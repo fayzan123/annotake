@@ -149,6 +149,12 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 **Mac App Store:** not viable. The sandbox disallows Accessibility and active event taps.
 
+## "Copy all paths" for terminals
+
+**Status:** added 2026-09-24 from M0.
+
+Dropping the card into VS Code's integrated terminal inserted only the first file path, as plain text, while the drag still reported success. A card action (or a modifier-drag) that puts all frame paths on the clipboard, one per line or space-separated and shell-quoted, would cover terminals that take a single path. Check Terminal.app and iTerm first; they may already take all 20.
+
 ## Considered and not planned
 
 - **Folder drag, steps.md in the drag, or a copy-log button:** caption strips were chosen instead.

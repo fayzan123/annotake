@@ -1,10 +1,11 @@
 # Flipbook: v1 spec
 
-**Status:** approved design, 2026-09-23 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
+**Status:** approved design, 2026-09-23; updated with M0 findings 2026-09-24 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
 
 Companion docs:
 - [v2-backlog.md](v2-backlog.md): everything deliberately left out of v1, with the design notes gathered so far.
 - [research-notes.md](research-notes.md): the facts and sources behind these decisions.
+- [spikes/findings.md](spikes/findings.md): what the M0 spikes measured, and the decisions taken from them.
 
 ## 1. Summary
 
@@ -29,7 +30,8 @@ The default trigger is **Right ⌘**. Settings also offers Right ⌥ and fn/Glob
 
 | Gesture | Result |
 |---|---|
-| Hold Right ⌘ alone for 250 ms | Recording starts (**hold mode**). Release → stop → card. |
+| Hold Right ⌘ alone for 250 ms | Recording starts silently (**hold mode**). At 800 ms the pill and start sound appear (the **reveal**). Release → stop → card. |
+| A key other than Esc pressed while Right ⌘ is held, after 250 ms but before the reveal, with no click first | It was a shortcut (⌘C, ⌘V). The recording is discarded silently and the shortcut works normally. |
 | Double-tap Right ⌘ (second press within 300 ms of the first release) | Recording starts at the second press (**hands-free mode**). |
 | Double-tap again while hands-free | Stop → card. |
 | Right ⌘ + Esc while recording | Cancel. Nothing is saved. |
@@ -40,21 +42,22 @@ Rules:
 - A **tap** is a press and release within 250 ms, with no other key or mouse button in between.
 - **Plain Esc always passes through** to the app being recorded, because closing a dialog can be part of the bug. The Esc in Right ⌘ + Esc is consumed by Flipbook and never reaches the app.
 - **While recording in either mode:**
-  - Right ⌘ shortcuts such as Right ⌘+S pass through normally and don't stop the recording.
+  - Right ⌘ shortcuts such as Right ⌘+S pass through normally and don't stop the recording (in hold mode, from the reveal on).
   - Single taps are ignored.
 - **Click cleanup (hold mode only).** The key is held while you click, so during a hold recording Flipbook removes ⌘ from mouse and scroll events. Clicks stay plain clicks.
   - In hands-free mode nothing is changed, so a deliberate ⌘-click still works.
-- The hold threshold (250 ms) and the double-tap window (300 ms) are adjustable in Settings → Advanced.
+- **Why the reveal:** M0 measured Fayzan's natural Right ⌘ shortcuts at 270–670 ms from ⌘ down to the letter, so 250 ms alone mistook 8 of 10 shortcuts for holds. Clicks are still classified at 250 ms, so a hold-and-click at 300 ms is a plain click (cleaned up), not a ⌘-click.
+- The hold threshold (250 ms), the hold reveal (800 ms) and the double-tap window (300 ms) are adjustable in Settings → Advanced.
 
 ### 3.2 While recording
 
-- **Pill.** Shown at the bottom center of the recorded screen:
+- **Pill.** Shown at the bottom center of the recorded screen (in hold mode, from the reveal at 800 ms):
   - Hold mode: `● 0:04 · 3 frames · release ⌘ to stop`
   - Hands-free mode: `● 0:12 · 5 frames · double-tap ⌘ to stop · ⌘Esc cancels`
-- **Sounds.** Soft start and stop sounds, controlled by a Settings toggle that is on by default.
+- **Sounds.** Soft start and stop sounds, controlled by a Settings toggle that is on by default. In hold mode the start sound plays at the reveal.
 - **Time limit.** Hands-free recordings stop and save automatically at **5 minutes**. Hold recordings end when the key is released.
 - **Accidental holds.** Recordings shorter than **0.5 s** are discarded silently.
-- **Never in the frames:** Flipbook's own windows (pill, cards, filmstrip, Settings) and **notification banners**.
+- **Never in the frames:** Flipbook's own windows (pill, cards, filmstrip, Settings), its menu-bar icon, and **notification banners**. On macOS 26 the menu-bar icon needs an explicit window exclusion (§6.2).
 - **Cursor.** The cursor is visible in frames because it explains hover states, but it is ignored when deciding what changed.
 
 ### 3.3 What gets recorded
@@ -72,10 +75,11 @@ Rules:
   - It shows stacked thumbnails, the frame count, and the duration.
   - It appears immediately and becomes draggable when export finishes. The target is under 1.5 s.
 - **Dragging the card** drops all frames, in order, as PNG files.
-  - This works in chat inputs (Cursor, Copilot, ChatGPT, Claude web), Slack, and Jira.
-  - Terminals receive the file paths.
-- **Dismissing.** After a successful drop the card disappears. ✕ or a swipe right dismisses it.
-  - Otherwise cards stay until dragged or dismissed, and new cards stack on top of older ones.
+  - M0: Cursor and Claude web took all 20 in order, and Finder copied all 20.
+  - Targets cap the count themselves and keep the first N: Slack 10 per message, ChatGPT's free plan 2. File names and caption numbers carry the order.
+  - Terminals receive file paths. VS Code's integrated terminal inserts only the first path, as plain text. Terminal.app/iTerm and Jira are still untested.
+- **Dismissing.** After a drop the card fades out over about 5 s instead of vanishing, and stays while hovered, so it can be dragged again. Drop targets report success even when they keep only some frames, so a drop can't be trusted to mean "done". ✕ or a swipe right dismisses it.
+  - Otherwise cards stay until dismissed (or until they fade after a drop), and new cards stack on top of older ones.
 - **Clicking the card** opens the **filmstrip**, a horizontal strip of the frames with their captions.
   - Click ✕ on a frame to remove it. Clicking again restores it while the filmstrip is open.
   - Drag a single frame out of the strip.
@@ -113,6 +117,7 @@ Rules:
 | | Keep captures: 7 days / 30 days / forever | 30 days |
 | Permissions | Status of each permission, with "Open System Settings" | — |
 | Advanced | Hold threshold | 250 ms |
+| | Hold reveal | 800 ms |
 | | Double-tap window | 300 ms |
 | | Save raw sessions (for tuning, §8) | Off |
 
@@ -132,7 +137,13 @@ For each permission it:
 - deep-links to the right System Settings pane,
 - re-checks the permission live.
 
-Flipbook works with only 1 and 2, in a degraded mode (§7). Spike M0 confirms exactly which permission each capability needs.
+Confirmed by M0:
+- **Input Monitoring** covers the listen-only tap (Right ⌘, clicks, keys). Request it with `CGRequestListenEventAccess()`, and check it with `CGPreflightListenEventAccess()`: `tapCreate` succeeds even without the permission, but no events arrive.
+- **Accessibility** covers the active tap (click cleanup, consuming the Esc of Right ⌘ + Esc), button names, and setting the Chrome/Electron flags (§6.2). Request it with `AXIsProcessTrustedWithOptions` and the prompt option. "Post events" access is never needed.
+- **Screen Recording** is requested by the first `SCShareableContent` call, which fails with error −3801 until it is granted.
+- Input Monitoring and Screen Recording take effect only after a relaunch, so first launch offers "Quit & Reopen". Accessibility applies without one.
+
+Flipbook works with only 1 and 2, in a degraded mode (§7).
 
 First launch also registers Flipbook to launch at login (`SMAppService`), because the key has to work right after a restart. It can be turned off in Settings → General.
 
@@ -200,7 +211,7 @@ Screen: Built-in Retina Display · 0:21 · 8 frames (from 12 candidates)
 
 Never recorded:
 - typed text,
-- anything in password fields. Secure text fields are never read, and macOS also blocks key events there.
+- anything in password fields. Secure text fields (`AXSecureTextField`) are never read. Flipbook does not rely on macOS to hide typing there: in M0, keystrokes in a Safari password field still reached the event tap with Secure Input off. Only the key *kind* is ever used.
 - audio.
 
 ## 5. Frame picking
@@ -222,7 +233,7 @@ Every number here is a starting point. Numbers are tuned against recorded sessio
 - A tile has **changed** if its signature's mean absolute difference from the comparison frame exceeds 3/255.
 - Three things are ignored:
   - Tiles under the cursor, at both its old and new position.
-  - A **blinking caret**: a thin dirty rect, at most 4 × 48 pt, toggling on and off. Its tiles stay ignored for 2 s.
+  - A **blinking caret**: a thin dirty rect, at most 4 × 48 pt, toggling on and off. Its tiles stay ignored for 2 s. Dirty rects arrive in output pixels (M0), so this limit is converted with the output scale.
   - **Busy regions** such as video, spinners, and animated ads. Tiles that changed in ≥ 60% of frames over the last 1.5 s (with at least 5 frames in that window) are masked until they have been still for 2 s. Two kinds of frame don't count toward this: frames that change more than half the screen, and frames that arrive while you're scrolling. Otherwise scrolling would look like a spinner.
 - **Motion** means at least 2 changed tiles remain after those exclusions. A single isolated tile, like a clock digit, doesn't count.
 - **D(a, b)** is the fraction of tiles that differ between frames a and b. It ignores busy tiles, recent caret tiles, and tiles under the cursor in either frame.
@@ -314,9 +325,9 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 | Need | API |
 |---|---|
 | Capture and changed regions | ScreenCaptureKit `SCStream`, `SCStreamFrameInfo` (status, dirtyRects) |
-| Exclude own windows and notification banners | `SCContentFilter(display:excludingApplications:…)`; panels are created at launch |
+| Exclude own windows and notification banners | `SCContentFilter(display:excludingApplications:…)`; panels are created at launch. Take `com.apple.notificationcenterui` from the all-windows `SCShareableContent` query (on macOS 15 it's missing from the on-screen-only list while no banner shows). On macOS 26, excluding the app doesn't cover its menu-bar status item, so exclude that window explicitly |
 | Trigger and input events | `CGEventTap`: listen-only for flagsChanged/keys/mouse. The active (event-modifying) tap exists only while a recording is running. It strips ⌘ from mouse events during hold recordings, and it consumes the Esc of Right ⌘ + Esc. |
-| Button names | `AXUIElementCopyElementAtPosition` plus role/title/description |
+| Button names | `AXUIElementCopyElementAtPosition` plus role/title/description, looked up off the tap callback (0.5–100 ms). Chrome web content and Electron apps need a flag, set only while recording: `AXEnhancedUserInterface` on Chrome (it returns −25208 but works), `AXManualAccessibility` on Electron apps. Never take a label from `AXWebArea`/`AXWindow` or above; fall back to `Clicked at (x, y)` |
 | App and window | `NSWorkspace` notifications; AX focused-window title |
 | Panels that don't take focus | `NSPanel` with `.nonactivatingPanel`, `.canJoinAllSpaces`, `.fullScreenAuxiliary` |
 | Scaling and encoding | vImage / Core Graphics; ImageIO (PNG) |
@@ -327,11 +338,12 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 | Situation | Behavior |
 |---|---|
 | Screen Recording missing or expired (macOS re-prompts monthly) | Pill shows "Screen Recording permission needed" with Open Settings. Nothing is saved. |
-| Input Monitoring missing | The key doesn't work, but the menu bar Start/Stop still does. Settings shows the fix. |
+| Input Monitoring missing | The key doesn't work, but the menu bar Start/Stop still does. Settings shows the fix. Detected with `CGPreflightListenEventAccess()`, not by tap creation. |
 | Accessibility missing | Still records. Hold-mode clicks keep ⌘, and captions say `Clicked at (x, y)`. |
 | Accessibility revoked while click cleanup runs | macOS can block all clicks until reboot if an active tap outlives its permission. Flipbook checks trust every 2 s and removes the active tap immediately. |
-| macOS disables the event tap (timeout) | Re-enabled automatically. |
-| Password field / Secure Input | The trigger still works because modifier events still arrive. Typing there isn't logged. |
+| macOS disables the event tap (timeout or user input) | Re-enabled automatically. |
+| An app reacts to the Accessibility flags | Cursor shows "Screen reader usage detected…" once the flag is set. Flags are set only while recording; clearing them at stop is verified in M2. |
+| Password field / Secure Input | The trigger still works (M0). Key events may still arrive there; only their kind is used, and the text is never logged. |
 | Recorded window closes or screen is unplugged mid-recording | Stop and save what was captured. |
 | Default window or screen missing at start | Record the cursor's screen, and the pill says so. |
 | macOS's screen/window list is slow or hangs | The list is cached and refreshed on display changes. After a 2 s timeout the pill shows an error instead of freezing. |
@@ -357,7 +369,7 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
   - double-tap start,
   - double-tap stop,
   - cancel,
-  - "was a shortcut",
+  - "was a shortcut" (before 250 ms, and after 250 ms but before the reveal),
   - single tap ignored.
 - **Golden tests:** raw sessions paired with the frames that should be kept. A raw session holds tile signatures, dirty rects, and events, and is saved via the Advanced setting.
   - `swift test` fails if picking changes.
@@ -377,11 +389,13 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 ## 9. Build, install, distribution
 
 - **One-time prerequisite:** Command Line Tools 26.3, the newest that runs on macOS 15.7. It includes the macOS 26.2 SDK and Swift 6.2. Install it from Software Update or developer.apple.com/download.
+- **Tests:** `make test` runs Swift Testing with the Command Line Tools' framework path added, because plain `swift test` can't find `Testing` without Xcode, and XCTest isn't in the CLT at all (M0).
 - **Make targets:**
   - `make cert` runs once. It creates a free self-signed signing identity so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
   - `make` builds and assembles `Flipbook.app`.
   - `make install` copies it into `~/Applications`.
   - `make zip` produces a zip for the work Mac.
+  - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
 - **Work Mac, until the app is notarized:**
   - The app is built only on the personal MacBook, using Fayzan's own Claude membership rather than work AI.
   - AirDrop the zip over and unzip it into `~/Applications`.
@@ -390,7 +404,7 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 
 ## 10. Milestones
 
-- **M0: Spikes.** Throwaway code that answers the risky questions first.
+- **M0: Spikes. Done 2026-09-24.** Throwaway code that answers the risky questions first. Results and decisions: [spikes/findings.md](spikes/findings.md).
   1. **Gestures and click cleanup.** Do Right ⌘ gestures and click cleanup work in Chrome, Safari, Cursor, and Finder? Which permission does each part need?
      - If click cleanup is unreliable, hold mode becomes look-only and click-through flows use double-tap.
   2. **Button names.** Are they readable in Chrome and in Electron apps (Cursor, Slack)?
@@ -432,6 +446,8 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
   - Apps may show ⌘-hover hints while the key is held.
 - **Ergonomics.** Holding Right ⌘ while using a right-handed mouse is awkward, so click-heavy flows will mostly use double-tap.
 - **Untuned numbers.** Thresholds are untested starting points. M5 exists to tune them.
+- **Accessibility flags change other apps.** Setting them makes Cursor offer screen-reader mode, and may affect others. Hence recording-only, and verify clearing them in M2.
+- **Unexplained dirty rects on macOS 26.** A bottom-center region was reported dirty at 10 fps with nobody touching the Mac. Tile comparison should ignore it; recheck once the real pill ticks every second.
 
 ## 13. Decision log (2026-09-23)
 
@@ -447,3 +463,6 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | No AI, no network | Works on company computers, and there are no bills. |
 | 30-day retention, then Trash | Work screenshots don't pile up, and deleted captures stay recoverable. |
 | Ring and MP4 deferred | Keeps v1 bare-bones. |
+| Hold mode reveals at 800 ms; a key before that discards it as a shortcut (2026-09-24) | M0: natural Right ⌘ shortcuts take 270–670 ms to the letter, so 250 ms alone misfired 8 of 10 times. A longer threshold would turn early clicks into ⌘-clicks. |
+| Card lingers ~5 s after a drop (2026-09-24) | Every drop target reported success, even Slack keeping 10 of 20. |
+| Exclude the menu-bar icon explicitly (2026-09-24) | On macOS 26 it appeared in frames despite excluding the app. |

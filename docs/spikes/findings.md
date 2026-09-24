@@ -54,7 +54,7 @@ Personal MacBook, macOS 15.7.9, 2026-09-24. Log: `~/Library/Logs/FlipbookSpike.l
   - `AXIsProcessTrustedWithOptions(prompt)` returned false at the moment it showed the prompt, as expected.
   - After a relaunch (row 14), `CGPreflightPostEventAccess` is **true**. The earlier false was because Accessibility was granted mid-process, and the preflight value is cached until relaunch. The real app should re-check after a relaunch, or not rely on the post-access preflight at all.
 - **Row 7, Safari link during a hold. Pass: opened in the same tab.** The log shows `stripped ⌘` and `⌘ flag: no`.
-- **Row 8, Cursor. Not tested.** Cursor isn't installed on the personal Mac. Check it on the work Mac with the zip.
+- **Row 8, Cursor. Not tested.** Cursor is installed on the personal Mac but not in daily use there (it was used later for Tasks 3 and 5). Check go-to-definition suppression in M2.
 - **Row 9, Finder, two clicks during a hold. Pass: the second click replaced the selection.** Both clicks were logged as stripped.
 - **Row 10, Finder drag to a folder on the same volume during a hold: moved.** Not conclusive: on the same volume, both a plain drag and a ⌘-drag move. It only shows up on a different volume (plain = copy, ⌘ = move).
 - **Spike change made during testing.** The spike gave no visible sign of whether it was recording, which caused two mis-ordered attempts: a cancel ended hands-free mode, so the next "stop" double-tap started a new recording. The menu-bar title now reads `FB ●` while recording, and key logs include `IsSecureEventInputEnabled()`.
@@ -88,7 +88,7 @@ Personal MacBook, macOS 15.7.9, 2026-09-24. Log: `~/Library/Logs/FlipbookSpike.l
 | 5 | Pass (no active tap without Accessibility; clicks keep ⌘) |
 | 6 | Pass (Chrome: same tab) |
 | 7 | Pass (Safari: same tab) |
-| 8 | Not tested (no Cursor on the personal Mac; check on the work Mac) |
+| 8 | Not tested (check in M2) |
 | 9 | Pass (Finder: selection replaced) |
 | 10 | Inconclusive (a same-volume drag moves either way) |
 | 11 | Pass |
@@ -233,3 +233,54 @@ Personal MacBook, macOS 15.7.9, 2026-09-24. The card drags 20 `NSDraggingItem`s 
     - (b) Test Claude Code in Terminal.app/iTerm and Jira on the work Mac.
 
 ## Decisions
+
+Decided 2026-09-24 with Fayzan. Each entry: question → answer → what it means for M2–M4.
+
+1. **Hold mode with click cleanup?**
+   - **Answer:** yes, keep hold mode. Click cleanup worked in Chrome, Safari and Finder.
+   - **But 250 ms alone can't tell a hold from Fayzan's Right ⌘ shortcuts** (270–670 ms before the letter). So hold mode gets a **late reveal**:
+     - Capture starts silently at 250 ms.
+     - The pill and start sound appear at **800 ms**.
+     - A key pressed before 800 ms, with no click first, means it was a shortcut: the recording is discarded silently, and the shortcut works as usual.
+     - After 800 ms, Right ⌘ shortcuts are part of the recording, as before.
+   - **For M1/M2:**
+     - `GestureRecognizer` gains a `holdReveal` threshold (0.8 s, adjustable in Advanced) and a "discard: was a shortcut" outcome, with tests.
+     - The M1 plan's gesture table needs this before M1 starts.
+     - Still open: Cursor go-to-definition (row 8) and the Finder cross-volume copy/move (row 10). Check both in M2.
+2. **Permission set and first-launch copy?**
+   - **Answer:** Input Monitoring for the trigger, clicks and keys. Accessibility for click cleanup, Right ⌘ + Esc, button names and the Chrome/Electron flags. Screen Recording for capture. "Post events" access is never needed.
+   - **For M4:**
+     - Input Monitoring prompts via `CGRequestListenEventAccess()`, Accessibility via `AXIsProcessTrustedWithOptions(prompt)`, and Screen Recording via the first `SCShareableContent` call (error −3801 until granted).
+     - Input Monitoring and Screen Recording take effect only after a relaunch, so first launch must offer "Quit & Reopen". Accessibility applied without a relaunch.
+     - Detect Input Monitoring with `CGPreflightListenEventAccess()`, never by whether `tapCreate` succeeded (it succeeds without the permission).
+3. **Accessibility flags for Chrome/Electron?**
+   - **Answer:** yes. Chrome web content and Electron apps (Cursor, Slack) expose nothing without them, and good labels with them.
+   - **For M2:**
+     - Set `AXEnhancedUserInterface` (Chrome; ignore its −25208) and `AXManualAccessibility` (Electron, detected by `Electron Framework.framework`) only while recording: at start, and for apps launched or activated during the recording.
+     - Test clearing them at stop. Expect Cursor's "Screen reader usage detected" prompt.
+     - Label rules as listed under Accessibility labels, never reading past `AXWebArea`/`AXWindow`.
+4. **Dirty-rect coordinate conversion?**
+   - **Answer:** dirty rects arrive in **output pixels**, top-left origin, the same space as the delivered buffer, on both macOS 15 and 26.
+   - **For M2:** no conversion for tile math. Convert point-based thresholds (the caret's 4 × 48 pt) by the output scale (output width / display width in points). `contentRect` is in output points.
+5. **Is pre-warming needed for capture start?**
+   - **Answer:** no. It's about 40–50 ms from `startCapture()` to the first frame (110–120 ms on the first run after launch), plus 20–40 ms for `SCShareableContent`.
+   - **For M2:** start the stream on the hold/hands-free start. The late reveal (item 1) also hides this latency. Keep the display/app list cached (spec §7).
+6. **Exclusion?**
+   - **Answer:** the pill and notification banners stay out of frames on 15 and 26. Two catches:
+     - (a) On 15, Notification Center is missing from the on-screen-only list while no banner shows, so get it from the all-windows query (or cache it).
+     - (b) On 26, Flipbook's own **menu-bar icon appears in frames**.
+   - **For M2:** exclude the status item's window explicitly. If that can't work on 26, accept it and note it. Recheck the unexplained bottom-center dirty region on 26 once the real pill updates every second.
+7. **Drag payload?**
+   - **Answer:** OK as is. 20 file URLs in step order: Cursor and Claude.ai took all 20 in order, Finder copied 20, and Slack keeps the first 10. Every target reports "success" even for partial drops.
+   - **For M3:**
+     - After a drop, the card **lingers for about 5 s** (fading, kept while hovered), so it can be dragged again.
+     - VS Code's terminal inserts only the first path, so a "copy all paths" action goes to the backlog.
+     - Still to test: Claude Code in Terminal.app/iTerm, and Jira (work Mac).
+8. **Test framework?**
+   - **Answer:** Swift Testing, run with the CLT framework path. XCTest isn't in the CLT at all.
+   - **For M1:** `make test` runs `swift test -Xswiftc -F -Xswiftc $F -Xlinker -F -Xlinker $F -Xlinker -rpath -Xlinker $F` with `F=/Library/Developer/CommandLineTools/Library/Developer/Frameworks`. The M1 plan's `swift test` commands should use `make test` (or those flags), and `Package.swift` needs `platforms: [.macOS(.v15)]`.
+9. **Secure Input?**
+   - **Answer:** it did not block key events in a Safari (facebook.com) password field.
+   - **For M2:** never rely on it. Detect secure fields via `AXSecureTextField`, and keep logging only key kinds.
+10. **Build hygiene.** `bundle-app.sh` strips extended attributes before signing, because iCloud Drive syncs `~/Documents`. Nothing else is needed.
+
