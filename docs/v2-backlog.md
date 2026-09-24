@@ -155,6 +155,14 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 Dropping the card into VS Code's integrated terminal inserted only the first file path, as plain text, while the drag still reported success. A card action (or a modifier-drag) that puts all frame paths on the clipboard, one per line or space-separated and shell-quoted, would cover terminals that take a single path. Check Terminal.app and iTerm first; they may already take all 20.
 
+## From the M2–M4 design
+
+**Status:** deferred on 2026-09-24 while designing M2–M4 ([design](plans/2026-09-24-m2-m4-design.md)).
+
+- **Accessibility flags for other Chromium browsers.** v1 sets `AXEnhancedUserInterface` only on Chrome, the one browser M0 tested. Edge, Brave, and Arc are Chromium too and probably need the same flag; test each before adding it.
+- **Drag actions.** A mouse drag is logged as a click at its start point. A `Dragged <label> to <label>` action would need a new Core action kind and a label lookup at the drop point.
+- **A display-capture exclusion check in the self-test.** The self-test records only Flipbook's own window, so it can't prove the pill, cards, or menu-bar icon stay out of real frames. A version that counts pixels of a known color in a display capture (Screen Recording permission required) could check exclusion unattended. The checkpoints look at real frames in the meantime.
+
 ## Considered and not planned
 
 - **Folder drag, steps.md in the drag, or a copy-log button:** caption strips were chosen instead.

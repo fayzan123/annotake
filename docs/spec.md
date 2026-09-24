@@ -1,11 +1,12 @@
 # Flipbook: v1 spec
 
-**Status:** approved design, 2026-09-23; updated with M0 findings 2026-09-24 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
+**Status:** approved design, 2026-09-23; updated with M0 findings and the M2–M4 design 2026-09-24 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
 
 Companion docs:
 - [v2-backlog.md](v2-backlog.md): everything deliberately left out of v1, with the design notes gathered so far.
 - [research-notes.md](research-notes.md): the facts and sources behind these decisions.
 - [spikes/findings.md](spikes/findings.md): what the M0 spikes measured, and the decisions taken from them.
+- [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md): how M2–M4 build the app (capture, input, export, UI), and the two checkpoints.
 
 ## 1. Summary
 
@@ -15,6 +16,7 @@ It exists because reproducing a Jira bug for a coding agent meant screenshotting
 
 ## 2. Principles and constraints
 
+- **Ease of use first.** The flow is: press the key, reproduce the bug, drag the card. Nothing may add a step, a confirmation, or a wait to it. Defaults work with no setup, and failures degrade instead of blocking a recording.
 - **Built for Fayzan's own workflow first.** Others should be able to download and use it easily later. Competitors do not drive decisions.
 - **No AI in the product.** No LLMs, no ML models, no API keys, no bills. Frames are picked by pixel comparison, and "what you clicked" comes from macOS Accessibility.
 - **Never touches the network.** No telemetry, no accounts, no update checks. This keeps it acceptable on a work Mac.
@@ -30,7 +32,7 @@ The default trigger is **Right ⌘**. Settings also offers Right ⌥ and fn/Glob
 
 | Gesture | Result |
 |---|---|
-| Hold Right ⌘ alone for 250 ms | Recording starts silently (**hold mode**). At 800 ms the pill and start sound appear (the **reveal**). Release → stop → card. |
+| Hold Right ⌘ alone for 250 ms | Recording starts silently (**hold mode**). At 800 ms the pill and start sound appear (the **reveal**). Release after the reveal → stop → card. Release before it → nothing is saved (§3.2). |
 | A key other than Esc pressed while Right ⌘ is held, after 250 ms but before the reveal, with no click first | It was a shortcut (⌘C, ⌘V). The recording is discarded silently and the shortcut works normally. |
 | Double-tap Right ⌘ (second press within 300 ms of the first release) | Recording starts at the second press (**hands-free mode**). |
 | Double-tap again while hands-free | Stop → card. |
@@ -44,7 +46,7 @@ Rules:
 - **While recording in either mode:**
   - Right ⌘ shortcuts such as Right ⌘+S pass through normally and don't stop the recording (in hold mode, from the reveal on).
   - Single taps are ignored.
-- **Click cleanup (hold mode only).** The key is held while you click, so during a hold recording Flipbook removes ⌘ from mouse and scroll events. Clicks stay plain clicks.
+- **Click cleanup (hold mode only).** The key is held while you click, so during a hold recording Flipbook removes the trigger's modifier (⌘, or ⌥ when Right ⌥ is the trigger) from mouse and scroll events. Clicks stay plain clicks.
   - In hands-free mode nothing is changed, so a deliberate ⌘-click still works.
 - **Why the reveal:** M0 measured Fayzan's natural Right ⌘ shortcuts at 270–670 ms from ⌘ down to the letter, so 250 ms alone mistook 8 of 10 shortcuts for holds. Clicks are still classified at 250 ms, so a hold-and-click at 300 ms is a plain click (cleaned up), not a ⌘-click.
 - The hold threshold (250 ms), the hold reveal (800 ms) and the double-tap window (300 ms) are adjustable in Settings → Advanced.
@@ -54,11 +56,15 @@ Rules:
 - **Pill.** Shown at the bottom center of the recorded screen (in hold mode, from the reveal at 800 ms):
   - Hold mode: `● 0:04 · 3 frames · release ⌘ to stop`
   - Hands-free mode: `● 0:12 · 5 frames · double-tap ⌘ to stop · ⌘Esc cancels`
-- **Sounds.** Soft start and stop sounds, controlled by a Settings toggle that is on by default. In hold mode the start sound plays at the reveal.
+  - The key glyph follows the trigger key. The frame count is capped at Max frames, so the pill never promises more than the card will hold.
+  - The pill sits over the app being recorded, so it ignores clicks while recording. It only takes clicks when it shows a message with a button, such as Open Settings.
+- **Sounds.** Soft start and stop sounds, controlled by a Settings toggle that is on by default. In hold mode the start sound plays at the reveal. No sound plays when a recording is discarded or cancelled.
 - **Time limit.** Hands-free recordings stop and save automatically at **5 minutes**. Hold recordings end when the key is released.
-- **Accidental holds.** Recordings shorter than **0.5 s** are discarded silently.
+- **Accidental recordings are discarded silently:**
+  - a hold released before the reveal: if the pill never appeared, nothing was recorded;
+  - a hands-free recording shorter than **0.5 s**.
 - **Never in the frames:** Flipbook's own windows (pill, cards, filmstrip, Settings), its menu-bar icon, and **notification banners**. On macOS 26 the menu-bar icon needs an explicit window exclusion (§6.2).
-- **Cursor.** The cursor is visible in frames because it explains hover states, but it is ignored when deciding what changed.
+- **Cursor.** The cursor is visible in frames because it explains hover states, but its movement is ignored when deciding what changed (§5.2).
 
 ### 3.3 What gets recorded
 
@@ -72,18 +78,20 @@ Rules:
 ### 3.4 The card and filmstrip
 
 - **The card.** When a recording stops, a card appears at the bottom right of the screen the cursor is on.
-  - It shows stacked thumbnails, the frame count, and the duration.
+  - It shows stacked thumbnails, the frame count, and the duration, with "Saving…" until export finishes.
   - It appears immediately and becomes draggable when export finishes. The target is under 1.5 s.
+  - It never takes focus and accepts the first click, so it drags straight into a chat.
 - **Dragging the card** drops all frames, in order, as PNG files.
   - M0: Cursor and Claude web took all 20 in order, and Finder copied all 20.
   - Targets cap the count themselves and keep the first N: Slack 10 per message, ChatGPT's free plan 2. File names and caption numbers carry the order.
   - Terminals receive file paths. VS Code's integrated terminal inserts only the first path, as plain text. Terminal.app/iTerm and Jira are still untested.
 - **Dismissing.** After a drop the card fades out over about 5 s instead of vanishing, and stays while hovered, so it can be dragged again. Drop targets report success even when they keep only some frames, so a drop can't be trusted to mean "done". ✕ or a swipe right dismisses it.
-  - Otherwise cards stay until dismissed (or until they fade after a drop), and new cards stack on top of older ones.
-- **Clicking the card** opens the **filmstrip**, a horizontal strip of the frames with their captions.
-  - Click ✕ on a frame to remove it. Clicking again restores it while the filmstrip is open.
+  - Otherwise cards stay until dismissed (or until they fade after a drop).
+  - The newest card sits in the corner and older ones stack upward. At most 4 are visible; a fifth pushes the oldest out, and that one stays in Recent Captures.
+- **Clicking the card** (moving less than 4 pt) opens the **filmstrip**, a horizontal strip of the frames with their captions.
+  - Click ✕ on a frame to remove it. Clicking again restores it while the filmstrip is open. The last remaining frame can't be removed.
   - Drag a single frame out of the strip.
-  - Closing the filmstrip applies the removals:
+  - Closing the filmstrip (✕, Esc, a click outside it, or a click on the card) applies the removals:
     - Removed frames move to the capture's hidden `.raw/removed/` folder.
     - The remaining frames are re-rendered and renumbered with no gaps (1/6 … 6/6).
     - A removed frame's actions merge into the previous frame's caption.
@@ -92,9 +100,10 @@ Rules:
 
 ### 3.5 Menu bar
 
-- **Icon:** shows idle or recording.
+- **Icon:** shows idle or recording (tinted red while recording).
 - **Menu:**
-  - Start/Stop Recording (a fallback when the key isn't available)
+  - Fix permissions… (only when a permission is missing; it opens the first-launch checklist, §3.7)
+  - Start/Stop Recording (a fallback when the key isn't available; it starts a hands-free recording)
   - Recent Captures ▸ (last 5)
   - Open Captures Folder
   - Settings…
@@ -116,36 +125,41 @@ Rules:
 | | Save location | `~/Pictures/Flipbook` |
 | | Keep captures: 7 days / 30 days / forever | 30 days |
 | Permissions | Status of each permission, with "Open System Settings" | — |
-| Advanced | Hold threshold | 250 ms |
-| | Hold reveal | 800 ms |
-| | Double-tap window | 300 ms |
+| Advanced | Hold threshold (150–500 ms) | 250 ms |
+| | Hold reveal (hold threshold + 200 ms, up to 1500 ms) | 800 ms |
+| | Double-tap window (200–500 ms) | 300 ms |
 | | Save raw sessions (for tuning, §8) | Off |
 
-Choosing fn shows a note with two warnings:
+A change applies to the next recording and never interrupts one in progress. A new trigger key or new gesture timings take effect as soon as Flipbook is idle.
+
+Choosing fn shows a note with three warnings:
 - macOS's "Press 🌐 key to" setting must be "Do Nothing".
 - Dictation apps (Wispr Flow, Handy) often use fn already.
+- Some third-party keyboards handle fn themselves and never send it to macOS, so fn works reliably only on Apple keyboards.
 
 ### 3.7 First launch
 
-First launch walks through three permissions, then asks you to double-tap Right ⌘ to try it:
+First launch shows one checklist window with three permissions, then asks you to double-tap Right ⌘ (or the chosen trigger) to try it:
 1. **Screen Recording:** required to record.
 2. **Input Monitoring:** needed to see Right ⌘, clicks, and keys.
 3. **Accessibility:** needed for click cleanup and button names.
 
-For each permission it:
+Each permission's row:
 - explains why in one sentence,
-- deep-links to the right System Settings pane,
+- has a button: the first press shows the system prompt, and later presses deep-link to the right System Settings pane,
 - re-checks the permission live.
 
 Confirmed by M0:
 - **Input Monitoring** covers the listen-only tap (Right ⌘, clicks, keys). Request it with `CGRequestListenEventAccess()`, and check it with `CGPreflightListenEventAccess()`: `tapCreate` succeeds even without the permission, but no events arrive.
 - **Accessibility** covers the active tap (click cleanup, consuming the Esc of Right ⌘ + Esc), button names, and setting the Chrome/Electron flags (§6.2). Request it with `AXIsProcessTrustedWithOptions` and the prompt option. "Post events" access is never needed.
 - **Screen Recording** is requested by the first `SCShareableContent` call, which fails with error −3801 until it is granted.
-- Input Monitoring and Screen Recording take effect only after a relaunch, so first launch offers "Quit & Reopen". Accessibility applies without one.
+- Input Monitoring and Screen Recording take effect only after a relaunch. Once either button has been pressed, the window offers "Quit & Reopen", and it reopens where you left off. Accessibility applies without one.
 
-Flipbook works with only 1 and 2, in a degraded mode (§7).
+Your first recording closes the window. You can also close it at any time: Flipbook works with only 1 and 2, in a degraded mode (§7).
 
-First launch also registers Flipbook to launch at login (`SMAppService`), because the key has to work right after a restart. It can be turned off in Settings → General.
+First launch also registers Flipbook to launch at login (`SMAppService`), because the key has to work right after a restart.
+- It registers only when Flipbook runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Flipbook there.
+- It can be turned off in Settings → General.
 
 ## 4. Output
 
@@ -158,21 +172,31 @@ First launch also registers Flipbook to launch at login (`SMAppService`), becaus
     02_0m03s.png
     …
     steps.md
-    .flipbook          # marker file: cleanup only ever touches folders that have it
-    .raw/              # unrendered kept frames, used to re-render after trims
+    .flipbook          # marker file holding the capture's date: cleanup only ever touches folders that have it
+    .raw/              # used to re-render after trims; internal, not a public format
+      capture.json     # name, target, date, render options, picked frames and their actions, removals
+      frame-000017.png # unrendered picked frames, named by frame index
       removed/         # frames removed in the filmstrip
+      session/         # raw session, only with Advanced → Save raw sessions (§8)
+  .flipbook-tmp/       # captures being written
 ```
 
-- Captures are written to a temp folder and moved into place once complete, so a crash never leaves a half-finished capture.
-- **Cleanup** runs at launch and every 24 h. It moves capture folders older than the retention period to the Trash, but only if they contain `.flipbook`.
+- Captures are written to a temp folder inside the save location (`.flipbook-tmp/`) and moved into place once complete, which is a rename on the same volume. A crash never leaves a half-finished capture, and leftovers are removed at the next launch.
+- A capture whose folder name is already taken gets " (2)", " (3)", and so on.
+- `.raw/capture.json` exists so the filmstrip and Recent Captures work after a relaunch. It is not the machine-readable capture file the backlog defers.
+- **Cleanup** runs at launch and every 24 h. It moves capture folders older than the retention period to the Trash, but only if they contain `.flipbook`, and it reads the date from that marker.
 
 ### 4.2 Frames
 
-- **Format:** PNG.
-- **Size:** the long edge is at most 1920 px by default (1568 px in compact mode). The final image, caption strip included, never exceeds 2000 px on either side, because Claude rejects larger images once a conversation holds more than 20.
+- **Format:** PNG, sRGB.
+- **Size:** the long edge is at most 1920 px by default (1568 px in compact mode). The final image, caption strip included, never exceeds 2000 px on either side, because Claude rejects larger images once a conversation holds more than 20. The capture size reserves room for the tallest strip, so in practice only portrait windows come out smaller.
 - **File names:** a two-digit step number plus the time from start, e.g. `03_0m07s.png`. The order survives any tool.
-- **Click markers:** a high-contrast ring at each click point, on the frame where the click happened. When a frame has more than one click, the rings are numbered.
+- **Click markers:** a high-contrast ring at each click point, on the frame where the click happened: 3 px of red (`#FF3B30`) over a 6 px white halo, with a radius of width ÷ 80 (24 px at 1920 wide). When a frame has more than one click, each ring gets a numbered red badge, in click order. A click that falls outside the frame gets no marker.
 - **Caption strip:** drawn under the screenshot, never over it.
+  - Dark background (`#1C1C1E`).
+  - Line 1 is semibold white at width ÷ 64 (30 px at 1920 wide, about twice the size of the UI text in the frame). It wraps to at most 3 lines and then ends with "…".
+  - Line 2 is regular gray at 85% of that size, on one line, truncated with "…".
+  - `steps.md` always has the full text.
 
 ```
 3/8 · 0:07 · Clicked button "Save"
@@ -204,10 +228,15 @@ Screen: Built-in Retina Display · 0:21 · 8 frames (from 12 candidates)
 | Right-click / double-click | `Right-clicked …` / `Double-clicked …` (same forms as a click) |
 | Typing | `Typed in field "<label>"`. The typed text is never logged. |
 | Return / Esc | `Pressed Return` / `Pressed Esc` |
-| ⌘ or ⌃ shortcut | e.g. `Pressed ⌘S` |
+| ⌘ or ⌃ shortcut | e.g. `Pressed ⌘S`, `Pressed ⇧⌘T`: modifiers in Apple's order ⌃⌥⇧⌘, then the key as the current keyboard layout prints it |
 | App or window switch | `Switched to <app> — <window>` |
 | Scroll | `Scrolled` |
 | Change with no input | `Screen changed` |
+
+Not logged as actions:
+- clicks and scrolls outside the recorded area, because the frames can't show them;
+- arrows, navigation keys, and F-keys pressed alone (the frames still show what they change);
+- key auto-repeats.
 
 Never recorded:
 - typed text,
@@ -227,16 +256,17 @@ Every number here is a starting point. Numbers are tuned against recorded sessio
   - A tile's signature is its 4×4 grid of mean brightness values.
   - Core never sees raw pixels.
 - **Input events:** clicks (with their Accessibility label), keys (class only, never content), scrolls, app/window switches, and the cursor position.
+- **Order.** Every frame and input event is timestamped when it reaches the recording queue, and the picker sees them in that order (§6.1).
 
 ### 5.2 What counts as change
 
 - A tile has **changed** if its signature's mean absolute difference from the comparison frame exceeds 3/255.
 - Three things are ignored:
-  - Tiles under the cursor, at both its old and new position.
+  - Tiles under the cursor, at both its old and new position, but only when the cursor moved between the two frames being compared. If it stayed put, its pixels are the same in both frames, so a change under it counts: a checkbox ticked under the pointer is a real change.
   - A **blinking caret**: a thin dirty rect, at most 4 × 48 pt, toggling on and off. Its tiles stay ignored for 2 s. Dirty rects arrive in output pixels (M0), so this limit is converted with the output scale.
   - **Busy regions** such as video, spinners, and animated ads. Tiles that changed in ≥ 60% of frames over the last 1.5 s (with at least 5 frames in that window) are masked until they have been still for 2 s. Two kinds of frame don't count toward this: frames that change more than half the screen, and frames that arrive while you're scrolling. Otherwise scrolling would look like a spinner.
 - **Motion** means at least 2 changed tiles remain after those exclusions. A single isolated tile, like a clock digit, doesn't count.
-- **D(a, b)** is the fraction of tiles that differ between frames a and b. It ignores busy tiles, recent caret tiles, and tiles under the cursor in either frame.
+- **D(a, b)** is the fraction of tiles that differ between frames a and b. It ignores busy tiles, recent caret tiles, and, when the cursor moved between a and b, the tiles under it in either frame.
 
 ### 5.3 Triggers, settle, keep
 
@@ -246,6 +276,7 @@ Every number here is a starting point. Numbers are tuned against recorded sessio
 - **Settle.** A pending trigger resolves once there has been no motion for 400 ms. The 400 ms are counted from the later of the last motion and the trigger itself, so a click's result has time to appear. After 3 s it resolves anyway, using the latest frame.
 - **Keep.** The settled frame is kept if D(last kept, settled) ≥ 0.005.
   - When the trigger was a click, a commit (Return, Esc, or a shortcut), a switch, or a typing pause, a single changed tile is enough. A ticked checkbox, an inline error, or a filled-in field still counts.
+  - For those same triggers, the settled frame is also compared with the frame that was on screen at the input: the mouse-down, the first key of the typing run, the commit key, or the switch. One changed tile there is enough too. The pointer was in the same place then, so this catches a change right under a pointer that stayed put, which D(last kept, settled) misses when the pointer was elsewhere in the last kept frame.
 - **Scrolling.** Each time scrolling has moved ≥ 80% of a screen since the last kept frame, the latest frame is kept immediately, without waiting to settle.
 - **Start and stop.**
   - The first frame is always kept.
@@ -283,54 +314,67 @@ First and last frames are pinned. Remove the lowest-cost frame, update its neigh
 ```
 Sources/
   FlipbookCore/     Foundation only, no macOS frameworks:
-                    frame picker (§5), gesture recognizer (§3.1), cap fitting (§5.5),
-                    caption and steps.md text
-  FlipbookCapture/  ScreenCaptureKit: target resolution, stream, frame → tile signatures
+                    frame picker (§5), LiveSession (the ordered feed, §6.1), gesture recognizer (§3.1),
+                    cap fitting (§5.5), caption and steps.md text, raw sessions and replay
+  FlipbookCapture/  ScreenCaptureKit: target resolution, exclusions, stream, output size,
+                    frame → tile signatures, point mapping
   FlipbookInput/    event taps: trigger key and click cleanup; clicks/keys/scrolls;
-                    Accessibility labels; active app/window tracking
-  FlipbookExport/   scaling, click markers, caption strips, PNGs + steps.md,
-                    folder writes, retention cleanup
-  Flipbook/         the app: menu bar, pill, card, filmstrip, Settings, first launch,
-                    SessionController
+                    Accessibility labels and flags; active app/window tracking
+  FlipbookExport/   caption strips, click markers, PNGs + steps.md, capture folders,
+                    filmstrip trims, retention cleanup
+  FlipbookApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
+                    card, filmstrip, Settings, first launch, self-test (§8)
+  Flipbook/         the executable: main.swift only
   flipbook-replay/  CLI: runs a saved raw session through FlipbookCore and prints its decisions
 Tests/
-  FlipbookCoreTests/  unit and golden tests
-  Fixtures/           raw sessions (never work data, see §8)
+  FlipbookCoreTests/     unit and golden tests; Fixtures/ holds raw sessions (never work data, see §8)
+  FlipbookCaptureTests/, FlipbookInputTests/, FlipbookExportTests/, FlipbookAppTests/
 ```
+
+The app is a library plus a one-file executable so its tests can import it the normal way.
 
 **Why Core has no macOS code:** it is the part the golden tests pin down. It is also the part a future Windows version would reuse, or port against the same tests.
 
 ### 6.1 Data flow
 
 ```
-Right ⌘ ─▶ Input (trigger tap) ─gesture─▶ SessionController ─start/stop─▶ Capture (SCStream)
-                                               ▲                           │ tile signatures + dirty rects
-Input (clicks, keys, scrolls, ─────events──────┴──────────────────────────▶ Core (frame picker)
- switches, AX labels, cursor)                                               │ keep decisions
-                                                                            ▼
-                                                  Capture writes full-size kept frames → temp .raw/
-                                                                            │ on stop: settle, fit cap
-                                                                            ▼
-                                                  Export renders PNGs + steps.md → capture folder
-                                                                            ▼
-                                                                  Card (drag / filmstrip)
+Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ SessionController (main)
+              │ click / key / scroll / switch                     │ start / stop
+              │   (click → reserve a slot; AX thread fills label) ▼
+              └──────────────▶ Recording queue: LiveSession ◀── SCStream frames + signatures
+                                    │ persist / discard
+                                    ▼
+               Writer: kept frames → temp .raw/ ──on stop: settle, fit cap──▶ Export: PNGs + steps.md
+                                                                                  ▼
+                                                                        Card (drag / filmstrip)
 ```
 
-- **Session states:** `idle → recording(hold | handsFree) → finishing → idle`, plus `cancelled`.
-- **Threads:** Capture and Core run on one serial queue, PNG writing runs on a background queue, and the UI runs on the main thread.
-- **Memory:** kept frames are written to disk as soon as they are kept, so memory use stays flat.
+- **Session states:** `idle → recording(hold | handsFree) → finishing → idle`, plus `cancelled`. Finishing and export run per capture in the background, so a new recording can start while the last one saves.
+- **Threads:**
+  - Main: UI and `SessionController`.
+  - Input thread (its own run loop): both event taps and the gesture recognizer. Callbacks only classify and hand off, because macOS disables a slow tap.
+  - AX thread (its own run loop): label lookups, focused field and window title, observers, and the Chrome/Electron flags, with a 0.25 s Accessibility messaging timeout.
+  - Recording queue: Capture and Core on one serial queue: frames, signatures, and `LiveSession`.
+  - Writer queue: PNG encoding.
+- **`LiveSession`** is the only way frames and events reach the frame picker, live and in replay.
+  - Items are stamped when they reach the recording queue and wait in one first-in-first-out queue.
+  - An event that needs an Accessibility lookup reserves a slot: a mouse-down, the first key of a typing run, a switch, or the window title at start. Items behind an unfilled slot wait. After 0.5 s the slot is released without a label.
+  - Ticks fall on the replayer's 50 ms grid.
+  - The replayer runs the same code, so a saved raw session replays exactly as it ran live.
+- **Memory:** kept frames are written to disk as soon as they are kept, so memory use stays flat. Capture holds the pixels only of frames the picker hasn't taken yet, plus the latest one it took.
 
 ### 6.2 Key macOS pieces
 
 | Need | API |
 |---|---|
 | Capture and changed regions | ScreenCaptureKit `SCStream`, `SCStreamFrameInfo` (status, dirtyRects) |
-| Exclude own windows and notification banners | `SCContentFilter(display:excludingApplications:…)`; panels are created at launch. Take `com.apple.notificationcenterui` from the all-windows `SCShareableContent` query (on macOS 15 it's missing from the on-screen-only list while no banner shows). On macOS 26, excluding the app doesn't cover its menu-bar status item, so exclude that window explicitly |
-| Trigger and input events | `CGEventTap`: listen-only for flagsChanged/keys/mouse. The active (event-modifying) tap exists only while a recording is running. It strips ⌘ from mouse events during hold recordings, and it consumes the Esc of Right ⌘ + Esc. |
-| Button names | `AXUIElementCopyElementAtPosition` plus role/title/description, looked up off the tap callback (0.5–100 ms). Chrome web content and Electron apps need a flag, set only while recording: `AXEnhancedUserInterface` on Chrome (it returns −25208 but works), `AXManualAccessibility` on Electron apps. Never take a label from `AXWebArea`/`AXWindow` or above; fall back to `Clicked at (x, y)` |
-| App and window | `NSWorkspace` notifications; AX focused-window title |
+| Exclude own windows and notification banners | `SCContentFilter(display:excludingApplications:exceptingWindows:)`; panels are created at launch. The content comes from one `SCShareableContent` query that includes off-screen windows (on macOS 15, `com.apple.notificationcenterui` is missing from the on-screen-only list while no banner shows), with a 2 s timeout and a cache refreshed at launch and on display changes. On macOS 26, excluding the app doesn't cover its menu-bar status item: its window is found by window number or frame, and if another process owns it, that app is excluded too, with its other windows listed in `exceptingWindows` |
+| Trigger and input events | `CGEventTap` on a dedicated input thread: listen-only for flagsChanged/keys/mouse. The active (event-modifying) tap exists only while a recording is running. It strips the trigger's modifier from mouse and scroll events during hold recordings, and it consumes the Esc of Right ⌘ + Esc. |
+| Button names | `AXUIElementCopyElementAtPosition` plus role/title/description, looked up on the AX thread (0.5–100 ms; `AXUIElementSetMessagingTimeout` 0.25 s). Chrome web content and Electron apps need a flag, set only while recording: `AXEnhancedUserInterface` on Chrome (it returns −25208 but works), `AXManualAccessibility` on Electron apps. Never take a label from `AXWebArea`/`AXWindow` or above; fall back to `Clicked at (x, y)` |
+| App and window | `NSWorkspace` notifications; AX focused-window title; an AX observer for window and title changes |
 | Panels that don't take focus | `NSPanel` with `.nonactivatingPanel`, `.canJoinAllSpaces`, `.fullScreenAuxiliary` |
-| Scaling and encoding | vImage / Core Graphics; ImageIO (PNG) |
+| Scaling and encoding | ScreenCaptureKit scales to the output size (sRGB); Core Graphics and Core Text draw strips and markers; ImageIO writes PNGs |
+| Self-test capture | `SCShareableContent.currentProcess` (macOS 14.4+) lets the app capture its own test window without Screen Recording permission |
 | Settings, launch at login | SwiftUI, `UserDefaults`, `SMAppService` |
 
 ## 7. Permissions and failure handling
@@ -339,14 +383,15 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 |---|---|
 | Screen Recording missing or expired (macOS re-prompts monthly) | Pill shows "Screen Recording permission needed" with Open Settings. Nothing is saved. |
 | Input Monitoring missing | The key doesn't work, but the menu bar Start/Stop still does. Settings shows the fix. Detected with `CGPreflightListenEventAccess()`, not by tap creation. |
-| Accessibility missing | Still records. Hold-mode clicks keep ⌘, and captions say `Clicked at (x, y)`. |
+| Accessibility missing | Still records. Hold-mode clicks keep the trigger's modifier (⌘), and captions say `Clicked at (x, y)`. |
+| Any permission missing | The menu shows "Fix permissions…", which opens the first-launch checklist (§3.7). |
 | Accessibility revoked while click cleanup runs | macOS can block all clicks until reboot if an active tap outlives its permission. Flipbook checks trust every 2 s and removes the active tap immediately. |
 | macOS disables the event tap (timeout or user input) | Re-enabled automatically. |
-| An app reacts to the Accessibility flags | Cursor shows "Screen reader usage detected…" once the flag is set. Flags are set only while recording; clearing them at stop is verified in M2. |
+| An app reacts to the Accessibility flags | Cursor shows "Screen reader usage detected…" once the flag is set. Flags are set only while recording and cleared at stop, unless VoiceOver is running. Checkpoint 1 verifies that apps behave normally after the flags are cleared. |
 | Password field / Secure Input | The trigger still works (M0). Key events may still arrive there; only their kind is used, and the text is never logged. |
 | Recorded window closes or screen is unplugged mid-recording | Stop and save what was captured. |
 | Default window or screen missing at start | Record the cursor's screen, and the pill says so. |
-| macOS's screen/window list is slow or hangs | The list is cached and refreshed on display changes. After a 2 s timeout the pill shows an error instead of freezing. |
+| macOS's screen/window list is slow or hangs | Each start makes a fresh query with a 2 s timeout and falls back to a cached list, refreshed at launch and on display changes. With neither, the pill shows "Couldn't start recording — try again" instead of freezing. |
 | Disk full / write error | Error card with "Show Folder". Temp files are cleaned up, and nothing half-written lands in the captures folder. |
 | Crash mid-recording | The leftover temp session is removed on the next launch. |
 | Nothing changed during the recording | One frame: the first, plus the last if it differs. |
@@ -361,9 +406,10 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
   - scrolling,
   - video playing in a corner,
   - a dialog that opens and then closes (A→B→A),
-  - a click whose only result is a checkbox,
+  - a click whose only result is a checkbox, including one under a pointer that stayed put,
   - over-cap selection,
-  - action merging.
+  - action merging,
+  - the live feed (`LiveSession`, with late labels) giving the same result as replaying what it recorded.
 - **Gesture tests:** timed key and mouse sequences, checked against the expected outcome:
   - hold,
   - double-tap start,
@@ -371,11 +417,20 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
   - cancel,
   - "was a shortcut" (before 250 ms, and after 250 ms but before the reveal),
   - single tap ignored.
-- **Golden tests:** raw sessions paired with the frames that should be kept. A raw session holds tile signatures, dirty rects, and events, and is saved via the Advanced setting.
-  - `swift test` fails if picking changes.
+- **Golden tests:** raw sessions paired with the frames that should be kept. A raw session holds tile signatures, dirty rects, and events. It's saved into the capture's `.raw/session/` when Advanced → Save raw sessions is on.
+  - `make test` fails if picking changes.
   - `flipbook-replay` prints the picker's decisions, for tuning.
+- **Module unit tests:** Capture, Input, Export, and the app each test their pure logic:
+  - output size, signatures, and point mapping;
+  - key classification, and label rules over a fake Accessibility tree;
+  - rendering, capture folders, trims, and retention;
+  - the session state machine, the pill text, and card stacking.
+
+  Event taps, the stream, AX calls, and the UI are covered by the self-test and the checkpoints.
+- **Self-test:** `make selftest` opens a test window of Flipbook's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports frames, timings, and picked captions in `selftest.json`. `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
+- **Log:** `~/Library/Logs/Flipbook.log` records gestures, state changes, timings, and errors. It never records labels, window titles, or keys.
 - **Fixture privacy:** sessions recorded on the work Mac never go in the repo, because window titles and labels can be internal. Work sessions stay local, or have all text stripped before use.
-- **Manual checklist (Fayzan):**
+- **Manual checklist (Fayzan).** It's run at the two checkpoints in [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md) §10:
   - Drag the card into Cursor chat, Claude Code in Terminal, ChatGPT and Claude web, Slack, and Jira.
   - Right ⌘ shortcuts still work.
   - Click cleanup works in Chrome, Safari, Cursor, and Finder.
@@ -393,8 +448,10 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 - **Make targets:**
   - `make cert` runs once. It creates a free self-signed signing identity so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
   - `make` builds and assembles `Flipbook.app`.
+  - `make run` builds it and opens it.
   - `make install` copies it into `~/Applications`.
   - `make zip` produces a zip for the work Mac.
+  - `make selftest` runs the self-test, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
 - **Work Mac, until the app is notarized:**
   - The app is built only on the personal MacBook, using Fayzan's own Claude membership rather than work AI.
@@ -413,10 +470,13 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
   4. **Dropping into Cursor.** Does Cursor's chat accept 20 dropped PNGs, and in order?
      - If not, revisit the drag payload.
   5. **Exclusion.** Confirm the pill and card never appear in recordings.
-- **M1: Core.** Frame picker, gesture recognizer, cap fitting, tests, `flipbook-replay`.
+- **M1: Core. Done 2026-09-24.** Frame picker, gesture recognizer, cap fitting, tests, `flipbook-replay`.
 - **M2: Recording end to end.** Right ⌘ → capture → frames in a folder, with no polish.
 - **M3: Output.** Caption strips, click markers, `steps.md`, the card, and filmstrip trimming.
 - **M4: The rest of the app.** Settings with the Meet-style picker, first launch, menu bar, retention cleanup, sounds.
+- M2–M4 are designed in [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md):
+  - Session 4 builds M2 and M3, then comes Checkpoint 1 on the personal Mac.
+  - Session 5 builds M4, then comes Checkpoint 2 on both Macs.
 - **M5: Dogfood.** A week of real use at work, tuning thresholds from local raw sessions.
 
 ## 11. Not in v1
@@ -446,8 +506,10 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
   - Apps may show ⌘-hover hints while the key is held.
 - **Ergonomics.** Holding Right ⌘ while using a right-handed mouse is awkward, so click-heavy flows will mostly use double-tap.
 - **Untuned numbers.** Thresholds are untested starting points. M5 exists to tune them.
-- **Accessibility flags change other apps.** Setting them makes Cursor offer screen-reader mode, and may affect others. Hence recording-only, and verify clearing them in M2.
-- **Unexplained dirty rects on macOS 26.** A bottom-center region was reported dirty at 10 fps with nobody touching the Mac. Tile comparison should ignore it; recheck once the real pill ticks every second.
+- **Accessibility flags change other apps.** Setting them makes Cursor offer screen-reader mode, and may affect others. Hence recording-only, and clearing them is verified at Checkpoint 1.
+- **Chrome may expose web content late.** M0 saw labels on the next click, about 4 s after setting the flag, so the first Chrome clicks after a recording starts may be unlabeled. Checkpoint 1 measures it.
+- **Unexplained dirty rects on macOS 26.** A bottom-center region was reported dirty at 10 fps with nobody touching the Mac. Tile comparison should ignore it; it's rechecked at Checkpoint 2, once the real pill ticks every second.
+- **The self-test needs an awake, unlocked Mac.** While the Mac is asleep or locked, capture delivers no frames, so unattended sessions retry the self-test later.
 
 ## 13. Decision log (2026-09-23)
 
@@ -466,3 +528,10 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Hold mode reveals at 800 ms; a key before that discards it as a shortcut (2026-09-24) | M0: natural Right ⌘ shortcuts take 270–670 ms to the letter, so 250 ms alone misfired 8 of 10 times. A longer threshold would turn early clicks into ⌘-clicks. |
 | Card lingers ~5 s after a drop (2026-09-24) | Every drop target reported success, even Slack keeping 10 of 20. |
 | Exclude the menu-bar icon explicitly (2026-09-24) | On macOS 26 it appeared in frames despite excluding the app. |
+| Frames and events reach the picker through `LiveSession`, one time-ordered queue (2026-09-24, M2–M4 design) | A click's label arrives up to ~100 ms after the click. Ordering keeps each click on the screen it happened on, and makes raw sessions replay exactly as they ran live. |
+| A change under a pointer that stayed put counts (2026-09-24) | After a click the pointer sits on what it clicked, so a ticked checkbox produced no frame. |
+| A hold released before the reveal is discarded (2026-09-24) | If the pill never appeared, nothing was recorded. |
+| `--selftest` records Flipbook's own scripted window (2026-09-24) | It needs no permission, so unattended implementation sessions can test the real capture path. |
+| Clicks and scrolls outside the recorded area aren't logged (2026-09-24) | The frames can't show them. |
+| First launch is one checklist; the menu gains "Fix permissions…" (2026-09-24) | Fewer clicks than a wizard, and Screen Recording expires monthly. |
+| Launch at login only from an Applications folder (2026-09-24) | A development build never leaves a stale login item. |
