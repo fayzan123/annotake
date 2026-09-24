@@ -11,6 +11,6 @@ let package = Package(
     targets: [
         .target(name: "FlipbookCore"),
         .executableTarget(name: "flipbook-replay", dependencies: ["FlipbookCore"]),
-        .testTarget(name: "FlipbookCoreTests", dependencies: ["FlipbookCore"]),
+        .testTarget(name: "FlipbookCoreTests", dependencies: ["FlipbookCore"], resources: [.copy("Fixtures")]),
     ]
 )

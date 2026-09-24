@@ -1,0 +1,16 @@
+{
+  "frameIndices" : [
+    0,
+    1,
+    2,
+    5,
+    6
+  ],
+  "summaries" : [
+    "Clicked button \"Open\"",
+    "Clicked checkbox \"Remember me\"",
+    "Typed in field \"Email\"",
+    "Pressed Return",
+    "End"
+  ]
+}
