@@ -147,20 +147,6 @@ struct GeneralTab: View {
     }
 }
 
-struct RecordTab: View {
-    @ObservedObject var model: SettingsModel
-
-    var body: some View {
-        SettingsForm {
-            Section {
-                LabeledContent("Record", value: SettingsText.target(model.settings.recordTarget))
-            } footer: {
-                Note("If a chosen screen or window is gone, Flipbook records the screen with the cursor.")
-            }
-        }
-    }
-}
-
 struct OutputTab: View {
     @ObservedObject var model: SettingsModel
 
@@ -316,10 +302,12 @@ struct AdvancedTab: View {
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let model: SettingsModel
+    private let picker: RecordPickerModel
     private var window: NSWindow?
 
-    init(model: SettingsModel) {
+    init(model: SettingsModel, picker: RecordPickerModel) {
         self.model = model
+        self.picker = picker
     }
 
     func show() {
@@ -332,7 +320,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
         for tab in SettingsTab.allCases {
-            let item = NSTabViewItem(viewController: Self.hosting(tab, model: model))
+            let item = NSTabViewItem(viewController: Self.hosting(tab, model: model, picker: picker))
             item.label = tab.title
             item.image = NSImage(systemSymbolName: tab.symbol, accessibilityDescription: tab.title)
             tabs.addTabViewItem(item)
@@ -346,10 +334,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         return window
     }
 
-    static func hosting(_ tab: SettingsTab, model: SettingsModel) -> NSViewController {
+    static func hosting(_ tab: SettingsTab, model: SettingsModel, picker: RecordPickerModel) -> NSViewController {
         let controller = switch tab {
         case .general: host(GeneralTab(model: model))
-        case .record: host(RecordTab(model: model))
+        case .record: host(RecordTab(model: model, picker: picker))
         case .output: host(OutputTab(model: model))
         case .permissions: host(PermissionsTab())
         case .advanced: host(AdvancedTab(model: model))
