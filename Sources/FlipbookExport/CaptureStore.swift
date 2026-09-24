@@ -22,7 +22,7 @@ public struct PendingCapture: Sendable {
 
     /// `.raw/frame-000017.png`
     public func rawFrameURL(frameIndex: Int) -> URL {
-        rawDirectory.appending(path: String(format: "frame-%06d.png", frameIndex))
+        rawDirectory.appending(path: CaptureStore.rawFrameName(frameIndex: frameIndex))
     }
 
     /// Removes the directory. Never throws.
@@ -47,6 +47,11 @@ public struct CaptureStore: Sendable {
     }
 
     private var tempRoot: URL { root.appending(path: Self.tempFolderName) }
+
+    /// An unrendered picked frame's file name inside `.raw`, e.g. `frame-000017.png`.
+    static func rawFrameName(frameIndex: Int) -> String {
+        String(format: "frame-%06d.png", frameIndex)
+    }
 
     /// e.g. "2026-09-23 at 14.05.12"
     public static func folderName(for date: Date, timeZone: TimeZone = .current) -> String {
