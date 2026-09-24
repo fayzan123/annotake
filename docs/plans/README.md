@@ -1,12 +1,13 @@
 # Flipbook plans: how to run them
 
-Each plan runs in its own fresh Claude Code session. Paste the prompt for that session below; the plan file holds the details.
+Each session starts fresh in Claude Code: paste its prompt from below, and the plan files hold the details.
 
 Rules for every session:
 - **Superpowers skills only where the prompt names them.** The superpowers plugin loads at the start of every session, and each prompt below says which skills to use:
   - Planning sessions use `superpowers:brainstorming` and `superpowers:writing-plans`.
   - Implementation sessions use none. Test-first is a plain instruction there, not the `test-driven-development` skill.
 - **`writing-plans` only in its skilleted form.** Superpowers updates install a fresh, full copy of every skill; the update to 6.4.1 undid the earlier reduction, and 6.4.1 has been reduced again. After an update, run skillet on `writing-plans` before the next planning session. To check, run `wc -l ~/.claude/plugins/cache/claude-plugins-official/superpowers/*/skills/writing-plans/SKILL.md`: the newest version should show about 43 lines, not about 190.
+- **Implementation sessions run long and unattended.** You're on the Max 20x plan, so each session works through as many tasks as it can on its own, and your hands-on checks (permissions, real apps, both Macs) are batched into as few checkpoints as possible, ideally one per milestone, instead of pauses after every task. Ultracode isn't needed: most tasks build on each other in the same files, so one long session fits better than many parallel agents.
 - **Test-first wherever the code is testable:**
   1. Write the tests.
   2. Watch them fail.
@@ -79,5 +80,5 @@ In ~/Documents/GitHub/flipbook, execute docs/plans/2026-09-23-m1-core.md task by
 Prompt:
 
 ```
-In ~/Documents/GitHub/flipbook, M0 and M1 are done. Read docs/spikes/findings.md, docs/spec.md, both plans and the session guide in docs/plans/, and Sources/FlipbookCore. Use superpowers:brainstorming to work out the M2–M4 design with me (capture, input, export, app UI), then superpowers:writing-plans to write the plan. Keep the design doc and the plan in docs/plans/. Implementation runs later in fresh sessions without superpowers skills, test-first wherever the code is testable: give the plan a how-to-execute header like the M1 plan's instead of the "For agentic workers" line, and add its sessions and their prompts to docs/plans/README.md. Don't start implementing.
+In ~/Documents/GitHub/flipbook, M0 and M1 are done. Read docs/spikes/findings.md, docs/spec.md, both plans and the session guide in docs/plans/, and Sources/FlipbookCore. Use superpowers:brainstorming to work out the M2–M4 design with me (capture, input, export, app UI), then superpowers:writing-plans to write the plan. Keep the design doc and the plan in docs/plans/, and if we change anything the spec decides, update docs/spec.md too. Implementation runs later in fresh sessions without superpowers skills, test-first wherever the code is testable, so give the plan a how-to-execute header like the M1 plan's instead of the "For agentic workers" line. Size those sessions to run long and unattended, as the guide's rules say: as few sessions as the work allows, with my hands-on checks batched into as few checkpoints as possible. Add the sessions and their prompts to docs/plans/README.md. Don't start implementing; once I've approved the plan, commit and push main to origin.
 ```
