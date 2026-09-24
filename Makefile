@@ -35,4 +35,4 @@ test:
 	swift test $(TEST_FLAGS) $(if $(FILTER),--filter '$(FILTER)')
 .PHONY: replay
 replay:
-	swift run flipbook-replay $(SESSION)
+	swift run flipbook-replay "$(SESSION)"
