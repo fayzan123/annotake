@@ -16,9 +16,10 @@ public struct ReplayOutcome: Sendable, Equatable {
     public let log: [ReplayLogEntry]
 }
 
-/// Runs a raw session through a FramePicker exactly as the app would, with a tick every 50 ms.
+/// Runs a raw session through a LiveSession exactly as the app does, so a recording replays the way it
+/// ran live: the same items in the same order, with a tick every 50 ms.
 public enum SessionReplayer {
-    public static let tickInterval: TimeInterval = 0.05
+    public static let tickInterval: TimeInterval = LiveSession.tickInterval
 
     private enum Item {
         case frame(FrameSample)
@@ -33,51 +34,45 @@ public enum SessionReplayer {
         }
         let items = (frames + events).sorted { ($0.time, $0.order) < ($1.time, $1.order) }
 
-        var picker = FramePicker(geometry: session.geometry, config: config, initialContext: session.initialContext)
+        var live = LiveSession(geometry: session.geometry, config: config, initialContext: session.initialContext)
         var log: [ReplayLogEntry] = []
-        var tick = 0
-        var tickTime: TimeInterval { Double(tick) * tickInterval }
-
-        func record(_ time: TimeInterval, _ outputs: [PickerOutput]) {
+        func record(_ outputs: [LiveSession.Output]) {
             for output in outputs {
                 switch output {
-                case .persist(let frameIndex):
-                    log.append(ReplayLogEntry(time: time, kind: .keep(frameIndex: frameIndex, reason: picker.keptFrames.last!.reason)))
-                case .discard(let frameIndices):
+                case let .persist(frameIndex, reason, time):
+                    log.append(ReplayLogEntry(time: time, kind: .keep(frameIndex: frameIndex, reason: reason)))
+                case let .discard(frameIndices, time):
                     log.append(ReplayLogEntry(time: time, kind: .discard(frameIndices: frameIndices)))
+                case .tookFrame, .tookEvent:
+                    break
                 }
             }
         }
-        func tickOnce() {
-            let now = tickTime
-            tick += 1
-            record(now, picker.tick(now: now))
-        }
-
-        for (time, _, item) in items {
-            while tickTime < time {
-                tickOnce()
-            }
+        func receive(_ item: Item) {
             switch item {
-            case .frame(let frame): record(time, picker.ingest(frame))
-            case .event(let event): record(time, picker.ingest(event))
+            case .frame(let frame): record(live.receive(frame))
+            case .event(let event): record(live.receive(event))
             }
         }
-        while tickTime <= session.stopTime {
-            tickOnce()
+
+        for (time, _, item) in items where time <= session.stopTime {
+            receive(item)
+        }
+        record(live.stop(at: session.stopTime))
+        for (time, _, item) in items where time > session.stopTime {
+            receive(item)
         }
 
-        picker.stop(at: session.stopTime)
         let limit = Int((config.stopSettleTimeout / tickInterval).rounded(.up)) + 4
-        var finishingTicks = 0
-        while !picker.isFinished {
-            finishingTicks += 1
-            if finishingTicks > limit {
+        var calls = 0
+        while !live.isFinished {
+            calls += 1
+            if calls > limit {
                 preconditionFailure("the picker didn't finish within \(limit) ticks of stopping")
             }
-            tickOnce()
+            record(live.advance(to: live.nextTickTime))
         }
-        return ReplayOutcome(result: picker.result(), log: log)
+        return ReplayOutcome(result: live.result(), log: log)
     }
 }
 
