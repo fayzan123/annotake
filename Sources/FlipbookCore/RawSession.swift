@@ -32,7 +32,8 @@ public enum RawSessionIO {
         var version: Int
     }
 
-    private struct SessionFile: Codable {
+    /// `session.json`. Internal so RawSessionWriter encodes exactly the same file.
+    struct SessionFile: Codable {
         struct Frame: Codable {
             var index: Int
             var time: TimeInterval
@@ -67,12 +68,16 @@ public enum RawSessionIO {
             events: session.events,
             stopTime: session.stopTime,
             bytesPerFrame: bytesPerFrame)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try encoder.encode(file).write(to: directory.appending(path: "session.json"), options: .atomic)
+        try writeSessionFile(file, to: directory)
         try tiles.write(to: directory.appending(path: "tiles.bin"), options: .atomic)
+    }
+
+    static func writeSessionFile(_ file: SessionFile, to directory: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(file).write(to: directory.appending(path: "session.json"), options: .atomic)
     }
 
     public static func read(from directory: URL) throws -> RawSession {

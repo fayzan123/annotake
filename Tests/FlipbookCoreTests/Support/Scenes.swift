@@ -39,6 +39,30 @@ enum Scenes {
     }
 }
 
+/// A frame or an event of a raw session.
+enum SessionItem: Equatable {
+    case frame(FrameSample)
+    case event(InputEvent)
+
+    var time: TimeInterval {
+        switch self {
+        case .frame(let frame): frame.time
+        case .event(let event): event.time
+        }
+    }
+}
+
+extension RawSession {
+    /// Frames and events in time order; at equal times, frames go first.
+    var mergedItems: [SessionItem] {
+        let frames = self.frames.enumerated().map { (time: $1.time, order: $0, item: SessionItem.frame($1)) }
+        let events = self.events.enumerated().map {
+            (time: $1.time, order: self.frames.count + $0, item: SessionItem.event($1))
+        }
+        return (frames + events).sorted { ($0.time, $0.order) < ($1.time, $1.order) }.map(\.item)
+    }
+}
+
 extension PickResult {
     /// Each frame's caption summary, numbered by position.
     var summaries: [String] {
