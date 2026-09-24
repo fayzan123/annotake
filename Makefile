@@ -19,3 +19,6 @@ TEST_FLAGS := -Xswiftc -F -Xswiftc $(CLT_FW) -Xlinker -F -Xlinker $(CLT_FW) -Xli
 .PHONY: test
 test:
 	swift test $(TEST_FLAGS) $(if $(FILTER),--filter '$(FILTER)')
+.PHONY: replay
+replay:
+	swift run flipbook-replay $(SESSION)
