@@ -22,7 +22,7 @@ public struct FrameChange: Sendable, Equatable {
     public let motion: Bool
 }
 
-/// Tracks which tiles change from frame to frame, and which to ignore: tiles under the cursor,
+/// Tracks which tiles change from frame to frame, and which to ignore: tiles under a cursor that moved,
 /// a blinking caret, and busy regions such as spinners and video (spec §5.2).
 public struct ChangeTracker: Sendable {
     private struct HistoryEntry {
@@ -105,8 +105,7 @@ public struct ChangeTracker: Sendable {
         }
 
         var excluded = busyTiles.union(caretOnly)
-        excluded.formUnion(cursorTiles(frame))
-        excluded.formUnion(cursorTiles(previous))
+        excluded.formUnion(cursorTiles(frame, previous))
         let motion = changed.subtracting(excluded).count >= config.motionMinTiles
         return FrameChange(changedTiles: changed, motion: motion)
     }
@@ -136,8 +135,7 @@ public struct ChangeTracker: Sendable {
     private func difference(_ a: FrameSample, _ b: FrameSample, masking masked: Set<Int>) -> Difference {
         let grid = geometry.grid
         var excluded = masked
-        excluded.formUnion(cursorTiles(a))
-        excluded.formUnion(cursorTiles(b))
+        excluded.formUnion(cursorTiles(a, b))
         var changed = 0
         for tile in 0..<grid.count where !excluded.contains(tile) {
             if a.signature.differs(from: b.signature, tile: tile, threshold: config.tileChangeThreshold) {
@@ -147,8 +145,15 @@ public struct ChangeTracker: Sendable {
         return Difference(changedTiles: changed, consideredTiles: grid.count - excluded.count)
     }
 
-    private func cursorTiles(_ frame: FrameSample) -> [Int] {
-        guard let cursor = frame.cursor else { return [] }
-        return geometry.grid.tiles(intersecting: cursor)
+    /// The tiles under the cursor in either frame, but only when the cursor moved between them.
+    /// A cursor that stayed put has the same pixels in both frames, so a change under it is real:
+    /// a checkbox ticked under the pointer (spec §5.2). Two nil cursors count as equal.
+    private func cursorTiles(_ a: FrameSample, _ b: FrameSample) -> Set<Int> {
+        guard a.cursor != b.cursor else { return [] }
+        var tiles = Set<Int>()
+        for cursor in [a.cursor, b.cursor].compactMap({ $0 }) {
+            tiles.formUnion(geometry.grid.tiles(intersecting: cursor))
+        }
+        return tiles
     }
 }

@@ -212,6 +212,62 @@ struct FramePickerTests {
         #expect(kept[0].actions == [saveClick])
     }
 
+    @Test func checkboxUnderStationaryPointerIsKept() throws {
+        var scene = SceneBuilder()
+        var harness = PickerHarness(geometry: scene.geometry)
+        let remember = ElementLabel(role: "checkbox", label: "Remember me")
+        let pointer = scene.rect(ofTile: 100)
+        let clickPoint = PixelPoint(x: 16, y: 176)   // tile 100
+        harness.frame(scene.frame(at: 0.0, cursor: scene.rect(ofTile: 0)))
+        // The pointer moves onto the checkbox; nothing else changes.
+        harness.frame(scene.frame(at: 0.5, dirty: [scene.rect(ofTile: 0), pointer], cursor: pointer))
+        harness.event(mouseDown(1.0, at: clickPoint, on: remember))
+        harness.event(mouseUp(1.05))
+        // The checkbox ticks under the pointer, which stays put.
+        harness.frame(scene.frame(at: 1.2, set: [100: 90], cursor: pointer))
+        harness.run(until: 2.0)
+
+        let kept = harness.picker.keptFrames
+        try #require(kept.count == 2)
+        #expect(kept[1].frameIndex == 2)
+        #expect(kept[1].reason == .click)
+        #expect(kept[0].actions == [.clicked(target: remember, at: clickPoint, button: .left, clickCount: 1)])
+    }
+
+    @Test func digitTypedUnderStationaryPointerIsKept() throws {
+        var scene = SceneBuilder()
+        var harness = PickerHarness(geometry: scene.geometry)
+        let amount = ElementLabel(role: "text field", label: "Amount")
+        let pointer = scene.rect(ofTile: 150)
+        harness.frame(scene.frame(at: 0.0, cursor: scene.rect(ofTile: 0)))
+        harness.frame(scene.frame(at: 0.5, dirty: [scene.rect(ofTile: 0), pointer], cursor: pointer))
+        harness.event(event(2.0, .keyTyped(field: amount)))
+        harness.frame(scene.frame(at: 2.1, set: [150: 60], cursor: pointer))
+        harness.run(until: 4.0)
+
+        let kept = harness.picker.keptFrames
+        try #require(kept.count == 2)
+        #expect(kept[1].frameIndex == 2)
+        #expect(kept[1].reason == .typing)
+        #expect(kept[0].actions == [.typed(field: amount)])
+    }
+
+    @Test func pointerMovingAwayKeepsNothing() {
+        var scene = SceneBuilder()
+        var harness = PickerHarness(geometry: scene.geometry)
+        let clickPoint = PixelPoint(x: 16, y: 176)   // tile 100
+        harness.frame(scene.frame(at: 0.0, cursor: scene.rect(ofTile: 100)))
+        harness.event(mouseDown(1.0, at: clickPoint))
+        harness.event(mouseUp(1.05))
+        // Only the pointer's own pixels change: it leaves tile 100 and is drawn over tile 120.
+        harness.frame(scene.frame(at: 1.2, set: [100: 180, 120: 180], cursor: scene.rect(ofTile: 120)))
+        harness.run(until: 5.0)
+
+        let kept = harness.picker.keptFrames
+        #expect(kept.count == 1)
+        #expect(kept[0].actions == [.clicked(target: save, at: clickPoint, button: .left, clickCount: 1)])
+    }
+
     @Test func typingRunProducesOneActionAndResultFrame() throws {
         var (scene, harness) = start()
         let typed = typeIntoEmail(&scene, &harness)

@@ -29,6 +29,10 @@ public struct FramePicker: Sendable {
     private var buffered: [StepAction] = []
     private var typing: TypingRun?
     private var scroll: ScrollRun?
+    /// The frame on screen at the latest input that has a low keep bar: a mouse-down, the first key of
+    /// a typing run, a commit, or a switch. A settled frame that differs from it clears the low bar,
+    /// which catches a change right under a pointer that stayed put (spec §5.3).
+    private var inputBaseline: FrameSample?
     private var stopAt: TimeInterval?
     private var finished = false
     private var candidateCount = 0
@@ -70,7 +74,9 @@ public struct FramePicker: Sendable {
         case let .mouseDown(point, target, button, clickCount):
             typing = nil
             scroll = nil
-            return attach(.clicked(target: target, at: point, button: button, clickCount: clickCount))
+            let out = attach(.clicked(target: target, at: point, button: button, clickCount: clickCount))
+            inputBaseline = latest
+            return out
         case .mouseUp:
             setPending(.click, t)
             return []
@@ -79,6 +85,7 @@ public struct FramePicker: Sendable {
             var out: [PickerOutput] = []
             if typing == nil || typing?.field != field {
                 out = attach(.typed(field: field))
+                inputBaseline = latest
             }
             typing = TypingRun(field: field, lastKey: t)
             return out
@@ -95,6 +102,7 @@ public struct FramePicker: Sendable {
             typing = nil
             scroll = nil
             let out = attach(.switched(to: newContext))
+            inputBaseline = latest
             context = newContext
             setPending(.switchApp, t)
             return out
@@ -212,7 +220,11 @@ public struct FramePicker: Sendable {
         guard let last = kept.last else { return true }
         let d = tracker.difference(last.sample, frame)
         if d.fraction >= config.keepFraction { return true }
-        return Self.hasLowBar(reason) && d.changedTiles >= config.minChangedTilesAfterInput
+        guard Self.hasLowBar(reason) else { return false }
+        if d.changedTiles >= config.minChangedTilesAfterInput { return true }
+        // The pointer sat in the same place at the input, so this sees a change right under it.
+        guard let inputBaseline, inputBaseline.index != frame.index else { return false }
+        return tracker.difference(inputBaseline, frame).changedTiles >= config.minChangedTilesAfterInput
     }
 
     /// True when the frame isn't already the last kept one.
@@ -227,6 +239,7 @@ public struct FramePicker: Sendable {
         typing = nil
         scroll = nil
         let out = attach(action)
+        inputBaseline = latest
         setPending(.commit, t)
         return out
     }

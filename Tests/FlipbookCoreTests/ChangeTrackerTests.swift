@@ -78,6 +78,39 @@ struct ChangeTrackerTests {
         #expect(tracker.difference(f0, f1).changedTiles == 0)
     }
 
+    @Test func stationaryCursorDoesNotHideChanges() {
+        var scene = SceneBuilder()
+        var tracker = makeTracker(scene)
+        let cursor = scene.rect(ofTile: 50)
+        let f0 = scene.frame(at: 0, cursor: cursor)
+        _ = tracker.observe(f0, previous: nil)
+        let f1 = scene.frame(at: 0.1, set: [50: 40], cursor: cursor)
+        let change = tracker.observe(f1, previous: f0)
+        #expect(change.changedTiles == [50])
+        #expect(!change.motion)
+        #expect(tracker.difference(f0, f1) == Difference(changedTiles: 1, consideredTiles: 240))
+    }
+
+    @Test func stationaryCursorChangeIsMotion() {
+        var scene = SceneBuilder()
+        var tracker = makeTracker(scene)
+        let cursor = PixelRect(x: 320, y: 64, width: 64, height: 32)   // tiles 50 and 51
+        let f0 = scene.frame(at: 0, cursor: cursor)
+        _ = tracker.observe(f0, previous: nil)
+        let f1 = scene.frame(at: 0.1, set: .tiles([50, 51]), cursor: cursor)
+        #expect(tracker.observe(f1, previous: f0).motion)
+    }
+
+    @Test func appearingCursorIsExcluded() {
+        var scene = SceneBuilder()
+        var tracker = makeTracker(scene)
+        let f0 = scene.frame(at: 0)
+        _ = tracker.observe(f0, previous: nil)
+        let f1 = scene.frame(at: 0.1, set: [60: 40], cursor: scene.rect(ofTile: 60))
+        _ = tracker.observe(f1, previous: f0)
+        #expect(tracker.difference(f0, f1) == Difference(changedTiles: 0, consideredTiles: 239))
+    }
+
     @Test func caretBlinkIsIgnored() {
         var scene = SceneBuilder()
         var tracker = makeTracker(scene)
