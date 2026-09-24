@@ -103,7 +103,7 @@ Rules:
 |---|---|---|
 | General | Trigger key: Right ⌘ / Right ⌥ / fn | Right ⌘ |
 | | Sounds | On |
-| | Launch at login | Off |
+| | Launch at login | On |
 | Record | Entire screen (the cursor's, or a specific one) or Window | Screen with the cursor |
 | Output | Max frames (2–50) | 20 |
 | | Frame size (long edge): 1920 px, or 1568 px compact | 1920 px |
@@ -133,6 +133,8 @@ For each permission it:
 - re-checks the permission live.
 
 Flipbook works with only 1 and 2, in a degraded mode (§7). Spike M0 confirms exactly which permission each capability needs.
+
+First launch also registers Flipbook to launch at login (`SMAppService`), because the key has to work right after a restart. It can be turned off in Settings → General.
 
 ## 4. Output
 
