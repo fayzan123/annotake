@@ -9,6 +9,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     struct Actions {
         var startStop: () -> Void
         var openFolder: () -> Void
+        var settings: () -> Void
         /// Titles for Recent Captures, newest first, and what choosing one does.
         var recentCaptures: () -> [(title: String, open: () -> Void)]
     }
@@ -71,6 +72,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(recent)
 
         menu.addItem(item("Open Captures Folder", actions.openFolder))
+        menu.addItem(item("Settings…", actions.settings))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Flipbook", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }

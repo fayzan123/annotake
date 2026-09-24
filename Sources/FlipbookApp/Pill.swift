@@ -120,7 +120,6 @@ final class PillPanel {
     static let bottomInset: CGFloat = 24
     /// Messages without a recording under them hide after this long.
     static let messageDuration: TimeInterval = 5
-    static let screenRecordingPane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
 
     let panel: NSPanel
     let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: PillView.height))
@@ -160,7 +159,7 @@ final class PillPanel {
     func showMessage(_ text: String, openSettings: Bool, hideAfter: TimeInterval? = messageDuration) {
         hideTimer?.invalidate()
         if openSettings {
-            buttonTarget.action = { NSWorkspace.shared.open(Self.screenRecordingPane) }
+            buttonTarget.action = { NSWorkspace.shared.open(PermissionPane.screenRecording) }
             view.setButton(title: "Open Settings", action: #selector(ButtonTarget.run), target: buttonTarget)
         } else {
             view.setButton(title: nil, action: nil, target: nil)
