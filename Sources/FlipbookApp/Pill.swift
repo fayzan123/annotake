@@ -168,7 +168,7 @@ final class PillPanel {
         panel.ignoresMouseEvents = !openSettings
         show(text)
         if let hideAfter {
-            hideTimer = Timer.scheduledTimer(withTimeInterval: hideAfter, repeats: false) { [weak self] _ in
+            hideTimer = Timer.onMainRunLoop(interval: hideAfter, repeats: false) { [weak self] _ in
                 MainActor.assumeIsolated { self?.hide() }
             }
         }

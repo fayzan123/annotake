@@ -117,9 +117,14 @@ final class RecordingPipeline: @unchecked Sendable {
                 log("raw session unavailable: \(error)")
             }
         }
-        queue.sync {
+        let discardedAlready = queue.sync { () -> Bool in
             self.pending = pending
             self.rawSession = rawSession
+            return discarded
+        }
+        if discardedAlready {
+            pending.discard()
+            return
         }
         do {
             try await stream.start(
@@ -139,7 +144,10 @@ final class RecordingPipeline: @unchecked Sendable {
             if !discarded { startTimer() }
             return discarded
         }
-        if stopNow { await stream.stop() }
+        if stopNow {
+            await stream.stop()
+            writer.async { pending.discard() }
+        }
     }
 
     func submit(_ kind: InputEventKind) {

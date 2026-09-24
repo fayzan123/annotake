@@ -98,7 +98,13 @@ final class SessionController: InputMonitorDelegate {
         for effect in machine.handle(input, at: time) {
             run(effect, at: time)
         }
-        statusMenu?.setRecording(machine.state != .idle)
+        statusMenu?.setRecording(isVisiblyRecording)
+    }
+
+    /// A hold is silent until its reveal, so a Right ⌘ shortcut never flashes the icon.
+    private var isVisiblyRecording: Bool {
+        if case .recording(_, revealed: true, _) = machine.state { return true }
+        return false
     }
 
     private func run(_ effect: SessionMachine.Effect, at time: TimeInterval) {
@@ -292,7 +298,7 @@ final class SessionController: InputMonitorDelegate {
 
     private func startElapsedTimer() {
         elapsedTimer?.invalidate()
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: Self.elapsedInterval, repeats: true) { [weak self] _ in
+        elapsedTimer = Timer.onMainRunLoop(interval: Self.elapsedInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.handle(.elapsed)
                 self?.refreshPill()
