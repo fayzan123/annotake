@@ -106,7 +106,9 @@ Personal MacBook, macOS 15.7.9, 2026-09-24. Three rounds:
 2. After `Enable AX in Chrome/Electron`.
 3. Controlled: Chrome and Slack freshly relaunched, with a diagnostic walk ≤ 8 that logs the role chain and the depth where a label appears.
 
-No side effects were observed after setting the flags (no jerky animations, no slowness).
+No jerky animations or slowness were observed after setting the flags.
+
+**Side effect found later (during Task 5):** after `AXManualAccessibility` was set, Cursor showed its own prompt: *"Screen reader usage detected. Do you want to enable editor.accessibilitySupport to optimize the editor for screen reader usage?"* VS Code-based apps react to the flag visibly. The real app should expect this prompt (the user can answer No), and it's another reason to set the flag only while recording, and to test clearing it at stop.
 
 | App | Label quality, no flag | Needs flag? | Label quality, with flag | Typical lookup |
 |---|---|---|---|---|
@@ -204,5 +206,30 @@ The zip was built on the personal Mac and installed into `/Applications` (not `~
   - For M2: Core compares tile signatures, not dirty rects alone, so identical pixels produce no "motion" and the cost is only CPU. Recheck when the real pill updates its timer every second.
 
 ## Drag card
+
+Personal MacBook, macOS 15.7.9, 2026-09-24. The card drags 20 `NSDraggingItem`s (file URLs to `01_0m00s.png` … `20_0m19s.png`, each 1920×1200 with a big number), and the source offers `.copy`.
+
+- **Claude Code in VS Code's integrated terminal:** `operation=1` (copy, reported as success), so the card hid. **Only the first path was inserted** (`…/flipbook-drag/01_0m00s.png`), as **plain text**; Claude Code did not turn it into an `[Image #1]` attachment. So 1 of 20 arrived.
+  - **Lesson: a non-empty drag operation does not mean every frame landed.** VS Code reported success after keeping 1 of 20 items.
+
+| Target | Accepted? | Images | In order? | Logged operation |
+|---|---|---|---|---|
+| Cursor (Agents chat input) | Yes | **20** | **Yes, 1→20** | 1 (copy) |
+| Claude Code in VS Code's terminal | Partly | **1**, as a plain-text path (no `[Image #1]`) | — | 1 |
+| Claude Code in Terminal.app / iTerm | Not tested | — | — | — |
+| ChatGPT web (Chrome, free plan) | Partly | **2** (free-plan upload limit) | Not noted | 1 |
+| Claude.ai web (Chrome) | Yes | **20** | **Yes, 1→20** | 1 |
+| Slack message box | Partly | **10** (Slack's per-message limit) | **Yes, 1→10** | 1 |
+| Jira | Not tested (not reachable from the personal Mac) | — | — | — |
+| Finder folder | Yes | **20 files copied** | — | 1 |
+
+- **Every target reported a successful drop (`operation = 1`, copy), including the partial ones.** So the card's "hide after a successful drop" can't tell a full drop from a partial one.
+- The order is preserved everywhere the order could be seen (Cursor, Claude.ai, Slack). Targets that cap the count keep the **first** N.
+- **Decision: the drag payload is OK** (20 file URLs in step order).
+  - Limits are the target's, not Flipbook's: Slack 10, ChatGPT free 2, VS Code terminal 1.
+  - File names (`01_…`) and the caption numbers already carry the order when a target drops some.
+  - Follow-ups for Task 6 or M3:
+    - (a) Maybe keep the card after a drop into known-limited targets, or always keep it for a few seconds, so the rest can be dragged again. The filmstrip already allows dragging single frames.
+    - (b) Test Claude Code in Terminal.app/iTerm and Jira on the work Mac.
 
 ## Decisions

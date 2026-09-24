@@ -44,6 +44,7 @@ let axItem = spikeMenu.add("AX spike") {
 }
 spikeMenu.add("Enable AX in Chrome/Electron") { axSpike.enableWebAX() }
 spikeMenu.add("Capture spike (10 s)") { captureSpike.start() }
+spikeMenu.add("Drag card spike") { dragSpike.show() }
 captureSpike.showPill()
 log("spike launched")
 app.run()
