@@ -20,15 +20,18 @@ enum Permissions {
                accessibility: AXIsProcessTrusted())
     }
 
-    /// The system prompt for each missing permission, at launch. The first-launch checklist replaces this.
-    static func requestMissing() {
+    /// The system prompt for one permission, from the first-launch checklist.
+    static func request(_ permission: ChecklistModel.Permission) {
+        switch permission {
+        case .screenRecording: _ = CGRequestScreenCaptureAccess()
+        case .inputMonitoring: _ = CGRequestListenEventAccess()
+        case .accessibility: _ = AXIsProcessTrustedWithOptions([promptOption: true] as CFDictionary)
+        }
+    }
+
+    static func logStatus() {
         let status = status()
         log("permissions: screen recording \(status.screenRecording), input monitoring \(status.inputMonitoring), "
             + "accessibility \(status.accessibility)")
-        if !status.screenRecording { CGRequestScreenCaptureAccess() }
-        if !status.inputMonitoring { CGRequestListenEventAccess() }
-        if !status.accessibility {
-            AXIsProcessTrustedWithOptions([promptOption: true] as CFDictionary)
-        }
     }
 }

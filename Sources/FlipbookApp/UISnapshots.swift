@@ -40,7 +40,9 @@ enum UISnapshots {
         defer { defaults.removePersistentDomain(forName: suite) }
         let model = SettingsModel(store: SettingsStore(defaults: defaults))
 
-        writeSwiftUI(GeneralTab(model: model), to: directory, as: "settings-general.png")
+        writeSwiftUI(GeneralTab(model: model, loginItem: { .available }), to: directory, as: "settings-general.png")
+        writeSwiftUI(GeneralTab(model: model, loginItem: { .notInApplications }), to: directory,
+                     as: "settings-general-not-in-applications.png")
         let picker = samplePicker()
         writeSwiftUI(RecordTab(model: model, picker: picker), to: directory, as: "settings-record.png")
         model.update { $0.recordTarget = .window(windowID: 12, title: "Checkout — Safari") }
@@ -52,7 +54,17 @@ enum UISnapshots {
         }), to: directory, as: "settings-permissions.png")
         writeSwiftUI(AdvancedTab(model: model), to: directory, as: "settings-advanced.png")
         model.update { $0.triggerKey = .fn }
-        writeSwiftUI(GeneralTab(model: model), to: directory, as: "settings-general-fn.png")
+        writeSwiftUI(GeneralTab(model: model, loginItem: { .available }), to: directory, as: "settings-general-fn.png")
+
+        let nothingGranted = Permissions.Status(screenRecording: false, inputMonitoring: false, accessibility: false)
+        writeSwiftUI(ChecklistView(viewModel: ChecklistViewModel(trigger: .rightCommand, defaults: nil,
+                                                                 status: { nothingGranted })),
+                     to: directory, as: "checklist-fresh.png")
+        let accessibilityGranted = Permissions.Status(screenRecording: false, inputMonitoring: false, accessibility: true)
+        writeSwiftUI(ChecklistView(viewModel: ChecklistViewModel(
+                        trigger: .rightCommand, defaults: nil, status: { accessibilityGranted },
+                        persisted: .init(requested: [.screenRecording, .accessibility]))),
+                     to: directory, as: "checklist-requested.png")
     }
 
     /// Screens and windows with placeholder thumbnails; it never queries the real screen.

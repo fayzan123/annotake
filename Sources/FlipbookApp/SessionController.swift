@@ -46,6 +46,8 @@ final class SessionController: InputMonitorDelegate {
     var inputMonitor: InputMonitor?
     var statusMenu: StatusMenu?
     var cards: CardController?
+    /// A recording was saved: its card is showing.
+    var onRecordingSaved: (() -> Void)?
 
     private var current: Recording?
     /// Between stopEngine and showCard, which names its capture.
@@ -136,6 +138,7 @@ final class SessionController: InputMonitorDelegate {
             // The card appears at once, on the screen the cursor is on.
             cards?.showSaving(id: id, duration: time - recording.startedAt,
                               on: Self.screen(containing: Self.cursorLocation()))
+            onRecordingSaved?()
         case .completeCard(let id):
             log("capture \(id) ready")
             if let capture = finishedCaptures.removeValue(forKey: id) {

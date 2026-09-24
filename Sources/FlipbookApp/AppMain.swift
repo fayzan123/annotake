@@ -72,6 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cards: CardController?
     private var filmstrip: FilmstripController?
     private var settingsWindow: SettingsWindowController?
+    private var firstLaunch: FirstLaunchController?
     private var monitor: InputMonitor?
     private var statusMenu: StatusMenu?
     private var contentCache: ShareableContentCache?
@@ -118,9 +119,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.filmstrip = filmstrip
 
         // 6. The menu, and the Settings window it opens.
+        let settingsModel = SettingsModel(store: settingsStore)
+        settingsModel.onChange = { old, new in
+            if old.launchAtLogin != new.launchAtLogin { LoginItem.set(new.launchAtLogin) }
+        }
         let settingsWindow = SettingsWindowController(
-            model: SettingsModel(store: settingsStore),
-            picker: RecordPickerModel(loader: { try await contentCache.current() }))
+            model: settingsModel, picker: RecordPickerModel(loader: { try await contentCache.current() }))
         self.settingsWindow = settingsWindow
         let statusMenu = StatusMenu(actions: .init(
             startStop: { [weak controller] in controller?.toggleFromMenu() },
@@ -149,7 +153,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.start()
         self.monitor = monitor
 
-        // 8. Permissions.
-        Permissions.requestMissing()
+        // 8. First launch: the permission checklist until the first recording, and the login item.
+        Permissions.logStatus()
+        let firstLaunch = FirstLaunchController(trigger: settings.triggerKey, defaults: .standard)
+        controller.onRecordingSaved = { [weak firstLaunch] in firstLaunch?.recordingSaved() }
+        firstLaunch.showIfNeeded()
+        self.firstLaunch = firstLaunch
+        LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)
     }
 }
