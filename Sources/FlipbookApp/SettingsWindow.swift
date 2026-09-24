@@ -118,8 +118,10 @@ private struct SettingsForm<Content: View>: View {
 
 struct GeneralTab: View {
     @ObservedObject var model: SettingsModel
+    var loginItem: () -> LoginItem.Availability = { LoginItem.availability }
 
     var body: some View {
+        let availability = loginItem()
         SettingsForm {
             Section {
                 Picker("Trigger key", selection: model.binding(\.triggerKey)) {
@@ -142,6 +144,13 @@ struct GeneralTab: View {
             Section {
                 Toggle("Sounds", isOn: model.binding(\.sounds))
                 Toggle("Launch at login", isOn: model.binding(\.launchAtLogin))
+                    .disabled(availability == .notInApplications)
+            } footer: {
+                switch availability {
+                case .notInApplications: Note("Move Flipbook to Applications to launch at login.")
+                case .requiresApproval: Note("Approve Flipbook in System Settings → General → Login Items.")
+                case .available: EmptyView()
+                }
             }
         }
     }
