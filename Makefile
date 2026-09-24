@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := app
 KC := $(CURDIR)/.signing/flipbook-signing.keychain-db
 BIN = $(shell swift build -c release --show-bin-path)
-.PHONY: app run install zip selftest ui-snapshots cert spike spike-run spike-zip clean
+.PHONY: app run install zip selftest ui-snapshots cert clean
 app:
 	swift build -c release --product Flipbook
 	scripts/bundle-app.sh $(BIN)/Flipbook Flipbook com.fayzanmalik.flipbook build
@@ -23,15 +23,8 @@ ui-snapshots: app
 	ls build/ui
 cert:
 	scripts/make-cert.sh
-spike:
-	cd spikes && swift build -c release
-	scripts/bundle-app.sh spikes/.build/release/FlipbookSpike FlipbookSpike com.fayzanmalik.flipbook.spike build
-spike-run: spike
-	open build/FlipbookSpike.app
-spike-zip: spike
-	cd build && rm -f FlipbookSpike.zip && ditto -c -k --keepParent FlipbookSpike.app FlipbookSpike.zip
 clean:
-	rm -rf .build spikes/.build build
+	rm -rf .build build
 CLT_FW := /Library/Developer/CommandLineTools/Library/Developer/Frameworks
 # The CLT's _Testing_Foundation overlay has no module interface, so a test file importing both
 # Testing and Foundation fails to compile unless cross-import overlays are turned off.

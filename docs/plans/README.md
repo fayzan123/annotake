@@ -22,9 +22,9 @@ Rules for every session:
 1. **Session 1: M0 spikes. Done 2026-09-24.** Results and decisions are in [../spikes/findings.md](../spikes/findings.md); the spec and the M1 plan are already updated with them. The repo is pushed to the private GitHub repo `fayzan123/flipbook`.
 2. **Session 2: M1 core. Done 2026-09-24.** `FlipbookCore` (the frame picker, gesture recognizer, cap fitting, and caption and `steps.md` text), its tests, and `flipbook-replay` are on `main`. What it found for later plans is under Session 2 below.
 3. **Session 3: the M2–M4 plan. Done 2026-09-24.** The design is [2026-09-24-m2-m4-design.md](2026-09-24-m2-m4-design.md) and the plan is [2026-09-24-m2-m4-app.md](2026-09-24-m2-m4-app.md); `docs/spec.md` has the changes the design made.
-4. **Session 4: M2 + M3, the recording loop. Next.** Tasks 1–20 of the plan, then Checkpoint 1 on the personal Mac. From then on you can use Flipbook.
-5. **Session 5: M4, the rest of the app.** It starts with your Checkpoint 1 results. Tasks 21–27, then Checkpoint 2 on both Macs.
-6. After Checkpoint 2: a short fix session if needed, then M5 (a week of real use; no plan).
+4. **Session 4: M2 + M3, the recording loop. Done 2026-09-24.** Recording end to end: capture, input, `LiveSession`, export with caption strips and markers, the pill, card, filmstrip, and Recent Captures, plus `make selftest` and `make ui-snapshots`. Checkpoint 1 passed apart from one label bug; the results are in [../checkpoints.md](../checkpoints.md).
+5. **Session 5: M4, the rest of the app. Done 2026-09-24,** run straight after Checkpoint 1 in the same session. The label fix, Settings with the Meet-style picker, the first-launch checklist and launch at login, the full menu with live settings, the retention schedule, and `spikes/` deleted. What both sessions found for later plans is under Session 5 below.
+6. **Next: Checkpoint 2 on both Macs** (the list is in the plan's Task 27), then a short fix session if needed, then M5 (a week of real use; no plan).
 
 ## Session 1: M0 spikes (done)
 
@@ -132,9 +132,18 @@ Prompt:
 In ~/Documents/GitHub/flipbook, execute Tasks 1–20 of docs/plans/2026-09-24-m2-m4-app.md, test-first as its header says. Read docs/spec.md, docs/plans/2026-09-24-m2-m4-design.md, and the plan before starting. Don't use any superpowers skills. Run tests only with `make test` (never plain `swift test`), and commit after each task. From Task 11 on, run `make selftest` wherever the plan says, and look at its frames and at the UI snapshots yourself. Never launch the full app: it requests permissions at launch. Stop only if macOS shows a permission prompt you can't answer, or a test expectation in the plan looks wrong (tell me why; don't change it). When Task 20 passes, push main to origin and give me the Checkpoint 1 list.
 ```
 
-## Session 5: M4, the rest of the app
+## Session 5: M4, the rest of the app (done)
 
 Plan: [2026-09-24-m2-m4-app.md](2026-09-24-m2-m4-app.md), Tasks 21–27.
+
+What Sessions 4 and 5 found, for later plans:
+- `make test` runs 298 tests. `make selftest` records the app's own scripted window through the real pipeline (about 12 frames, first frame in about 65 ms, stop to a finished capture in about 0.6 s), and `make ui-snapshots` writes every panel and window to `build/ui`.
+- `scripts/bundle-app.sh` retries signing up to 3 times: iCloud Drive can tag the new bundle between `xattr -cr` and `codesign`.
+- Additions beyond the plan's interfaces: `InputMonitor.handsFreeStartedElsewhere()` (menu-started recordings record input, and a double-tap or trigger + Esc ends them), `InputLog` (the Input module's log hook), `RecordingPipeline.onStreamEnded`, and `AXNode.window`.
+- A container labeled with its window's title counts as no label (Checkpoint 1: Chrome's tab strip).
+- Retention runs at every launch, as the spec says, and then on wake and hourly once 24 h have passed; the plan had the launch run check the 24 h too.
+- Captures in window mode show macOS's "being shared" badge in the window's title bar from the second frame on.
+- Claude Code in VS Code's integrated terminal receives only the first dropped frame, as a path. Terminal.app and iTerm are still untested.
 
 21. Checkpoint 1 results and fixes
 22. The Settings window
