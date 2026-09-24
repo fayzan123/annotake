@@ -15,14 +15,8 @@ Rules for every session:
 ## Order
 
 1. **Session 1: M0 spikes. Done 2026-09-24.** Results and decisions are in [../spikes/findings.md](../spikes/findings.md); the spec and the M1 plan are already updated with them. The repo is pushed to the private GitHub repo `fayzan123/flipbook`.
-2. **Session 2: M1 core. Next.** It runs without you, directly in `~/Documents/GitHub/flipbook` on `main` (no worktree needed now that Session 1 is finished).
-3. **Session 3: write the M2–M4 plan** (capture, input, export, the app UI) from M0's findings. It only writes docs, so it can run during Session 2. If it does, give it a worktree so the two sessions' commits don't mix:
-
-   ```
-   cd ~/Documents/GitHub/flipbook && git worktree add ../flipbook-plans -b m2-m4-plan
-   ```
-
-   When it's done: `cd ~/Documents/GitHub/flipbook && git merge m2-m4-plan && git worktree remove ../flipbook-plans`.
+2. **Session 2: M1 core. Done 2026-09-24.** `FlipbookCore` (the frame picker, gesture recognizer, cap fitting, and caption and `steps.md` text), its tests, and `flipbook-replay` are on `main`. What it found for later plans is under Session 2 below.
+3. **Session 3: write the M2–M4 plan. Next.** It covers capture, input, export, and the app UI, building on M0's findings and the M1 code. It only writes docs, directly in `~/Documents/GitHub/flipbook` on `main` (no worktree needed now that Session 2 is finished).
 
 ## Session 1: M0 spikes (done)
 
@@ -43,9 +37,9 @@ Prompt:
 In ~/Documents/GitHub/flipbook, execute docs/plans/2026-09-23-m0-spikes.md task by task. Read docs/spec.md and the plan first. Don't use any superpowers skills. Pause at every "Manual check" block and wait for my results, record them in docs/spikes/findings.md, and commit after each task.
 ```
 
-## Session 2: M1 core
+## Session 2: M1 core (done)
 
-Plan: [2026-09-23-m1-core.md](2026-09-23-m1-core.md). Every task is test-first. Nothing is needed from you until the end.
+Plan: [2026-09-23-m1-core.md](2026-09-23-m1-core.md). Kept for reference.
 
 What M0 changed in this plan:
 - Tests run with `make test` (or `make test FILTER=<suite>`). Plain `swift test` fails with only the Command Line Tools, because it can't find Swift Testing.
@@ -64,7 +58,12 @@ What M0 changed in this plan:
 11. Raw sessions, the replayer, golden tests
 12. The `flipbook-replay` command and final checks
 
-At the end, you can run `swift run flipbook-replay Tests/FlipbookCoreTests/Fixtures/synthetic-click-flow` to watch it pick frames from a test recording.
+To watch it pick frames from a test recording, run `swift run flipbook-replay Tests/FlipbookCoreTests/Fixtures/synthetic-click-flow` (add `--cap 3` to see frames merge), or `make replay SESSION=<dir>`.
+
+What M1 found, for later plans:
+- `make test` also passes `-disable-cross-import-overlays`. The Command Line Tools ship Swift Testing's `_Testing_Foundation` overlay without its `Modules` folder, so any test file that imports both `Testing` and `Foundation` fails to compile without the flag. New test targets rely on it too.
+- `Bundle.module` only exists once a test target declares `resources:`, and SwiftPM needs the resource folder to exist first. So create the folder and declare it before generating fixtures; the M1 plan had these the other way round. The first `FLIPBOOK_REGENERATE_FIXTURES=1` run then fails `goldenFixturesMatch` once, because the test bundle was copied before the files existed. The next run passes.
+- Git treats `tiles.bin` as text because it has no zero bytes. Mark `*.bin` as binary in `.gitattributes` before real raw sessions get saved.
 
 Prompt:
 
@@ -74,8 +73,8 @@ In ~/Documents/GitHub/flipbook, execute docs/plans/2026-09-23-m1-core.md task by
 
 ## Session 3: M2–M4 plan
 
-Prompt (use `~/Documents/GitHub/flipbook-plans` if it runs during Session 2):
+Prompt:
 
 ```
-In ~/Documents/GitHub/flipbook, M0 is done. Read docs/spikes/findings.md, docs/spec.md, and both plans in docs/plans/, then write the M2–M4 plan (capture, input, export, app UI) to docs/plans/. No superpowers skills; test-first wherever the code is testable.
+In ~/Documents/GitHub/flipbook, M0 and M1 are done. Read docs/spikes/findings.md, docs/spec.md, both plans and the session guide in docs/plans/, and Sources/FlipbookCore. Then write the M2–M4 plan (capture, input, export, app UI) to docs/plans/, and add its sessions and their prompts to docs/plans/README.md. No superpowers skills; test-first wherever the code is testable.
 ```
