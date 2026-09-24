@@ -118,7 +118,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.filmstrip = filmstrip
 
         // 6. The menu, and the Settings window it opens.
-        let settingsWindow = SettingsWindowController(model: SettingsModel(store: settingsStore))
+        let settingsWindow = SettingsWindowController(
+            model: SettingsModel(store: settingsStore),
+            picker: RecordPickerModel(loader: { try await contentCache.current() }))
         self.settingsWindow = settingsWindow
         let statusMenu = StatusMenu(actions: .init(
             startStop: { [weak controller] in controller?.toggleFromMenu() },

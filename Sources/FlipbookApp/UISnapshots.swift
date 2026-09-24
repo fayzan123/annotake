@@ -41,7 +41,11 @@ enum UISnapshots {
         let model = SettingsModel(store: SettingsStore(defaults: defaults))
 
         writeSwiftUI(GeneralTab(model: model), to: directory, as: "settings-general.png")
-        writeSwiftUI(RecordTab(model: model), to: directory, as: "settings-record.png")
+        let picker = samplePicker()
+        writeSwiftUI(RecordTab(model: model, picker: picker), to: directory, as: "settings-record.png")
+        model.update { $0.recordTarget = .window(windowID: 12, title: "Checkout — Safari") }
+        writeSwiftUI(RecordTab(model: model, picker: picker), to: directory, as: "settings-record-windows.png")
+        model.update { $0.recordTarget = .cursorScreen }
         writeSwiftUI(OutputTab(model: model), to: directory, as: "settings-output.png")
         writeSwiftUI(PermissionsTab(status: {
             Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: false)
@@ -49,6 +53,28 @@ enum UISnapshots {
         writeSwiftUI(AdvancedTab(model: model), to: directory, as: "settings-advanced.png")
         model.update { $0.triggerKey = .fn }
         writeSwiftUI(GeneralTab(model: model), to: directory, as: "settings-general-fn.png")
+    }
+
+    /// Screens and windows with placeholder thumbnails; it never queries the real screen.
+    @MainActor
+    private static func samplePicker() -> RecordPickerModel {
+        let picker = RecordPickerModel(loader: nil)
+        let thumbnails = sampleThumbnails(count: 5)
+        picker.screens = [
+            RecordPickerModel.cursorTile,
+            .init(target: .screen(displayUUID: "BUILT-IN"), title: "Built-in Retina Display", thumbnail: thumbnails[0]),
+            .init(target: .screen(displayUUID: "E29W"), title: "E29w-20", thumbnail: thumbnails[1]),
+        ]
+        let apps: [(String, String, String)] = [
+            ("Checkout — Safari", "/Applications/Safari.app", "Safari"),
+            ("main.swift — flipbook", "/System/Applications/TextEdit.app", "TextEdit"),
+            ("Downloads", "/System/Library/CoreServices/Finder.app", "Finder"),
+        ]
+        picker.windows = apps.enumerated().map { index, app in
+            .init(target: .window(windowID: UInt32(12 + index), title: app.0), title: app.0,
+                  icon: NSWorkspace.shared.icon(forFile: app.1), thumbnail: thumbnails[2 + index])
+        }
+        return picker
     }
 
     /// A SwiftUI view through NSHostingView, at its own size.
