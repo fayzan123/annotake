@@ -194,6 +194,8 @@ struct RecordTab: View {
             Text("If a chosen screen or window is gone, Flipbook records the screen with the cursor.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+
+            RestoreDefaultsButton(tab: .record, model: model) { mode = .screen }
         }
         .padding(20)
         .frame(width: 540)

@@ -66,6 +66,11 @@ final class SettingsModel: ObservableObject {
         settings = store.settings
         if settings != old { onChange?(old, settings) }
     }
+
+    /// The settings `tab` shows, back to their defaults.
+    func restoreDefaults(_ tab: SettingsTab) {
+        update { $0 = tab.restoringDefaults(of: $0) }
+    }
 }
 
 // MARK: - Tabs
@@ -83,6 +88,61 @@ enum SettingsTab: String, CaseIterable {
         case .permissions: "lock.shield"
         case .advanced: "slider.horizontal.3"
         }
+    }
+
+    /// Every tab but Permissions has settings, and a Restore Defaults button.
+    var hasSettings: Bool { self != .permissions }
+
+    /// `settings` with the ones this tab shows back to their defaults; the other tabs' are kept.
+    func restoringDefaults(of settings: Settings) -> Settings {
+        var settings = settings
+        let defaults = Settings()
+        func restore<Value>(_ keyPath: WritableKeyPath<Settings, Value>) {
+            settings[keyPath: keyPath] = defaults[keyPath: keyPath]
+        }
+        switch self {
+        case .general:
+            restore(\.triggerKey)
+            restore(\.sounds)
+            restore(\.launchAtLogin)
+        case .record:
+            restore(\.recordTarget)
+        case .output:
+            restore(\.maxFrames)
+            restore(\.compactFrames)
+            restore(\.captionStrip)
+            restore(\.clickMarkers)
+            restore(\.saveLocation)
+            restore(\.retention)
+        case .permissions:
+            break
+        case .advanced:
+            restore(\.holdThreshold)
+            restore(\.holdReveal)
+            restore(\.doubleTapWindow)
+            restore(\.saveRawSessions)
+        }
+        return settings
+    }
+
+    func isAtDefaults(_ settings: Settings) -> Bool {
+        restoringDefaults(of: settings) == settings
+    }
+}
+
+/// A tab's Restore Defaults button, at the tab's bottom right, greyed out while the tab is at its defaults.
+struct RestoreDefaultsButton: View {
+    let tab: SettingsTab
+    @ObservedObject var model: SettingsModel
+    var onRestore: () -> Void = {}
+
+    var body: some View {
+        Button("Restore Defaults") {
+            model.restoreDefaults(tab)
+            onRestore()
+        }
+        .disabled(tab.isAtDefaults(model.settings))
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 
@@ -102,17 +162,24 @@ private struct Note: View {
     }
 }
 
-/// A grouped form at the settings window's width, as tall as its content.
+/// A grouped form at the settings window's width, as tall as its content, with the tab's Restore Defaults
+/// button under it.
 private struct SettingsForm<Content: View>: View {
     static var width: CGFloat { 540 }
+    var restore: RestoreDefaultsButton? = nil
     @ViewBuilder var content: Content
 
     var body: some View {
-        Form { content }
-            .formStyle(.grouped)
-            .scrollDisabled(true)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(width: Self.width)
+        Form {
+            content
+            if let restore {
+                Section {} footer: { restore }
+            }
+        }
+        .formStyle(.grouped)
+        .scrollDisabled(true)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: Self.width)
     }
 }
 
@@ -122,7 +189,7 @@ struct GeneralTab: View {
 
     var body: some View {
         let availability = loginItem()
-        SettingsForm {
+        SettingsForm(restore: RestoreDefaultsButton(tab: .general, model: model)) {
             Section {
                 Picker("Trigger key", selection: model.binding(\.triggerKey)) {
                     Text("Right ⌘").tag(TriggerKey.rightCommand)
@@ -160,7 +227,7 @@ struct OutputTab: View {
     @ObservedObject var model: SettingsModel
 
     var body: some View {
-        SettingsForm {
+        SettingsForm(restore: RestoreDefaultsButton(tab: .output, model: model)) {
             Section {
                 LabeledContent("Max frames") {
                     HStack {
@@ -269,7 +336,7 @@ struct AdvancedTab: View {
 
     var body: some View {
         let settings = model.settings
-        SettingsForm {
+        SettingsForm(restore: RestoreDefaultsButton(tab: .advanced, model: model)) {
             Section {
                 slider("Hold threshold", \.holdThreshold, Settings.holdThresholdRange)
                 slider("Hold reveal", \.holdReveal,
