@@ -50,6 +50,20 @@ final class SelfTestDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+/// When retention runs again after launch (spec §4.1): on wake and hourly, once 24 h have passed since
+/// the last run.
+enum RetentionSchedule {
+    static let interval: TimeInterval = 86_400
+    /// How often the hourly timer checks.
+    static let checkInterval: TimeInterval = 3_600
+    static let lastRunKey = "retention.lastRun"
+
+    static func isDue(lastRun: Date?, now: Date) -> Bool {
+        guard let lastRun else { return true }
+        return now.timeIntervalSince(lastRun) >= interval
+    }
+}
+
 /// `--render-ui <dir>`: draws the UI to PNGs and exits. No permissions, no status item.
 @MainActor
 final class RenderUIDelegate: NSObject, NSApplicationDelegate {
@@ -73,6 +87,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var filmstrip: FilmstripController?
     private var settingsWindow: SettingsWindowController?
     private var firstLaunch: FirstLaunchController?
+    private var settingsStore: SettingsStore?
+    private var retentionTimer: Timer?
+    private var wakeObserver: NSObjectProtocol?
     private var monitor: InputMonitor?
     private var statusMenu: StatusMenu?
     private var contentCache: ShareableContentCache?
@@ -87,9 +104,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settingsStore = SettingsStore(defaults: .standard)
         let settings = settingsStore.settings
 
-        // 3. Crash leftovers, then one retention pass.
+        // 3. Crash leftovers, then retention: now, then on wake and hourly once 24 h have passed.
+        self.settingsStore = settingsStore
         CaptureStore(root: settings.saveLocation).removeLeftovers()
-        Self.retentionPass(settings)
+        startRetentionSchedule()
 
         // 4. The screen and window list, kept fresh.
         let contentCache = ShareableContentCache()
@@ -166,15 +184,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if old.sounds != new.sounds { controller?.setSounds(new.sounds) }
         if old.launchAtLogin != new.launchAtLogin { LoginItem.set(new.launchAtLogin) }
-        if old.saveLocation != new.saveLocation { Self.retentionPass(new) }
+        if old.saveLocation != new.saveLocation { retentionPass(new) }
     }
 
-    /// Moves captures older than the retention period to the Trash.
-    static func retentionPass(_ settings: Settings) {
-        let trashed = Retention.run(in: CaptureStore(root: settings.saveLocation), days: settings.retention.days,
-                                    now: Date()) {
+    /// Spec §4.1: cleanup runs at every launch, then whenever 24 h have passed (checked on wake and hourly).
+    private func startRetentionSchedule() {
+        if let settings = settingsStore?.settings { retentionPass(settings) }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.runRetentionIfDue() }
+            }
+        retentionTimer = Timer.onMainRunLoop(interval: RetentionSchedule.checkInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.runRetentionIfDue() }
+        }
+    }
+
+    private func runRetentionIfDue() {
+        let lastRun = UserDefaults.standard.object(forKey: RetentionSchedule.lastRunKey) as? Date
+        guard let settings = settingsStore?.settings, RetentionSchedule.isDue(lastRun: lastRun, now: Date()) else { return }
+        retentionPass(settings)
+    }
+
+    /// Moves captures older than the retention period to the Trash. Logs only the count.
+    private func retentionPass(_ settings: Settings) {
+        let now = Date()
+        let trashed = Retention.run(in: CaptureStore(root: settings.saveLocation), days: settings.retention.days, now: now) {
             try FileManager.default.trashItem(at: $0, resultingItemURL: nil)
         }
+        UserDefaults.standard.set(now, forKey: RetentionSchedule.lastRunKey)
         log("retention: \(trashed.count) capture(s) moved to the Trash")
     }
 }
