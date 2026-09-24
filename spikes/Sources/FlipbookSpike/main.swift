@@ -13,12 +13,14 @@ final class SpikeMenu: NSObject {
     }
 
     /// Later tasks add their experiments above the separator and Quit.
-    func add(_ title: String, action: @escaping () -> Void) {
+    @discardableResult
+    func add(_ title: String, action: @escaping () -> Void) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: #selector(ClosureTarget.run), keyEquivalent: "")
         let target = ClosureTarget(action)
         item.target = target
         item.representedObject = target  // keeps the target alive
         menu.insertItem(item, at: menu.numberOfItems - 2)
+        return item
     }
 }
 
@@ -31,5 +33,10 @@ final class ClosureTarget: NSObject {
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 let spikeMenu = SpikeMenu()
+let triggerItem = spikeMenu.add("Trigger spike") {
+    triggerSpike.toggle()
+    triggerItem.state = triggerSpike.isOn ? .on : .off
+}
+spikeMenu.add("Request Accessibility prompt") { triggerSpike.requestAccessibility() }
 log("spike launched")
 app.run()
