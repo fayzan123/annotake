@@ -1,0 +1,44 @@
+{
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:flipbook}",
+      "name": "Debug Flipbook",
+      "target": "Flipbook",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug Flipbook"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:flipbook}",
+      "name": "Release Flipbook",
+      "target": "Flipbook",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release Flipbook"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:flipbook}",
+      "name": "Debug flipbook-replay",
+      "target": "flipbook-replay",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug flipbook-replay"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:flipbook}",
+      "name": "Release flipbook-replay",
+      "target": "flipbook-replay",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release flipbook-replay"
+    }
+  ]
+}

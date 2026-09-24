@@ -94,6 +94,7 @@ struct AXElementNode: AXNode {
     var value: String { subrole == LabelResolver.secureSubrole ? "" : string(kAXValueAttribute) }
     var titleElement: AXNode? { Self.element(element, kAXTitleUIElementAttribute).map(AXElementNode.init) }
     var parent: AXNode? { Self.element(element, kAXParentAttribute).map(AXElementNode.init) }
+    var window: AXNode? { Self.element(element, kAXWindowAttribute).map(AXElementNode.init) }
 
     var children: [AXNode] {
         var value: CFTypeRef?
