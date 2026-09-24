@@ -1,5 +1,10 @@
 import Foundation
 
+/// The key that starts and stops recordings (spec §3.1, §3.6).
+public enum TriggerKey: String, Sendable, Codable, CaseIterable {
+    case rightCommand, rightOption, fn
+}
+
 public struct GestureConfig: Sendable, Equatable, Codable {
     public var holdThreshold: TimeInterval = 0.25
     /// Spec §3.1: the pill and start sound appear here; a key before this was a shortcut.
