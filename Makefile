@@ -12,7 +12,10 @@ spike-zip: spike
 clean:
 	rm -rf .build spikes/.build build
 CLT_FW := /Library/Developer/CommandLineTools/Library/Developer/Frameworks
-TEST_FLAGS := -Xswiftc -F -Xswiftc $(CLT_FW) -Xlinker -F -Xlinker $(CLT_FW) -Xlinker -rpath -Xlinker $(CLT_FW)
+# The CLT's _Testing_Foundation overlay has no module interface, so a test file importing both
+# Testing and Foundation fails to compile unless cross-import overlays are turned off.
+TEST_FLAGS := -Xswiftc -F -Xswiftc $(CLT_FW) -Xlinker -F -Xlinker $(CLT_FW) -Xlinker -rpath -Xlinker $(CLT_FW) \
+	-Xswiftc -Xfrontend -Xswiftc -disable-cross-import-overlays
 .PHONY: test
 test:
 	swift test $(TEST_FLAGS) $(if $(FILTER),--filter '$(FILTER)')
