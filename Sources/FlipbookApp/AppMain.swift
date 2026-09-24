@@ -5,17 +5,41 @@ import AppKit
 public enum AppEntry {
     @MainActor public static func main() {
         let arguments = CommandLine.arguments
-        if arguments.contains("--selftest") || arguments.contains("--render-ui") {
+        let delegate: NSApplicationDelegate
+        if let index = arguments.firstIndex(of: "--selftest") {
+            guard index + 1 < arguments.count else {
+                print("usage: Flipbook --selftest <directory>")
+                exit(2)
+            }
+            delegate = SelfTestDelegate(directory: URL(fileURLWithPath: arguments[index + 1]))
+        } else if arguments.contains("--render-ui") {
             print("not implemented")
             exit(1)
+        } else {
+            delegate = AppDelegate()
         }
 
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
-        let delegate = AppDelegate()
         app.delegate = delegate
         withExtendedLifetime(delegate) {
             app.run()
+        }
+    }
+}
+
+/// `--selftest <dir>`: no status item, no permission requests, no event taps. Runs the self-test and exits.
+@MainActor
+final class SelfTestDelegate: NSObject, NSApplicationDelegate {
+    private let directory: URL
+
+    init(directory: URL) {
+        self.directory = directory
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Task { @MainActor in
+            exit(await SelfTest.run(outputDirectory: directory))
         }
     }
 }
