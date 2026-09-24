@@ -1,6 +1,7 @@
 import AppKit
 import FlipbookCore
 import FlipbookExport
+import SwiftUI
 
 /// `Flipbook --render-ui <dir>`: draws every panel and window state offscreen to PNGs, so a session can
 /// look at the UI it builds. Needs no permissions.
@@ -26,6 +27,39 @@ enum UISnapshots {
         write(CardView(state: .failed(folder: URL(fileURLWithPath: NSHomeDirectory()))), to: directory, as: "card-error.png")
 
         write(filmstrip(), to: directory, as: "filmstrip.png")
+
+        renderSettings(to: directory)
+    }
+
+    /// One snapshot per Settings tab, from a throwaway store with the defaults.
+    @MainActor
+    private static func renderSettings(to directory: URL) {
+        let suite = "com.fayzanmalik.flipbook.ui-snapshots"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let model = SettingsModel(store: SettingsStore(defaults: defaults))
+
+        writeSwiftUI(GeneralTab(model: model), to: directory, as: "settings-general.png")
+        writeSwiftUI(RecordTab(model: model), to: directory, as: "settings-record.png")
+        writeSwiftUI(OutputTab(model: model), to: directory, as: "settings-output.png")
+        writeSwiftUI(PermissionsTab(status: {
+            Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: false)
+        }), to: directory, as: "settings-permissions.png")
+        writeSwiftUI(AdvancedTab(model: model), to: directory, as: "settings-advanced.png")
+        model.update { $0.triggerKey = .fn }
+        writeSwiftUI(GeneralTab(model: model), to: directory, as: "settings-general-fn.png")
+    }
+
+    /// A SwiftUI view through NSHostingView, at its own size.
+    @MainActor
+    static func writeSwiftUI(_ view: some View, to directory: URL, as name: String) {
+        let hosting = NSHostingView(rootView: view)
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = hosting
+        hosting.layoutSubtreeIfNeeded()
+        write(hosting, to: directory, as: name)
     }
 
     /// Four frames, the second removed, the third hovered.

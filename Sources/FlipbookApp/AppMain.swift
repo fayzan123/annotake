@@ -71,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: SessionController?
     private var cards: CardController?
     private var filmstrip: FilmstripController?
+    private var settingsWindow: SettingsWindowController?
     private var monitor: InputMonitor?
     private var statusMenu: StatusMenu?
     private var contentCache: ShareableContentCache?
@@ -116,7 +117,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.cards = cards
         self.filmstrip = filmstrip
 
-        // 6. The menu.
+        // 6. The menu, and the Settings window it opens.
+        let settingsWindow = SettingsWindowController(model: SettingsModel(store: settingsStore))
+        self.settingsWindow = settingsWindow
         let statusMenu = StatusMenu(actions: .init(
             startStop: { [weak controller] in controller?.toggleFromMenu() },
             openFolder: { [weak controller] in
@@ -124,6 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                 NSWorkspace.shared.open(folder)
             },
+            settings: { [weak settingsWindow] in settingsWindow?.show() },
             recentCaptures: { [weak controller, weak cards] in
                 guard let controller, let cards else { return [] }
                 let store = CaptureStore(root: controller.settingsStore.settings.saveLocation)
