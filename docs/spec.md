@@ -190,6 +190,7 @@ Screen: Built-in Retina Display · 0:21 · 8 frames (from 12 candidates)
 |---|---|
 | Click on a labeled element | `Clicked <role> "<label>"` (from macOS Accessibility) |
 | Click with no label available | `Clicked at (x, y)` |
+| Right-click / double-click | `Right-clicked …` / `Double-clicked …` (same forms as a click) |
 | Typing | `Typed in field "<label>"`. The typed text is never logged. |
 | Return / Esc | `Pressed Return` / `Pressed Esc` |
 | ⌘ or ⌃ shortcut | e.g. `Pressed ⌘S` |
@@ -221,19 +222,20 @@ Every number here is a starting point. Numbers are tuned against recorded sessio
 - A tile has **changed** if its signature's mean absolute difference from the comparison frame exceeds 3/255.
 - Three things are ignored:
   - Tiles under the cursor, at both its old and new position.
-  - A **blinking caret**: a thin dirty rect, at most 4 × 48 pt, toggling on and off.
-  - **Busy regions** such as video, spinners, and animated ads. Tiles that changed in ≥ 60% of frames over the last 1.5 s are masked until they have been still for 2 s.
-- **D(a, b)** is the fraction of unmasked tiles that differ between frames a and b.
+  - A **blinking caret**: a thin dirty rect, at most 4 × 48 pt, toggling on and off. Its tiles stay ignored for 2 s.
+  - **Busy regions** such as video, spinners, and animated ads. Tiles that changed in ≥ 60% of frames over the last 1.5 s (with at least 5 frames in that window) are masked until they have been still for 2 s. Two kinds of frame don't count toward this: frames that change more than half the screen, and frames that arrive while you're scrolling. Otherwise scrolling would look like a spinner.
+- **Motion** means at least 2 changed tiles remain after those exclusions. A single isolated tile, like a clock digit, doesn't count.
+- **D(a, b)** is the fraction of tiles that differ between frames a and b. It ignores busy tiles, recent caret tiles, and tiles under the cursor in either frame.
 
 ### 5.3 Triggers, settle, keep
 
 - **Pending.** A frame might be needed when either of these happens:
-  - **Input:** the mouse-up of a click, Return, a ⌘/⌃ shortcut, an app/window switch, the end of a scroll, or a 1.2 s pause in typing.
+  - **Input:** the mouse-up of a click, Return, Esc, a ⌘/⌃ shortcut, an app/window switch, the end of a scroll (no scroll events for 0.3 s), or a 1.2 s pause in typing.
   - **Visual:** D(last kept, current) ≥ 0.02, or ≥ 0.005 when nothing has been kept for 10 s.
-- **Settle.** A pending trigger resolves once the screen has shown no unmasked motion for 400 ms. After 3 s it resolves anyway, using the least-changing recent frame.
+- **Settle.** A pending trigger resolves once there has been no motion for 400 ms. The 400 ms are counted from the later of the last motion and the trigger itself, so a click's result has time to appear. After 3 s it resolves anyway, using the latest frame.
 - **Keep.** The settled frame is kept if D(last kept, settled) ≥ 0.005.
-  - When the trigger was a click, a commit (Return or a shortcut), or a switch, the bar drops to ≥ 0.001. A ticked checkbox or an inline error still counts.
-- **Scrolling.** A frame is also kept each time scrolling has moved ≥ 80% of a screen since the last kept frame.
+  - When the trigger was a click, a commit (Return, Esc, or a shortcut), a switch, or a typing pause, a single changed tile is enough. A ticked checkbox, an inline error, or a filled-in field still counts.
+- **Scrolling.** Each time scrolling has moved ≥ 80% of a screen since the last kept frame, the latest frame is kept immediately, without waiting to settle.
 - **Start and stop.**
   - The first frame is always kept.
   - At stop, Flipbook waits up to 1 s for the screen to settle, then keeps the final state if it differs from the last kept frame.
@@ -313,7 +315,7 @@ Input (clicks, keys, scrolls, ─────events──────┴──�
 |---|---|
 | Capture and changed regions | ScreenCaptureKit `SCStream`, `SCStreamFrameInfo` (status, dirtyRects) |
 | Exclude own windows and notification banners | `SCContentFilter(display:excludingApplications:…)`; panels are created at launch |
-| Trigger and input events | `CGEventTap`: listen-only for flagsChanged/keys/mouse. The active (event-modifying) tap for click cleanup exists only while a hold recording is running. |
+| Trigger and input events | `CGEventTap`: listen-only for flagsChanged/keys/mouse. The active (event-modifying) tap exists only while a recording is running. It strips ⌘ from mouse events during hold recordings, and it consumes the Esc of Right ⌘ + Esc. |
 | Button names | `AXUIElementCopyElementAtPosition` plus role/title/description |
 | App and window | `NSWorkspace` notifications; AX focused-window title |
 | Panels that don't take focus | `NSPanel` with `.nonactivatingPanel`, `.canJoinAllSpaces`, `.fullScreenAuxiliary` |
