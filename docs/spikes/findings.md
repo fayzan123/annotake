@@ -19,6 +19,7 @@ Checked 2026-09-24 on the personal MacBook (macOS 15.7.9).
   - The package also needs `platforms: [.macOS(.v15)]`. Without it, the `@Test` macro expansion fails with `'isolation()' is only available in macOS 10.15 or newer`.
   - **For M1:** use Swift Testing. Put those flags in a `make test` target so plain `swift test` isn't the documented command. Xcode is not needed.
 - **Signing.** `make cert` created `Flipbook Local Signing` (the listing shows `CSSMERR_TP_NOT_TRUSTED`, as expected), and a second run printed `Signing identity already exists`.
+- **iCloud Drive vs. codesign.** The repo lives in `~/Documents`, which iCloud Drive syncs. A later rebuild failed with `codesign: resource fork, Finder information, or similar detritus not allowed`, because the bundle had picked up `com.apple.FinderInfo`, `com.apple.fileprovider.fpfs#P` and `com.apple.provenance`. **Fix:** `scripts/bundle-app.sh` now runs `xattr -cr "$APP"` just before signing, and three consecutive builds then signed cleanly. (If this ever recurs, build to a directory outside iCloud.)
 - **Spike build.** `make spike-run`: the release build took 34 s, `FB` appears in the menu bar, and the log shows `spike launched`. `codesign` shows `Authority=Flipbook Local Signing`, and the designated requirement is `identifier "com.fayzanmalik.flipbook.spike" and certificate leaf = H"4ce02ce5…"`.
 
 ## Trigger & click cleanup
@@ -139,6 +140,68 @@ Details:
   - Otherwise fall back to `Clicked at (x, y)`.
 
 ## Capture
+
+### Personal MacBook (macOS 15.7.9), 2026-09-24
+
+Displays: built-in Retina (1512×982 pt, 3024×1964 px, output 1920×1246), and a 2560×1080 external "E29w-20" (1×, output **1920×810**, aspect preserved).
+
+- **Permission.**
+  - The first run failed right away: `SCShareableContent` threw `SCStreamErrorDomain -3801 "The user declined TCCs for application, window, display capture"` and macOS showed the Screen Recording prompt.
+  - After granting it and relaunching, everything worked.
+  - No re-prompt appeared during the session.
+
+| Run | Scenario | Shareable content | `startCapture()` returned | First complete frame | Complete / idle (of 100) |
+|---|---|---|---|---|---|
+| 1 | Hands off | 32 ms (+29 ms 2nd query) | 84 ms | **112 ms** | 37 / 63 |
+| 2 | Typing in TextEdit | 21 ms (+37 ms) | 37 ms | **44 ms** | 87 / 13 |
+| 3 | Scrolling a long web page | 25 ms (+31 ms) | 37 ms | **48 ms** | 99 / 0 |
+| 4 | Ultrawide, moving a window | 26 ms (+44 ms) | 38 ms | **41 ms** | 100 / 0 |
+
+- **Start latency.**
+  - About 40–50 ms from `startCapture()` to the first complete frame. The first run after launch took about 110 ms.
+  - Adding `SCShareableContent` (20–35 ms), the total from key press to first frame is about 70–150 ms. **No pre-warming is needed.**
+- **Idle behavior.**
+  - When nothing changes, SCK keeps delivering frames at the 10 fps interval, but with `status = idle` (1) and no image to process.
+  - Run 1: all 37 complete frames came in the first ~3.8 s (the menu closing, the hand leaving the trackpad, a menu-bar indicator animation). From 3.9 s to 10 s, every frame was `idle`.
+  - The spec's assumption holds: skip idle frames, and nothing new arrives while the screen is still.
+- **Dirty-rect coordinate space: output pixels.**
+  - Rects span 0…1919 × 0…1241 on the 1920×1246 output, and 0…1921 × 0…811 on the 1920×810 output, with a top-left origin.
+  - They are not in points (1512×982) or native pixels (3024×1964).
+  - `contentRect` is reported in output points (`959×623` = 1920×1246 / `scaleFactor` 2; `1920×810` at scaleFactor 1). `contentScale` = 0.634 (built-in) or 0.75 (ultrawide).
+  - **Conversion for the Capture module:** none for tile math, because dirty rects are already in the same pixel space as the delivered buffer. To map to global screen points, divide by (output width / display width in points).
+- **Caret and typing.** The caret shows up as a thin dirty rect, e.g. `(1063,530 3×18)` output px (≈2.4×14 pt), well inside the spec's 4 × 48 pt caret filter. While typing, each frame's dirty rect is the growing text run, e.g. `(1058,527 454×25)` → `(1058,527 553×25)`.
+- **Scrolling.** Mostly large rects over the scrolled area, 99 complete frames out of 100.
+- **Other small changes.** A 13×24 px rect in the menu bar at (1700,11) changed at 10 fps for the first ~3.8 s of run 1. Most likely the macOS screen-recording indicator animating in. Thin 2 px-tall rects at the top of the ultrawide came from the same area.
+- **Exclusion. Pass.** In the checked frames (run1-04, run3-05, run4-04), the red pill panel does not appear, and neither does the notification banner. The spike's own `FB` status item is also excluded (the whole app is filtered out).
+    - **Validity check:** Fayzan saw the red pill on screen during the runs. A notification posted the same way (`osascript display notification`) afterwards did display as a banner on this Mac, so the banner was on screen during the runs and its absence from frames is real.
+- **Important: `com.apple.notificationcenterui` is not in `SCShareableContent(onScreenWindowsOnly: true)` while no banner is showing.** Filtering with that list alone would not exclude banners. The spike detected this and re-queried with `onScreenWindowsOnly: false` (+30–45 ms), which found it.
+  - The real app must get Notification Center from the all-windows query, or cache it. Spec §7 already plans for a cached list.
+- **Pill placement.** The spike moves the pill to the recorded screen at capture start, so exclusion is tested on the screen being recorded (the plan put it on the main screen only).
+- PNGs are saved as `~/Desktop/flipbook-spike-frames/run<N>-<NN>.png` (a run prefix, so runs don't overwrite each other).
+
+### Work Mac (macOS 26), 2026-09-24
+
+The zip was built on the personal Mac and installed into `/Applications` (not `~/Applications`), then the quarantine flag was cleared. Built-in Retina: 1728×1117 pt, 3456×2234 px, output **1920×1240**. Work-Mac frames were inspected locally only and are not stored anywhere in the repo (§8 fixture privacy).
+
+- **Permission.** Same as 15: the first run hit `-3801 "The user declined TCCs…"` plus the Screen Recording prompt. After granting and relaunching, it worked, with no further re-prompt.
+
+| Run | Scenario | Shareable content | `startCapture()` returned | First complete frame | Complete / idle |
+|---|---|---|---|---|---|
+| 1 | Hands off | 39 ms | 92 ms | **123 ms** | 47 / 52 |
+| 3 (logged as run 2) | Scrolling | 38 ms | 47 ms | **53 ms** | 100 / 0 |
+
+- **Start latency.** Same pattern as 15: about 120 ms on the first run after launch, then about 50 ms.
+- **Dirty rects are in output pixels here too.** They extend to 1919 × 1194 on the 1920×1240 output.
+- **Notification Center is in the on-screen-only list on 26.** `com.apple.notificationcenterui` was found by `onScreenWindowsOnly: true` in both runs, so no second query was needed. This differs from 15, so the real app must handle both.
+- **Exclusion. The pill and the banner pass. The status item fails.**
+  - Frame run1-06 (6 s) has no pill and no notification banner. (Pill visibility on screen was confirmed. Banner display on the work Mac was not checked separately.)
+  - **But the spike's `FB` menu-bar status item *is* visible in the macOS 26 frame.** On 15 it was excluded along with the app. On 26, excluding the application apparently doesn't cover its `NSStatusItem`.
+  - For the real app, the menu-bar icon, including its "recording" state, will show up in frames on 26. The spec only promises that the pill, cards, filmstrip and Settings stay out. Fix options: exclude the status item's window explicitly (`exceptingWindows`/window-level filter), or accept it as cosmetic. Decide in Task 6.
+- **Idle behavior.**
+  - Hands-off run 1 had idle stretches (1.3–1.4 s, 2.4–5.1 s, 7.7–10 s).
+  - But **from 5.2 s to 7.6 s, and in single frames at 8.5 s and 9.6 s, 6–7 identical dirty rects were reported at 10 fps at the bottom center** (x ≈ 664–1257, y ≈ 1090–1177 output px), with nobody touching the Mac.
+  - That region overlaps where the excluded pill sits, but also app UI underneath it. The saved frames show no visible change there. It could be an app redrawing behind the scenes, or the excluded pill panel's region being reported as dirty on 26. **Unexplained.**
+  - For M2: Core compares tile signatures, not dirty rects alone, so identical pixels produce no "motion" and the cost is only CPU. Recheck when the real pill updates its timer every second.
 
 ## Drag card
 

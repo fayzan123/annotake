@@ -4,3 +4,4 @@ build/
 .signing/
 .swiftpm/
 *.xcodeproj
+.DS_Store
