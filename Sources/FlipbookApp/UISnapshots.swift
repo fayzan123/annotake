@@ -24,6 +24,30 @@ enum UISnapshots {
         ready.hovering = true
         write(ready, to: directory, as: "card-ready-hover.png")
         write(CardView(state: .failed(folder: URL(fileURLWithPath: NSHomeDirectory()))), to: directory, as: "card-error.png")
+
+        write(filmstrip(), to: directory, as: "filmstrip.png")
+    }
+
+    /// Four frames, the second removed, the third hovered.
+    @MainActor
+    private static func filmstrip() -> NSView {
+        let capture = sampleCapture(frames: 4, duration: 12)
+        let view = FilmstripView(frame: CGRect(x: 0, y: 0, width: 1200, height: FilmstripView.height))
+        view.title = RecentCaptures.title(for: capture)
+        let frames = capture.manifest.result.frames
+        let captions = [#"Clicked button "Checkout""#, #"Typed in field "Card number""#, "Pressed Return", "End"]
+        view.strip.tiles = zip(frames, sampleThumbnails(count: 4)).enumerated().map { position, pair in
+            var frame = pair.0
+            frame.actions = position < 3 ? [.pressedReturn] : []
+            let caption = "\(position + 1)/\(frames.count) · \(Captions.timestamp(frame.time)) · \(captions[position])"
+            return FilmstripTile(frameIndex: frame.frameIndex, url: capture.folder, caption: caption, image: pair.1,
+                                 aspect: pair.1.size.width / pair.1.size.height)
+        }
+        view.strip.selection = FilmstripSelection(frameIndices: frames.map(\.frameIndex))
+        view.strip.selection.toggle(frames[1].frameIndex)
+        view.strip.hovered = 2
+        view.layoutSubtreeIfNeeded()
+        return view
     }
 
     /// A finished capture that exists only in memory, for drawing.

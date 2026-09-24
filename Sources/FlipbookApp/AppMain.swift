@@ -69,6 +69,8 @@ final class RenderUIDelegate: NSObject, NSApplicationDelegate {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: SessionController?
+    private var cards: CardController?
+    private var filmstrip: FilmstripController?
     private var monitor: InputMonitor?
     private var statusMenu: StatusMenu?
     private var contentCache: ShareableContentCache?
@@ -102,8 +104,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 5. The pill.
         let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel())
-        controller.cards = CardController()
+        let cards = CardController()
+        let filmstrip = FilmstripController()
+        cards.onOpen = { [weak cards, weak filmstrip] capture, id in
+            guard let cards else { return }
+            filmstrip?.toggle(capture, cardID: id, cards: cards)
+        }
+        filmstrip.onTrimmed = { [weak cards] capture, id in cards?.update(capture, id: id) }
+        controller.cards = cards
         self.controller = controller
+        self.cards = cards
+        self.filmstrip = filmstrip
 
         // 6. The menu.
         let statusMenu = StatusMenu(actions: .init(
@@ -113,7 +124,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                 NSWorkspace.shared.open(folder)
             },
-            recentCaptures: { [] }))
+            recentCaptures: { [weak controller, weak cards] in
+                guard let controller, let cards else { return [] }
+                let store = CaptureStore(root: controller.settingsStore.settings.saveLocation)
+                return RecentCaptures.latest(in: store).map { capture in
+                    (title: RecentCaptures.title(for: capture), open: {
+                        cards.reopen(capture, on: SessionController.screen(containing: SessionController.cursorLocation()))
+                    })
+                }
+            }))
         controller.statusMenu = statusMenu
         self.statusMenu = statusMenu
 

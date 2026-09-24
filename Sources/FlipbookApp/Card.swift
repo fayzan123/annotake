@@ -363,10 +363,16 @@ final class CardController {
 
     private var stack = CardStack()
     private var cards: [Int: Card] = [:]
+    /// The card showing each capture folder, so reopening one brings its card forward.
+    private var cardByFolder: [String: Int] = [:]
+    /// Cards reopened from Recent Captures count down from here, apart from live captures' ids.
+    private var nextReopenedID = -1
     private var screen: NSScreen?
     private var timer: Timer?
-    /// A click on a ready card: the filmstrip, or until then the folder in Finder.
-    var onOpen: (FinishedCapture) -> Void = { NSWorkspace.shared.activateFileViewerSelecting([$0.folder]) }
+    /// A click on a ready card: its filmstrip.
+    var onOpen: (FinishedCapture, Int) -> Void = { capture, _ in
+        NSWorkspace.shared.activateFileViewerSelecting([capture.folder])
+    }
 
     func showSaving(id: Int, duration: TimeInterval, on screen: NSScreen?) {
         let view = CardView(state: .saving(duration: duration))
@@ -397,6 +403,7 @@ final class CardController {
         }
         card.capture = capture
         card.view.state = .ready(capture, thumbnails: Self.thumbnails(for: capture))
+        cardByFolder[capture.folder.path] = id
     }
 
     func fail(id: Int, folder: URL) {
@@ -405,14 +412,16 @@ final class CardController {
     }
 
     /// Brings a capture's card back, on top of the stack (Recent Captures).
-    func reopen(_ capture: FinishedCapture, id: Int, on screen: NSScreen?) {
+    func reopen(_ capture: FinishedCapture, on screen: NSScreen?) {
         if let screen { self.screen = screen }
-        if let card = cards[id] {
-            _ = stack.push(id)
+        if let id = cardByFolder[capture.folder.path], let card = cards[id] {
+            for pushedOut in stack.push(id) { close(pushedOut) }
             layout()
             card.panel.orderFrontRegardless()
             return
         }
+        let id = nextReopenedID
+        nextReopenedID -= 1
         show(capture, id: id)
     }
 
@@ -438,7 +447,7 @@ final class CardController {
         card.view.onDismiss = { [weak self] in self?.close(id) }
         card.view.onClick = { [weak self, weak card] in
             guard let capture = card?.capture else { return }
-            self?.onOpen(capture)
+            self?.onOpen(capture, id)
         }
         card.view.onHover = { [weak self, weak card] inside in
             card?.fade.hover(inside, at: ProcessInfo.processInfo.systemUptime)
@@ -453,6 +462,7 @@ final class CardController {
 
     private func close(_ id: Int) {
         guard let card = cards.removeValue(forKey: id) else { return }
+        if let folder = card.capture?.folder.path, cardByFolder[folder] == id { cardByFolder[folder] = nil }
         card.panel.orderOut(nil)
         stack.remove(id)
         layout()
