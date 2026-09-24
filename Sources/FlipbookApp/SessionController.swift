@@ -45,24 +45,18 @@ final class SessionController: InputMonitorDelegate {
     private var machine: SessionMachine
     var inputMonitor: InputMonitor?
     var statusMenu: StatusMenu?
-    /// A finished capture's card is ready to show, update or fail.
-    var onCardEvent: ((CardEvent) -> Void)?
+    var cards: CardController?
 
     private var current: Recording?
     /// Between stopEngine and showCard, which names its capture.
     private var stopped: Recording?
     private var captures: [Int: Recording] = [:]
+    private var finishedCaptures: [Int: FinishedCapture] = [:]
     private var elapsedTimer: Timer?
     private var workspaceObservers: [NSObjectProtocol] = []
     private var noteUntil: TimeInterval = 0
     /// The current recording's input sink, read on the input thread.
     nonisolated let bridge = Locked<InputBridge?>(nil)
-
-    enum CardEvent {
-        case saving(id: Int, duration: TimeInterval, screen: NSScreen?)
-        case finished(id: Int, FinishedCapture)
-        case failed(id: Int, folder: URL)
-    }
 
     init(settingsStore: SettingsStore, contentCache: ShareableContentCache, pill: PillPanel) {
         self.settingsStore = settingsStore
@@ -133,12 +127,18 @@ final class SessionController: InputMonitorDelegate {
             recording.captureID = id
             captures[id] = recording
             log("capture \(id) saving")
-            onCardEvent?(.saving(id: id, duration: time - recording.startedAt, screen: recording.screen))
+            // The card appears at once, on the screen the cursor is on.
+            cards?.showSaving(id: id, duration: time - recording.startedAt,
+                              on: Self.screen(containing: Self.cursorLocation()))
         case .completeCard(let id):
             log("capture \(id) ready")
+            if let capture = finishedCaptures.removeValue(forKey: id) {
+                cards?.show(capture, id: id)
+            }
+            captures[id] = nil
         case .failCard(let id):
             log("capture \(id) failed")
-            onCardEvent?(.failed(id: id, folder: settingsStore.settings.saveLocation))
+            cards?.fail(id: id, folder: settingsStore.settings.saveLocation)
             captures[id] = nil
         case .resetGestures:
             inputMonitor?.recordingEnded()
@@ -269,7 +269,7 @@ final class SessionController: InputMonitorDelegate {
         guard let id = recording.captureID else { return }
         switch result {
         case .success(let capture):
-            onCardEvent?(.finished(id: id, capture))
+            finishedCaptures[id] = capture
             handle(.exported(captureID: id, success: true))
         case .failure(let error):
             log("capture \(id) couldn't be saved: \(error)")

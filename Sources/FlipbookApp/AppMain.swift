@@ -102,6 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 5. The pill.
         let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel())
+        controller.cards = CardController()
         self.controller = controller
 
         // 6. The menu.
