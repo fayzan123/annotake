@@ -16,6 +16,21 @@ public protocol AXNode {
     var titleElement: AXNode? { get }
     var parent: AXNode? { get }
     var children: [AXNode] { get }
+    /// The window the element is in.
+    var window: AXNode? { get }
+}
+
+extension AXNode {
+    /// The nearest AXWindow ancestor. Live elements ask for their window directly instead.
+    public var window: AXNode? {
+        var node = parent
+        for _ in 0..<LabelResolver.windowSearchDepth {
+            guard let current = node else { return nil }
+            if current.role == "AXWindow" { return current }
+            node = current.parent
+        }
+        return nil
+    }
 }
 
 /// What a click or a typing run is labeled with (spec §4.4; M0's label rules). Typed text and a secure
@@ -30,6 +45,11 @@ public enum LabelResolver {
     /// A label found at or above these is really the page's or window's title, so it counts as none.
     static let stopRoles: Set<String> = ["AXWebArea", "AXWindow", "AXApplication"]
     static let fieldRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"]
+    /// Containers that aren't themselves things you click. When one is labeled with its window's title,
+    /// the label is really the window's, like Chrome's tab strip (Checkpoint 1).
+    static let containerRoles: Set<String> = ["AXGroup", "AXScrollArea", "AXSplitGroup", "AXLayoutArea", "AXUnknown"]
+    /// How far up the default `window` looks.
+    static let windowSearchDepth = 50
     static let ellipsis = "…"
 
     /// Whitespace runs become one space, the ends are trimmed, and anything over 120 characters is cut
@@ -47,7 +67,9 @@ public enum LabelResolver {
         var depth = 0
         while let current = node, depth <= maxDepth {
             if stopRoles.contains(current.role) { return nil }
-            if let label = ownLabel(current) { return label }
+            if let label = ownLabel(current) {
+                return isWindowTitle(label, of: current) ? nil : label
+            }
             node = current.parent
             depth += 1
         }
@@ -64,6 +86,12 @@ public enum LabelResolver {
             ?? focused.titleElement.map { normalize($0.title) }
         guard let text, !text.isEmpty else { return nil }
         return ElementLabel(role: focused.roleDescription.lowercased(), label: text)
+    }
+
+    /// A container labeled with its own window's title: the label says nothing about what was clicked.
+    private static func isWindowTitle(_ label: ElementLabel, of node: AXNode) -> Bool {
+        guard containerRoles.contains(node.role), let window = node.window else { return false }
+        return normalize(window.title) == label.label
     }
 
     /// The label this element has by itself, before looking at its parents.

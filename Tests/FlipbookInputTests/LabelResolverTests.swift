@@ -77,6 +77,24 @@ struct LabelResolverTests {
         #expect(LabelResolver.label(atHit: group) == nil)
     }
 
+    /// Checkpoint 1: Chrome's tab strip is a group titled with the whole window title.
+    @Test func groupTitledLikeItsWindowIsNoLabel() {
+        let title = "Inbox (8) - Gmail - Google Chrome - Fayzan"
+        let window = FakeNode("AXWindow", roleDescription: "standard window", title: title)
+        let browser = window.add(FakeNode("AXGroup", roleDescription: "group"))
+        let strip = browser.add(FakeNode("AXGroup", roleDescription: "group", title: title))
+        #expect(LabelResolver.label(atHit: strip) == nil)
+        let inside = strip.add(FakeNode("AXGroup", roleDescription: "group"))
+        #expect(LabelResolver.label(atHit: inside) == nil)
+    }
+
+    @Test func controlNamedLikeItsWindowKeepsItsLabel() {
+        let window = FakeNode("AXWindow", roleDescription: "standard window", title: "Downloads")
+        let sidebar = window.add(FakeNode("AXOutline", roleDescription: "outline"))
+        let row = sidebar.add(FakeNode("AXRow", roleDescription: "row", title: "Downloads"))
+        #expect(LabelResolver.label(atHit: row) == ElementLabel(role: "row", label: "Downloads"))
+    }
+
     @Test func finderCell() {
         let cell = FakeNode("AXCell", roleDescription: "cell")
         cell.add(FakeNode("AXTextField", roleDescription: "text field", value: "report.pdf"))
