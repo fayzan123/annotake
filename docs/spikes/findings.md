@@ -100,6 +100,44 @@ Personal MacBook, macOS 15.7.9, 2026-09-24. Log: `~/Library/Logs/FlipbookSpike.l
 
 ## Accessibility labels
 
+Personal MacBook, macOS 15.7.9, 2026-09-24. Three rounds:
+1. Plan method: parent walk ≤ 3.
+2. After `Enable AX in Chrome/Electron`.
+3. Controlled: Chrome and Slack freshly relaunched, with a diagnostic walk ≤ 8 that logs the role chain and the depth where a label appears.
+
+No side effects were observed after setting the flags (no jerky animations, no slowness).
+
+| App | Label quality, no flag | Needs flag? | Label quality, with flag | Typical lookup |
+|---|---|---|---|---|
+| Safari (web + chrome) | **Good**: `button "Google Search"`, `button "Go back"`, `combo box "Search"` | No | — | 2–23 ms |
+| Chrome, its own UI (toolbar) | **Good**: `button "New Tab"`, `"Back"`, `"Reload"` | No | — | 2–20 ms |
+| Chrome, web content | **None**: the hit is `AXScrollArea` > groups; nothing inside is exposed, even after 10 s of AX queries | **Yes**: `AXEnhancedUserInterface` | **Good**: `link "https://fayzanmalik.com/"`, `button "Edit profile"`, `button "Save"`, `link "Rungraph"` | 1–3 ms |
+| Cursor | **None**: unlabeled `AXGroup`s | **Yes**: `AXManualAccessibility` | **Good**: `outline row "CLAUDE.md"`, `button "Plan New Idea ⇧Tab"` | 0.5–12 ms |
+| Slack | **None** | **Yes**: `AXManualAccessibility` | **Good**: `"Channel hacker-badges"`, `text entry area "Message to hacker-badges"`, `outline "Channels and direct messages"` | 1–8 ms |
+| VS Code (bonus, not a target) | None | Flag accepted (AXError 0) | Still none (`AXImage` inside ≥ 8 groups) | 0.4–28 ms |
+| Finder (file in list view) | **Generic**: the hit is `AXCell` (empty) > `AXRow` > `AXOutline "list view"`. The file name is in a child of the cell | No flag; needs a child lookup | — | 2–37 ms |
+| System Settings (a switch) | **None**: `AXCheckBox/AXSwitch` with no title or description. The text is a sibling in the same row | No flag; needs a sibling or `AXTitleUIElement` lookup | — | 18–100 ms |
+| Dock, menu bar, menus | **Good**: `dock item "Safari"`, `menu item "System Settings…"` | No | — | 0.5–93 ms |
+
+Details:
+- **Chrome returns `AXError -25208` (`kAXErrorNotImplemented`) when `AXEnhancedUserInterface` is set, but the flag takes effect anyway.** Web content appeared on the next click, about 4 s later. The real app must ignore this error code.
+- Electron apps (Slack, Cursor, VS Code, GitHub Desktop) accept `AXManualAccessibility` with `AXError 0`. Detecting Electron by the presence of `Contents/Frameworks/Electron Framework.framework` worked.
+- In round 2, a single Slack click right after enabling still had no label; in round 3 it worked on every click. Most likely a one-off.
+- **A naive parent walk gives wrong labels.** When nothing is exposed, walking up reaches the window and returns the **window title** as the label (e.g. `"Who's using Chrome?"`, `"hardware (Channel) - … - Slack"`). The real app must stop at `AXWebArea`/`AXWindow`, treat a label found there as "no label", and log `Clicked at (x, y)`.
+- Useful lookups: when the hit is `AXStaticText` inside `AXLink`/`AXButton`, use the parent's label. The `AXStaticText` value alone was a fragment (`" to search"`).
+- Lookup time: usually 0.5–25 ms; the first lookup in an app, and the menu bar or System Settings, took up to about 100 ms. Do it off the event-tap callback, as the spike does.
+
+**Decision for M2:**
+- **Flipbook sets the flags, only while recording.**
+  - At recording start, set `AXEnhancedUserInterface` on running Chrome instances and `AXManualAccessibility` on running Electron apps.
+  - Do the same for any such app launched or activated during the recording.
+  - Ignore -25208 from Chrome.
+  - Clearing the flags at stop is untested; verify in M2, and keep them set if clearing breaks a screen reader the user runs.
+- **Label rules:**
+  - title → description → the parent's label for static text in a link or button → the first child's value for `AXCell`/`AXRow` → the row sibling's text for an unlabeled switch or checkbox.
+  - Never read past `AXWebArea`/`AXWindow`.
+  - Otherwise fall back to `Clicked at (x, y)`.
+
 ## Capture
 
 ## Drag card

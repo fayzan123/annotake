@@ -38,5 +38,10 @@ let triggerItem = spikeMenu.add("Trigger spike") {
     triggerItem.state = triggerSpike.isOn ? .on : .off
 }
 spikeMenu.add("Request Accessibility prompt") { triggerSpike.requestAccessibility() }
+let axItem = spikeMenu.add("AX spike") {
+    axSpike.toggle()
+    axItem.state = axSpike.isOn ? .on : .off
+}
+spikeMenu.add("Enable AX in Chrome/Electron") { axSpike.enableWebAX() }
 log("spike launched")
 app.run()
