@@ -14,25 +14,19 @@ Rules for every session:
 
 ## Order
 
-1. **Session 1: M0 spikes.** You're at the keyboard for every task. The session starts with installing Command Line Tools 26.3.
-2. **Session 2: M1 core.** It runs without you. Start it after M0 Task 1 is committed, because M1 needs to know which test framework works.
-   - **If Session 1 is still running,** give Session 2 its own worktree. Otherwise one session's commits would pick up the other's half-finished files:
+1. **Session 1: M0 spikes. Done 2026-09-24.** Results and decisions are in [../spikes/findings.md](../spikes/findings.md); the spec and the M1 plan are already updated with them. The repo is pushed to the private GitHub repo `fayzan123/flipbook`.
+2. **Session 2: M1 core. Next.** It runs without you, directly in `~/Documents/GitHub/flipbook` on `main` (no worktree needed now that Session 1 is finished).
+3. **Session 3: write the M2–M4 plan** (capture, input, export, the app UI) from M0's findings. It only writes docs, so it can run during Session 2. If it does, give it a worktree so the two sessions' commits don't mix:
 
-     ```
-     cd ~/Documents/GitHub/flipbook && git worktree add ../flipbook-core -b m1-core
-     ```
+   ```
+   cd ~/Documents/GitHub/flipbook && git worktree add ../flipbook-plans -b m2-m4-plan
+   ```
 
-   - **When Session 2 is done,** merge its branch and remove the worktree:
+   When it's done: `cd ~/Documents/GitHub/flipbook && git merge m2-m4-plan && git worktree remove ../flipbook-plans`.
 
-     ```
-     cd ~/Documents/GitHub/flipbook && git merge m1-core && git worktree remove ../flipbook-core
-     ```
+## Session 1: M0 spikes (done)
 
-3. **Session 3: write the M2–M4 plan** (capture, input, export, the app UI) from M0's findings.
-
-## Session 1: M0 spikes
-
-Plan: [2026-09-23-m0-spikes.md](2026-09-23-m0-spikes.md)
+Plan: [2026-09-23-m0-spikes.md](2026-09-23-m0-spikes.md). Kept for reference.
 
 | Task | The agent builds | You do |
 |---|---|---|
@@ -53,6 +47,10 @@ In ~/Documents/GitHub/flipbook, execute docs/plans/2026-09-23-m0-spikes.md task 
 
 Plan: [2026-09-23-m1-core.md](2026-09-23-m1-core.md). Every task is test-first. Nothing is needed from you until the end.
 
+What M0 changed in this plan:
+- Tests run with `make test` (or `make test FILTER=<suite>`). Plain `swift test` fails with only the Command Line Tools, because it can't find Swift Testing.
+- The gesture logic has the 800 ms hold reveal: a key pressed before it means the hold was a shortcut, and the recording is discarded.
+
 1. Package scaffold
 2. Tile grid
 3. Frame signatures, plus the test scene builder
@@ -62,21 +60,21 @@ Plan: [2026-09-23-m1-core.md](2026-09-23-m1-core.md). Every task is test-first. 
 7. The frame picker: triggers, settling, which frames to keep, stopping
 8. Removing frames from the filmstrip
 9. `steps.md`
-10. Right ⌘ gesture logic
+10. Right ⌘ gesture logic, including the hold reveal
 11. Raw sessions, the replayer, golden tests
 12. The `flipbook-replay` command and final checks
 
 At the end, you can run `swift run flipbook-replay Tests/FlipbookCoreTests/Fixtures/synthetic-click-flow` to watch it pick frames from a test recording.
 
-Prompt (use `~/Documents/GitHub/flipbook` if you're not using the worktree):
-
-```
-In ~/Documents/GitHub/flipbook-core, execute docs/plans/2026-09-23-m1-core.md task by task, test-first: write the listed tests, run them and watch them fail, implement, watch them pass, commit. Read docs/spec.md and the plan first. Don't use any superpowers skills. If a test expectation in the plan looks wrong, stop and tell me instead of changing it.
-```
-
-## Session 3: M2–M4 plan (after M0 is done)
-
 Prompt:
+
+```
+In ~/Documents/GitHub/flipbook, execute docs/plans/2026-09-23-m1-core.md task by task, test-first: write the listed tests, run them with `make test FILTER=<suite>` and watch them fail, implement, watch them pass, commit after each task. Never use plain `swift test`; it can't find Swift Testing without Xcode. M0 is done: read docs/spec.md, the Decisions section of docs/spikes/findings.md, and the plan before starting. Leave spikes/ and the M0 scripts alone. Don't use any superpowers skills. If a test expectation in the plan looks wrong, stop and tell me instead of changing it. When all tasks pass, push main to origin.
+```
+
+## Session 3: M2–M4 plan
+
+Prompt (use `~/Documents/GitHub/flipbook-plans` if it runs during Session 2):
 
 ```
 In ~/Documents/GitHub/flipbook, M0 is done. Read docs/spikes/findings.md, docs/spec.md, and both plans in docs/plans/, then write the M2–M4 plan (capture, input, export, app UI) to docs/plans/. No superpowers skills; test-first wherever the code is testable.
