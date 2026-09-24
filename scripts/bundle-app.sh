@@ -31,7 +31,15 @@ PLIST
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
 # ~/Documents may be synced by iCloud Drive, which tags new bundles with Finder/file-provider
 # attributes that codesign rejects ("resource fork, Finder information, or similar detritus").
-xattr -cr "$APP"
+# It can tag the bundle again between the strip and the signing, so try a few times.
 security unlock-keychain -p flipbook-local "$KC"
-codesign --force --options runtime --timestamp=none --keychain "$KC" --sign "Flipbook Local Signing" "$APP"
+for attempt in 1 2 3; do
+  xattr -cr "$APP"
+  if codesign --force --options runtime --timestamp=none --keychain "$KC" --sign "Flipbook Local Signing" "$APP"; then
+    break
+  fi
+  if [ "$attempt" -eq 3 ]; then exit 1; fi
+  echo "signing attempt $attempt failed; retrying" >&2
+  sleep 1
+done
 codesign --verify --verbose=2 "$APP"

@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := app
 KC := $(CURDIR)/.signing/flipbook-signing.keychain-db
 BIN = $(shell swift build -c release --show-bin-path)
-.PHONY: app run install zip selftest cert spike spike-run spike-zip clean
+.PHONY: app run install zip selftest ui-snapshots cert spike spike-run spike-zip clean
 app:
 	swift build -c release --product Flipbook
 	scripts/bundle-app.sh $(BIN)/Flipbook Flipbook com.fayzanmalik.flipbook build
@@ -17,6 +17,10 @@ selftest: app
 	open -W -n build/Flipbook.app --args --selftest "$(CURDIR)/build/selftest"
 	cat build/selftest/selftest.txt
 	grep -q '^PASSED' build/selftest/selftest.txt
+ui-snapshots: app
+	rm -rf build/ui && mkdir -p build/ui
+	open -W -n build/Flipbook.app --args --render-ui "$(CURDIR)/build/ui"
+	ls build/ui
 cert:
 	scripts/make-cert.sh
 spike:

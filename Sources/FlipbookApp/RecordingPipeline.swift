@@ -7,6 +7,11 @@ import Foundation
 @preconcurrency import ScreenCaptureKit
 import Synchronization
 
+enum PipelineError: Error, Equatable {
+    /// The stream never delivered a frame: the Mac was asleep or locked, or the recording stopped at once.
+    case noFrames
+}
+
 /// Timings and counts for one recording, for the log and the self-test.
 struct PipelineStats: Sendable, Equatable, Codable {
     var completeFrames = 0, idleFrames = 0
@@ -325,6 +330,16 @@ final class RecordingPipeline: @unchecked Sendable {
         log("picker finished: \(result.frames.count) frames from \(result.candidateCount) candidates, "
             + "\(currentStats.completeFrames) complete and \(currentStats.idleFrames) idle stream frames")
         guard let pending else { return }
+        if result.frames.isEmpty {
+            let writer = self.writer
+            let callback = onFinished
+            Task.detached { [stream] in
+                await stream.stop()
+                writer.async { pending.discard() }
+                DispatchQueue.main.async { callback?(.failure(PipelineError.noFrames)) }
+            }
+            return
+        }
 
         let stopUptime = self.stopUptime ?? ProcessInfo.processInfo.systemUptime
         let settings = configuration.settings
