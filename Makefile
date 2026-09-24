@@ -1,5 +1,16 @@
+.DEFAULT_GOAL := app
 KC := $(CURDIR)/.signing/flipbook-signing.keychain-db
-.PHONY: cert spike spike-run spike-zip clean
+BIN = $(shell swift build -c release --show-bin-path)
+.PHONY: app run install zip cert spike spike-run spike-zip clean
+app:
+	swift build -c release --product Flipbook
+	scripts/bundle-app.sh $(BIN)/Flipbook Flipbook com.fayzanmalik.flipbook build
+run: app
+	open build/Flipbook.app
+install: app
+	rm -rf ~/Applications/Flipbook.app && ditto build/Flipbook.app ~/Applications/Flipbook.app
+zip: app
+	cd build && rm -f Flipbook.zip && ditto -c -k --keepParent Flipbook.app Flipbook.zip
 cert:
 	scripts/make-cert.sh
 spike:
