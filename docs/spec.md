@@ -132,6 +132,8 @@ Rules:
 
 A change applies to the next recording and never interrupts one in progress. A new trigger key or new gesture timings take effect as soon as Flipbook is idle.
 
+Each tab with settings (all but Permissions) has a **Restore Defaults** button at its bottom right (Checkpoint 2: a slider is hard to put back exactly). It resets only that tab's settings, and is greyed out while they're already the defaults.
+
 Choosing fn shows a note with three warnings:
 - macOS's "Press 🌐 key to" setting must be "Do Nothing".
 - Dictation apps (Wispr Flow, Handy) often use fn already.
