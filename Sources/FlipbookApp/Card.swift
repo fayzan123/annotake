@@ -478,7 +478,7 @@ final class CardController {
     /// Animates fades and spinners while any card needs it.
     private func startTimer() {
         guard timer == nil else { return }
-        timer = Timer.scheduledTimer(withTimeInterval: Self.fadeStep, repeats: true) { [weak self] _ in
+        timer = Timer.onMainRunLoop(interval: Self.fadeStep, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.step() }
         }
     }

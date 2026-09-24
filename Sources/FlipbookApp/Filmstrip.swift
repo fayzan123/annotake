@@ -286,6 +286,16 @@ final class FilmstripPanel: NSPanel {
     override func cancelOperation(_ sender: Any?) {
         onCancel()
     }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == Self.escapeKeycode {
+            onCancel()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    static let escapeKeycode: UInt16 = 53
 }
 
 /// One filmstrip at a time (spec §3.4), above the card column. Closing it with removals trims the
