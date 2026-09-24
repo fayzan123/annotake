@@ -43,5 +43,7 @@ let axItem = spikeMenu.add("AX spike") {
     axItem.state = axSpike.isOn ? .on : .off
 }
 spikeMenu.add("Enable AX in Chrome/Electron") { axSpike.enableWebAX() }
+spikeMenu.add("Capture spike (10 s)") { captureSpike.start() }
+captureSpike.showPill()
 log("spike launched")
 app.run()

@@ -29,6 +29,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
+# ~/Documents may be synced by iCloud Drive, which tags new bundles with Finder/file-provider
+# attributes that codesign rejects ("resource fork, Finder information, or similar detritus").
+xattr -cr "$APP"
 security unlock-keychain -p flipbook-local "$KC"
 codesign --force --options runtime --timestamp=none --keychain "$KC" --sign "Flipbook Local Signing" "$APP"
 codesign --verify --verbose=2 "$APP"
