@@ -88,12 +88,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settings = settingsStore.settings
 
         // 3. Crash leftovers, then one retention pass.
-        let store = CaptureStore(root: settings.saveLocation)
-        store.removeLeftovers()
-        let trashed = Retention.run(in: store, days: settings.retention.days, now: Date()) {
-            try FileManager.default.trashItem(at: $0, resultingItemURL: nil)
-        }
-        log("retention: \(trashed.count) capture(s) moved to the Trash")
+        CaptureStore(root: settings.saveLocation).removeLeftovers()
+        Self.retentionPass(settings)
 
         // 4. The screen and window list, kept fresh.
         let contentCache = ShareableContentCache()
@@ -120,14 +116,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 6. The menu, and the Settings window it opens.
         let settingsModel = SettingsModel(store: settingsStore)
-        settingsModel.onChange = { old, new in
-            if old.launchAtLogin != new.launchAtLogin { LoginItem.set(new.launchAtLogin) }
-        }
+        settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
         let settingsWindow = SettingsWindowController(
             model: settingsModel, picker: RecordPickerModel(loader: { try await contentCache.current() }))
         self.settingsWindow = settingsWindow
         let statusMenu = StatusMenu(actions: .init(
+            fixPermissions: { [weak self] in self?.firstLaunch?.show() },
             startStop: { [weak controller] in controller?.toggleFromMenu() },
+            isRecording: { [weak controller] in controller?.isRecording ?? false },
             openFolder: { [weak controller] in
                 guard let folder = controller?.settingsStore.settings.saveLocation else { return }
                 try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -160,5 +156,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         firstLaunch.showIfNeeded()
         self.firstLaunch = firstLaunch
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)
+    }
+
+    /// Settings apply live where they can (design §7): the trigger and gesture timings once idle, sounds at
+    /// once, a new save location with one retention pass. Everything else is read at the next recording.
+    private func settingsChanged(from old: Settings, to new: Settings) {
+        if old.triggerKey != new.triggerKey || old.gestureConfig != new.gestureConfig {
+            monitor?.reconfigure(trigger: new.triggerKey, gestures: new.gestureConfig)
+        }
+        if old.sounds != new.sounds { controller?.setSounds(new.sounds) }
+        if old.launchAtLogin != new.launchAtLogin { LoginItem.set(new.launchAtLogin) }
+        if old.saveLocation != new.saveLocation { Self.retentionPass(new) }
+    }
+
+    /// Moves captures older than the retention period to the Trash.
+    static func retentionPass(_ settings: Settings) {
+        let trashed = Retention.run(in: CaptureStore(root: settings.saveLocation), days: settings.retention.days,
+                                    now: Date()) {
+            try FileManager.default.trashItem(at: $0, resultingItemURL: nil)
+        }
+        log("retention: \(trashed.count) capture(s) moved to the Trash")
     }
 }

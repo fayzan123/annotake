@@ -71,6 +71,11 @@ final class SessionController: InputMonitorDelegate {
 
     var isRecording: Bool { machine.state != .idle }
 
+    /// The Sounds setting, live.
+    func setSounds(_ sounds: Bool) {
+        machine.sounds = sounds
+    }
+
     // MARK: - InputMonitorDelegate
 
     nonisolated func gesture(_ event: GestureEvent, at time: TimeInterval) {
