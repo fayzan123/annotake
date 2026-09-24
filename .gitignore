@@ -1,0 +1,6 @@
+.build/
+spikes/.build/
+build/
+.signing/
+.swiftpm/
+*.xcodeproj
