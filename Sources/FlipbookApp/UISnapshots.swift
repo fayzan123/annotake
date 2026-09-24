@@ -1,4 +1,6 @@
 import AppKit
+import FlipbookCore
+import FlipbookExport
 
 /// `Flipbook --render-ui <dir>`: draws every panel and window state offscreen to PNGs, so a session can
 /// look at the UI it builds. Needs no permissions.
@@ -15,6 +17,51 @@ enum UISnapshots {
               to: directory, as: "pill-handsfree.png")
         write(pill(PillText.message(.screenRecordingNeeded), button: "Open Settings"),
               to: directory, as: "pill-message.png")
+
+        write(CardView(state: .saving(duration: 21)), to: directory, as: "card-saving.png")
+        let ready = CardView(state: .ready(sampleCapture(frames: 8, duration: 21), thumbnails: sampleThumbnails()))
+        write(ready, to: directory, as: "card-ready.png")
+        ready.hovering = true
+        write(ready, to: directory, as: "card-ready-hover.png")
+        write(CardView(state: .failed(folder: URL(fileURLWithPath: NSHomeDirectory()))), to: directory, as: "card-error.png")
+    }
+
+    /// A finished capture that exists only in memory, for drawing.
+    static func sampleCapture(frames: Int, duration: TimeInterval) -> FinishedCapture {
+        let context = FrameContext(app: "Safari", window: "Checkout")
+        let picked = (0..<frames).map {
+            PickedFrame(frameIndex: $0, time: Double($0) * duration / Double(frames), context: context, actions: [],
+                        reason: .visual)
+        }
+        let manifest = CaptureManifest(name: "2026-09-24 at 14.05.12", target: "Screen: Built-in Retina Display",
+                                       created: Date(), render: RenderOptions(captionStrip: true, clickMarkers: true),
+                                       result: PickResult(frames: picked, candidateCount: frames, duration: duration),
+                                       removed: [])
+        return FinishedCapture(folder: URL(fileURLWithPath: NSTemporaryDirectory()), manifest: manifest)
+    }
+
+    /// Mock screenshots: a window with a toolbar, some content, and a caption strip.
+    static func sampleThumbnails(count: Int = 3) -> [NSImage] {
+        let accents: [NSColor] = [.systemBlue, .systemOrange, .systemGreen, .systemPurple, .systemPink, .systemTeal]
+        return (0..<count).map { index in
+            NSImage(size: CGSize(width: 416, height: 315), flipped: true) { rect in
+                NSColor(white: 0.96, alpha: 1).setFill()
+                rect.fill()
+                NSColor(white: 0.86, alpha: 1).setFill()
+                CGRect(x: 0, y: 0, width: rect.width, height: 30).fill()
+                accents[index % accents.count].setFill()
+                NSBezierPath(roundedRect: CGRect(x: 24, y: 56, width: 150, height: 34), xRadius: 6, yRadius: 6).fill()
+                NSColor(white: 0.8, alpha: 1).setFill()
+                for row in 0..<5 {
+                    CGRect(x: 24, y: 110 + CGFloat(row) * 24, width: 260 - CGFloat((row + index) % 3) * 50, height: 10).fill()
+                }
+                NSColor(red: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1).setFill()
+                CGRect(x: 0, y: rect.height - 34, width: rect.width, height: 34).fill()
+                NSColor.white.setFill()
+                CGRect(x: 12, y: rect.height - 25, width: 180, height: 6).fill()
+                return true
+            }
+        }
     }
 
     @MainActor
