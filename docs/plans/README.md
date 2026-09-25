@@ -25,7 +25,7 @@ Rules for every session:
 4. **Session 4: M2 + M3, the recording loop. Done 2026-09-24.** Recording end to end: capture, input, `LiveSession`, export with caption strips and markers, the pill, card, filmstrip, and Recent Captures, plus `make selftest` and `make ui-snapshots`. Checkpoint 1 passed apart from one label bug; the results are in [../checkpoints.md](../checkpoints.md).
 5. **Session 5: M4, the rest of the app. Done 2026-09-24,** run straight after Checkpoint 1 in the same session. The label fix, Settings with the Meet-style picker, the first-launch checklist and launch at login, the full menu with live settings, the retention schedule, and `spikes/` deleted. What both sessions found for later plans is under Session 5 below.
 6. **Checkpoint 2 on both Macs. Done 2026-09-25.** Everything passed; the results are in [../checkpoints.md](../checkpoints.md). Fixed during it: Restore Defaults on each settings tab, and `make replay` with capture paths (they have spaces).
-7. **Next: a short fix session** for Checkpoint 2's three minor findings: caption line 2 in window mode, one log line per slider step, and the personal Mac's constant 10 fps dirty frames (log the dirty region's bounding box first). Then M5 (a week of real use; no plan).
+7. **Next: Session 6, the Checkpoint 2 fixes** (below): caption line 2 in window mode, one log line per slider drag, and where the personal Mac's constant redraws are. Then M5 (a week of real use; no plan).
 
 ## Session 1: M0 spikes (done)
 
@@ -144,7 +144,7 @@ What Sessions 4 and 5 found, for later plans:
 - A container labeled with its window's title counts as no label (Checkpoint 1: Chrome's tab strip).
 - Retention runs at every launch, as the spec says, and then on wake and hourly once 24 h have passed; the plan had the launch run check the 24 h too.
 - Captures in window mode show macOS's "being shared" badge in the window's title bar from the second frame on.
-- Claude Code in VS Code's integrated terminal receives only the first dropped frame, as a path. Terminal.app and iTerm are still untested.
+- Claude Code in VS Code's integrated terminal receives only the first dropped frame, as a path. Terminal.app receives every frame (Checkpoint 2); iTerm is untested.
 
 21. Checkpoint 1 results and fixes
 22. The Settings window
@@ -167,4 +167,31 @@ In ~/Documents/GitHub/flipbook, Session 4 is done. My Checkpoint 1 results:
 <paste your results here>
 
 Execute Tasks 21–27 of docs/plans/2026-09-24-m2-m4-app.md, test-first as its header says; Task 21 records my results in docs/checkpoints.md and fixes what failed. Read docs/spec.md, docs/plans/2026-09-24-m2-m4-design.md, and the plan before starting. Don't use any superpowers skills. Run tests only with `make test`, and commit after each task. Never launch the full app; use `make selftest` and `make ui-snapshots`. Stop only if macOS shows a permission prompt you can't answer, a test expectation in the plan looks wrong, or one of my results needs a decision from me. When Task 27 passes, push main to origin, run `make zip`, and give me the Checkpoint 2 list.
+```
+
+## Session 6: Checkpoint 2 fixes
+
+No plan file. The three fixes are below, from Checkpoint 2 in [../checkpoints.md](../checkpoints.md). Do each one test-first, and commit each one on its own.
+
+1. **Window mode: caption line 2 names the recorded window.** Line 2, and each step's context in `steps.md`, names whichever app and window have focus. So a window recording started from another app captions a picture of Finder with `Code — main.swift — flipbook` (capture `2026-09-24 at 17.58.54`). In window mode, line 2 should name the recorded window: its app, and its title at that step, whatever has focus.
+   - Screen mode doesn't change, and neither do actions: `Switched to …` still names the app that got focus.
+   - A window's title can be read by its window ID with `CGWindowListCopyWindowInfo`, since Flipbook has Screen Recording. Titles still never go in the log.
+   - Raw sessions saved before the change must still replay, and the golden tests mustn't change.
+   - Update spec §4.2.
+2. **One log line per slider drag.** Every step of an Advanced slider logs `trigger key and gesture timings updated` (from `InputMonitor.applyPendingConfigurationIfIdle`, reached through `settingsChanged` in `AppMain.swift`), so one drag writes dozens of lines. A burst of changes should log one line. Settings still save on every step, and new timings still apply as soon as Flipbook is idle (spec §3.6).
+3. **Where the personal Mac's constant redraws are.** On the personal Mac (macOS 15.7), a hands-off recording gets 10 complete frames a second, each with about 60,000 px dirty and nothing changed (Checkpoint 2, item 9). The once-a-second `stream` log line (`LogWindow` in `RecordingPipeline.swift`) has totals only. Add the bounding box of that second's dirty rects, in capture pixels (x, y, width, height), so the log shows where the redraws are. Coordinates are fine in the log, which never holds labels, window titles, or keys (spec §8).
+
+To finish: `make test`, `make selftest` (look at its frames), and `make ui-snapshots` if anything visible changed. Mark Session 6 done in the list at the top of this file, push main to origin, and run `make zip`.
+
+Your part, about 10 minutes:
+- Quit Flipbook, run `make install`, and reopen it.
+- Record 10 seconds hands-off, then run `grep " stream " ~/Library/Logs/Flipbook.log | tail -12`. The box says where the redraws are; see what's on screen there.
+- In Settings → Record → Window, pick a window, then start a recording from another app. Line 2 should name the recorded window.
+- Drag an Advanced slider, then press Restore Defaults. The log should get one line for the drag, not dozens.
+- Put `build/Flipbook.zip` on the work Mac, as in Checkpoint 2.
+
+Prompt:
+
+```
+In ~/Documents/GitHub/flipbook, run Session 6 in docs/plans/README.md: the three Checkpoint 2 fixes, each test-first. Read docs/spec.md, docs/checkpoints.md, and the Session 6 section before starting. Don't use any superpowers skills. Run tests only with `make test`, and commit after each fix. Never launch the full app; use `make selftest` and `make ui-snapshots`. Stop only if macOS shows a permission prompt you can't answer, or a fix needs a decision from me. When all three are done, push main to origin, run `make zip`, and give me the "Your part" list from the Session 6 section.
 ```
