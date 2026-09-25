@@ -11,16 +11,17 @@ enum PillText {
         }
     }
 
-    /// e.g. `● 0:04 · 3 frames · release ⌘ to stop`. The count never promises more than the card will hold.
+    /// e.g. `● 0:04 · 3 frames · release ⌘ to stop`. Past the cap it reads `best 20 of 27`: it never promises
+    /// more than the card will hold, and the growing total shows recording goes on.
     static func recording(mode: RecordingMode, elapsed: TimeInterval, frames: Int, maxFrames: Int,
                           trigger: TriggerKey) -> String {
-        let count = min(frames, maxFrames)
+        let count = frames > maxFrames ? "best \(maxFrames) of \(frames)" : frames == 1 ? "1 frame" : "\(frames) frames"
         let key = glyph(trigger)
         let hint = switch mode {
         case .hold: "release \(key) to stop"
         case .handsFree: "double-tap \(key) to stop · \(trigger == .fn ? "fn+Esc" : key + "Esc") cancels"
         }
-        return "● \(Captions.timestamp(elapsed)) · \(count == 1 ? "1 frame" : "\(count) frames") · \(hint)"
+        return "● \(Captions.timestamp(elapsed)) · \(count) · \(hint)"
     }
 
     static func message(_ message: SessionMachine.PillMessage) -> String {
