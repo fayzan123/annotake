@@ -40,6 +40,22 @@ final class Locked<Value: Sendable>: Sendable {
     }
 }
 
+/// When applying a new trigger key or gesture timings gets a log line: the first change of a burst, and the
+/// first after a pause. A slider drag applies dozens of changes and logs one line (Checkpoint 2).
+public struct ConfigurationLogRule: Sendable {
+    public static let pause: TimeInterval = 2
+
+    private var lastChange: TimeInterval?
+
+    public init() {}
+
+    public mutating func needsLine(forChangeAt time: TimeInterval) -> Bool {
+        defer { lastChange = time }
+        guard let lastChange else { return true }
+        return time - lastChange >= Self.pause
+    }
+}
+
 /// The trigger key, gestures and recorded input (design §5). Both event taps and the gesture recognizer
 /// live on a dedicated input thread with its own run loop: the tap callbacks only classify and hand
 /// off, because macOS disables a slow tap, and a busy main thread would delay every click on the Mac.
@@ -74,6 +90,7 @@ public final class InputMonitor: @unchecked Sendable {
     private var gestures: GestureConfig
     private var recognizer: GestureRecognizer
     private var pendingConfiguration: (trigger: TriggerKey, gestures: GestureConfig)?
+    private var configurationLog = ConfigurationLogRule()
     private var triggerDown = false
     private var lastRelease: TimeInterval?
     private var recording: RecordingMode?
@@ -359,6 +376,8 @@ public final class InputMonitor: @unchecked Sendable {
         gestures = pending.gestures
         recognizer = GestureRecognizer(config: pending.gestures)
         pendingConfiguration = nil
-        InputLog.write("trigger key and gesture timings updated")
+        if configurationLog.needsLine(forChangeAt: ProcessInfo.processInfo.systemUptime) {
+            InputLog.write("trigger key and gesture timings updated")
+        }
     }
 }
