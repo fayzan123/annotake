@@ -18,4 +18,35 @@ Personal Mac, macOS 15.7. Items follow the plan's Task 20 list. Fayzan's summary
    - Finder drag to another volume, copy or move: not reported.
    - Clearing the AX flags at stop: Chrome and Cursor behaved normally (passed with item 3).
    - How soon Chrome exposes web content: labels passed; the first click's timing wasn't reported separately, so the flag stays as it is.
-   - Claude Code in Terminal.app and iTerm: not reported. VS Code's terminal keeps only the first frame.
+   - Claude Code in Terminal.app and iTerm: not reported here. VS Code's terminal keeps only the first frame. (Checkpoint 2 on the work Mac: Terminal gets every frame.)
+
+## Checkpoint 2 (2026-09-24)
+
+Items follow the plan's Task 27 list. Results so far:
+
+0. **Personal Mac setup: done.** Flipbook quit, `tccutil reset All com.fayzanmalik.flipbook`, `make install`, then opened. An earlier run of the Session 5 build had already completed the checklist, so `firstLaunch.v1` and `loginItem.initialized` were also deleted from Flipbook's defaults; without that, the checklist wouldn't have shown. Settings were kept.
+1. **First launch: pass.** The checklist appeared. Each button prompted first and opened System Settings after that. Quit & Reopen brought the checklist back where it was. Double-tapping Right ⌘ closed it and gave a card, and Flipbook is in Login Items. The log: the first launch had all three permissions off and logged `launch at login on`; after the reopens, all three were on; the first capture was ready 1.07 s after stop.
+2. **Settings: pass, with two fixes.** Every tab worked; Right ⌥ (hold, double-tap, and a hold-click on a Chrome link didn't download it); fn with Handy off and the 🌐 key set to Do Nothing; the Advanced sliders changed how the gestures feel.
+   - **Putting the Advanced sliders back by hand missed the defaults** (260 / 800 / 250 ms instead of 250 / 800 / 300). Fayzan: every tab with settings needs a reset button. Fixed: each tab but Permissions now has **Restore Defaults** at its bottom right. It resets only that tab's settings, and is greyed out while they're already the defaults (spec §3.6). **Checked on the new build:** Advanced's button put the timings back to exactly 250 / 800 / 300 ms, and General's turned Launch at login back on.
+   - Minor: dragging a slider logs `trigger key and gesture timings updated` once per step (dozens of lines a drag). Harmless, but noisy in the log.
+   - **`make replay SESSION="<capture>/.raw/session"` failed on real captures:** the Makefile passed `$(SESSION)` unquoted, and capture folder names have spaces, so it printed the usage line. Fixed by quoting it. On capture `2026-09-24 at 17.47.39`, the replay then picked the same 4 frames as the live capture, with the same captions as its `steps.md`.
+3. **Picker: pass.**
+   - **A window: pass.** Capture `2026-09-24 at 17.58.54` recorded a Finder window alone (the log: `1840×928, window`).
+   - Minor: that frame's caption line 2 reads `Code — main.swift — flipbook`, the app that had focus at the start, under a picture of Finder. In window mode, line 2 could name the recorded window when the focus is elsewhere.
+   - **A specific screen (the ultrawide), and a window moved to the other screen: pass, per Fayzan** (tested earlier; this Mac's log, which starts at 16:02, has no recording on another display).
+   - **A window closed mid-recording: pass.** Capture `2026-09-24 at 18.00.33`: ⌘W closed the recorded Chrome window, the log shows `capture stream ended: targetGone`, and the capture was saved 549 ms later with 3 frames (Start, Pressed ⌘W, End).
+   - **The fallback after the chosen window's app quits: pass, per Fayzan** (not in this Mac's log).
+4. **Output: pass, per Fayzan** (not in this Mac's log: no compact or 5-frame capture, and none outside `~/Pictures/Flipbook`).
+5. **Retention: pass** (run by Claude). A copy of capture `2026-09-24 at 17.58.54` with its marker set to `2026-08-15T12:00:00Z` was moved to the Trash at the next launch (the log: `retention: 1 capture(s) moved to the Trash`). A folder without a marker, with 60-day-old files, stayed.
+6. **Permissions: pass, on the work Mac** (macOS 26): turning Accessibility off made "Fix permissions…" appear, and revoking it during a hold left the mouse working.
+7. **Sounds and login: pass, on the work Mac:** the sounds toggle and the launch-at-login toggle both work.
+8. **Recording coverage: pass.** Full screen: capture `2026-09-25 at 00.29.54` recorded full-screen Chrome (8 frames, the click ring on the right bookmark), and Fayzan confirmed it on the work Mac too. Both displays: pass, per Fayzan (item 3's ultrawide checks). No frame looked at in this checkpoint shows the pill or the card.
+   - **Feedback: the start sound sounds like an error.** It's Tink, one of macOS's alert sounds (the one for clicking where you can't), so starting a recording sounds like a mistake. The stop sound, Pop, is an alert sound too. Fayzan compared it with four sounds that aren't alert sounds (CoreAudio's `begin_record`, `mic_unmute`, and `screen_sharing_started`, and FaceTime's `multiway_join`) and kept Tink, and Pop for the finish. No change.
+9. Work Mac (macOS 26):
+   - **Install, first-launch checklist, permissions, recording, and a drag into Cursor: pass.** Installed by dragging the app into `/Applications` (not `~/Applications`); the quarantine flag was removed with `xattr -dr com.apple.quarantine /Applications/Flipbook.app`.
+   - **Menu-bar icon in frames: pass.** macOS 26 gives the icon's window to Control Center (the log's `ownedBy(bundleID: "com.apple.controlcenter")`). Flipbook excluded Control Center along with itself and Notification Center, kept Control Center's 24 other windows as exceptions, and the icon is not in the frames.
+   - **Bottom-center dirty region: M0's 10 fps region doesn't recur on the work Mac.** A 10 s hands-off recording was idle most of the time (26 complete, 81 idle): about one complete frame a second, about 295,000 px dirty, 0 changed. That matches the pill's once-a-second clock: the pill is excluded, but macOS still reports its redraw. Negligible cost, and the capture was right (1 frame kept).
+     - **The personal Mac (macOS 15.7) is the odd one out:** the same test there got 10 complete frames a second, each with about 60,000 px dirty and 0 changed (107 frames, about 5% of a core). That's something on that Mac's screen, not macOS 26; the source is unknown because the log has totals only. Next: log the dirty region's bounding box in that line.
+   - Drags: **Cursor and Terminal: pass, every frame arrived** on the work Mac. That answers Checkpoint 1's open question for Terminal.app: all frames (unlike VS Code's integrated terminal, which keeps only the first). iTerm and Jira: pending.
+   - **Self-test: pass** on the work Mac (macOS 26).
+   - Chrome labels, Slack:
