@@ -8,7 +8,7 @@ app:
 run: app
 	open build/Flipbook.app
 install: app
-	rm -rf ~/Applications/Flipbook.app && ditto build/Flipbook.app ~/Applications/Flipbook.app
+	rm -rf /Applications/Flipbook.app ~/Applications/Flipbook.app && ditto build/Flipbook.app /Applications/Flipbook.app
 zip: app
 	cd build && rm -f Flipbook.zip && ditto -c -k --keepParent Flipbook.app Flipbook.zip
 selftest: app
