@@ -13,8 +13,13 @@ struct PillTextTests {
                 == "● 0:12 · 5 frames · double-tap ⌘ to stop · ⌘Esc cancels")
     }
 
-    @Test func countIsCapped() {
-        #expect(PillText.recording(mode: .hold, elapsed: 4, frames: 34, maxFrames: 20, trigger: .rightCommand)
+    @Test func pastTheCapItKeepsTheBest() {
+        #expect(PillText.recording(mode: .hold, elapsed: 34, frames: 27, maxFrames: 20, trigger: .rightCommand)
+                == "● 0:34 · best 20 of 27 · release ⌘ to stop")
+    }
+
+    @Test func atTheCapItCountsNormally() {
+        #expect(PillText.recording(mode: .hold, elapsed: 4, frames: 20, maxFrames: 20, trigger: .rightCommand)
                 == "● 0:04 · 20 frames · release ⌘ to stop")
     }
 

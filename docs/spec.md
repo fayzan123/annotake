@@ -56,7 +56,7 @@ Rules:
 - **Pill.** Shown at the bottom center of the recorded screen (in hold mode, from the reveal at 800 ms):
   - Hold mode: `● 0:04 · 3 frames · release ⌘ to stop`
   - Hands-free mode: `● 0:12 · 5 frames · double-tap ⌘ to stop · ⌘Esc cancels`
-  - The key glyph follows the trigger key. The frame count is capped at Max frames, so the pill never promises more than the card will hold.
+  - The key glyph follows the trigger key. Past Max frames the count reads `best 20 of 27`: it never promises more than the card will hold, and the growing total shows recording goes on (the best frames are picked at the end, §5.5).
   - The pill sits over the app being recorded, so it ignores clicks while recording. It only takes clicks when it shows a message with a button, such as Open Settings.
 - **Sounds.** Soft start and stop sounds, controlled by a Settings toggle that is on by default. In hold mode the start sound plays at the reveal. No sound plays when a recording is discarded or cancelled.
 - **Time limit.** Hands-free recordings stop and save automatically at **5 minutes**. Hold recordings end when the key is released.
