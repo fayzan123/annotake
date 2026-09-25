@@ -25,7 +25,8 @@ Rules for every session:
 4. **Session 4: M2 + M3, the recording loop. Done 2026-09-24.** Recording end to end: capture, input, `LiveSession`, export with caption strips and markers, the pill, card, filmstrip, and Recent Captures, plus `make selftest` and `make ui-snapshots`. Checkpoint 1 passed apart from one label bug; the results are in [../checkpoints.md](../checkpoints.md).
 5. **Session 5: M4, the rest of the app. Done 2026-09-24,** run straight after Checkpoint 1 in the same session. The label fix, Settings with the Meet-style picker, the first-launch checklist and launch at login, the full menu with live settings, the retention schedule, and `spikes/` deleted. What both sessions found for later plans is under Session 5 below.
 6. **Checkpoint 2 on both Macs. Done 2026-09-25.** Everything passed; the results are in [../checkpoints.md](../checkpoints.md). Fixed during it: Restore Defaults on each settings tab, and `make replay` with capture paths (they have spaces).
-7. **Next: Session 6, the Checkpoint 2 fixes** (below): caption line 2 in window mode, one log line per slider drag, and where the personal Mac's constant redraws are. Then M5 (a week of real use; no plan).
+7. **Session 6: the Checkpoint 2 fixes. Done 2026-09-25.** Caption line 2 names the recorded window in window mode, a slider drag logs one line, and the `stream` log line says where the dirty area is. Your checks are in its section below.
+8. **Next: M5,** a week of real use (no plan).
 
 ## Session 1: M0 spikes (done)
 
@@ -169,9 +170,16 @@ In ~/Documents/GitHub/flipbook, Session 4 is done. My Checkpoint 1 results:
 Execute Tasks 21–27 of docs/plans/2026-09-24-m2-m4-app.md, test-first as its header says; Task 21 records my results in docs/checkpoints.md and fixes what failed. Read docs/spec.md, docs/plans/2026-09-24-m2-m4-design.md, and the plan before starting. Don't use any superpowers skills. Run tests only with `make test`, and commit after each task. Never launch the full app; use `make selftest` and `make ui-snapshots`. Stop only if macOS shows a permission prompt you can't answer, a test expectation in the plan looks wrong, or one of my results needs a decision from me. When Task 27 passes, push main to origin, run `make zip`, and give me the Checkpoint 2 list.
 ```
 
-## Session 6: Checkpoint 2 fixes
+## Session 6: Checkpoint 2 fixes (done)
 
 No plan file. The three fixes are below, from Checkpoint 2 in [../checkpoints.md](../checkpoints.md). Do each one test-first, and commit each one on its own.
+
+What Session 6 found, for later plans:
+- `make test` runs 318 tests. The self-test renames its window as the dialog closes, and checks each frame's line 2, live and replayed.
+- The window server has a renamed window's new title at once, and reading it by window ID takes about 0.1 ms, so window recordings read it as each frame arrives.
+- Raw sessions of window recordings carry `"contextSource" : "recordedWindow"`. Sessions without it follow focus, so older ones replay unchanged.
+- The `stream` line reads like `dirty 61440 px in 320×192 at (1480, 1190)`: the box around that second's dirty rects, in capture pixels from the top left. The capture's size is in the `recording started` line.
+- New trigger or gesture settings log a line for the first change of a burst, or the first after a 2 s pause.
 
 1. **Window mode: caption line 2 names the recorded window.** Line 2, and each step's context in `steps.md`, names whichever app and window have focus. So a window recording started from another app captions a picture of Finder with `Code — main.swift — flipbook` (capture `2026-09-24 at 17.58.54`). In window mode, line 2 should name the recorded window: its app, and its title at that step, whatever has focus.
    - Screen mode doesn't change, and neither do actions: `Switched to …` still names the app that got focus.
