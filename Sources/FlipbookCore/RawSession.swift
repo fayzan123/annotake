@@ -4,14 +4,16 @@ import Foundation
 public struct RawSession: Sendable, Equatable {
     public var geometry: CaptureGeometry
     public var initialContext: FrameContext
+    public var contextSource: ContextSource
     public var frames: [FrameSample]
     public var events: [InputEvent]
     public var stopTime: TimeInterval
 
-    public init(geometry: CaptureGeometry, initialContext: FrameContext, frames: [FrameSample],
-                events: [InputEvent], stopTime: TimeInterval) {
+    public init(geometry: CaptureGeometry, initialContext: FrameContext, contextSource: ContextSource = .focus,
+                frames: [FrameSample], events: [InputEvent], stopTime: TimeInterval) {
         self.geometry = geometry
         self.initialContext = initialContext
+        self.contextSource = contextSource
         self.frames = frames
         self.events = events
         self.stopTime = stopTime
@@ -44,10 +46,25 @@ public enum RawSessionIO {
         var version: Int
         var geometry: CaptureGeometry
         var initialContext: FrameContext
+        /// Written only for window recordings. Sessions without it, including every one saved before
+        /// window recordings named their window, follow focus.
+        var contextSource: ContextSource?
         var frames: [Frame]
         var events: [InputEvent]
         var stopTime: TimeInterval
         var bytesPerFrame: Int
+
+        init(version: Int, geometry: CaptureGeometry, initialContext: FrameContext, contextSource: ContextSource,
+             frames: [Frame], events: [InputEvent], stopTime: TimeInterval, bytesPerFrame: Int) {
+            self.version = version
+            self.geometry = geometry
+            self.initialContext = initialContext
+            self.contextSource = contextSource == .focus ? nil : contextSource
+            self.frames = frames
+            self.events = events
+            self.stopTime = stopTime
+            self.bytesPerFrame = bytesPerFrame
+        }
     }
 
     /// Creates the directory if needed.
@@ -62,6 +79,7 @@ public enum RawSessionIO {
             version: formatVersion,
             geometry: session.geometry,
             initialContext: session.initialContext,
+            contextSource: session.contextSource,
             frames: session.frames.map {
                 SessionFile.Frame(index: $0.index, time: $0.time, dirtyRects: $0.dirtyRects, cursor: $0.cursor)
             },
@@ -102,7 +120,8 @@ public enum RawSessionIO {
                 signature: FrameSignature(tileCount: tileCount, values: Array(tiles[start..<start + bytesPerFrame])),
                 dirtyRects: frame.dirtyRects, cursor: frame.cursor)
         }
-        return RawSession(geometry: file.geometry, initialContext: file.initialContext, frames: frames,
-                          events: file.events, stopTime: file.stopTime)
+        return RawSession(geometry: file.geometry, initialContext: file.initialContext,
+                          contextSource: file.contextSource ?? .focus, frames: frames, events: file.events,
+                          stopTime: file.stopTime)
     }
 }

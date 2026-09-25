@@ -21,7 +21,7 @@ public struct FrameSample: Sendable, Equatable {
     }
 }
 
-/// The frontmost app and window title.
+/// The app and window title a frame's caption names on line 2.
 public struct FrameContext: Sendable, Hashable, Codable {
     public var app: String
     public var window: String?
@@ -30,6 +30,15 @@ public struct FrameContext: Sendable, Hashable, Codable {
         self.app = app
         self.window = window
     }
+}
+
+/// Which window line 2 names (spec §4.2).
+public enum ContextSource: String, Sendable, Codable {
+    /// The frontmost app and window: screen recordings. A switch changes the context.
+    case focus
+    /// The recorded window, whatever has focus: window recordings. A switch is still an action, but only
+    /// the recorded window's `titleChanged` changes the context.
+    case recordedWindow
 }
 
 /// An Accessibility label for a clicked element or a text field.

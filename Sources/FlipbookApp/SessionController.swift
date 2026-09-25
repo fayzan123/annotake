@@ -194,7 +194,9 @@ final class SessionController: InputMonitorDelegate {
                     settings: settings, mapping: mapping,
                     geometry: CaptureGeometry(outputWidth: output.width, outputHeight: output.height,
                                               pixelsPerPoint: mapping.pixelsPerPoint),
-                    store: CaptureStore(root: settings.saveLocation), initialContext: context.initialContext(),
+                    store: CaptureStore(root: settings.saveLocation),
+                    initialContext: target.window?.context ?? context.initialContext(),
+                    recordedWindowID: target.window?.id,
                     targetDescription: target.description, showsCursor: true,
                     cursorHotspot: { CGEvent(source: nil)?.location }, cursorScale: cursorScale),
                 filter: target.filter)
@@ -206,7 +208,7 @@ final class SessionController: InputMonitorDelegate {
                 ?? recording.screen
             if !recording.ended {
                 pill.place(on: recording.screen)
-                connectInputs(to: pipeline)
+                connectInputs(to: pipeline, contextSource: target.window == nil ? .focus : .recordedWindow)
             }
             try await pipeline.start()
             log("recording started: \(output.width)×\(output.height), \(target.kind)")
@@ -252,12 +254,12 @@ final class SessionController: InputMonitorDelegate {
     }
 
     /// Input, context and the Chrome/Electron flags follow the recording while it runs.
-    private func connectInputs(to pipeline: RecordingPipeline) {
+    private func connectInputs(to pipeline: RecordingPipeline, contextSource: ContextSource) {
         bridge.value = InputBridge(mapping: { pipeline.mapping }, pipeline: pipeline, labels: ax)
         context.begin(ContextTracker.Hooks(
             reserve: { pipeline.reserve($0) },
             fill: { pipeline.fill($0, with: $1) },
-            submit: { pipeline.submit($0) }))
+            submit: { pipeline.submit($0) }), source: contextSource)
         flags.enableForRunningApps()
         let center = NSWorkspace.shared.notificationCenter
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didActivateApplicationNotification] {
@@ -359,6 +361,8 @@ final class SessionController: InputMonitorDelegate {
         var screenRect: CGRect
         var description: String
         var kind: String
+        /// A recorded window, which line 2 names (spec §4.2); nil for screens.
+        var window: (id: CGWindowID, context: FrameContext)?
     }
 
     private static func engineTarget(_ target: ResolvedTarget, plan: FilterPlan,
@@ -373,7 +377,7 @@ final class SessionController: InputMonitorDelegate {
             return EngineTarget(
                 filter: SCContentFilter(display: scDisplay, excludingApplications: excluded, exceptingWindows: excepting),
                 sourcePixels: display.pixelSize, screenRect: display.frame,
-                description: "Screen: \(display.name)", kind: "screen")
+                description: "Screen: \(display.name)", kind: "screen", window: nil)
         case .window(let window):
             guard let scWindow = content.windows.first(where: { $0.windowID == window.id }) else {
                 throw CaptureError.targetGone
@@ -386,7 +390,8 @@ final class SessionController: InputMonitorDelegate {
                 sourcePixels: CGSize(width: filter.contentRect.width * scale, height: filter.contentRect.height * scale),
                 screenRect: window.frame,
                 description: title.isEmpty ? "Window: \(window.ownerName)" : "Window: \(window.ownerName) — \(title)",
-                kind: "window")
+                kind: "window",
+                window: (window.id, FrameContext(app: window.ownerName, window: title.isEmpty ? nil : title)))
         }
     }
 

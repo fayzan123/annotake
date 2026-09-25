@@ -7,6 +7,7 @@ public final class RawSessionWriter {
     private let directory: URL
     private let geometry: CaptureGeometry
     private let initialContext: FrameContext
+    private let contextSource: ContextSource
     private let bytesPerFrame: Int
     private let tiles: FileHandle
     private var frames: [RawSessionIO.SessionFile.Frame] = []
@@ -14,10 +15,12 @@ public final class RawSessionWriter {
     private var closed = false
 
     /// Creates the directory and an empty `tiles.bin`.
-    public init(directory: URL, geometry: CaptureGeometry, initialContext: FrameContext) throws {
+    public init(directory: URL, geometry: CaptureGeometry, initialContext: FrameContext,
+                contextSource: ContextSource = .focus) throws {
         self.directory = directory
         self.geometry = geometry
         self.initialContext = initialContext
+        self.contextSource = contextSource
         bytesPerFrame = geometry.grid.count * FrameSignature.valuesPerTile
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let tilesURL = directory.appending(path: "tiles.bin")
@@ -49,6 +52,7 @@ public final class RawSessionWriter {
             version: RawSessionIO.formatVersion,
             geometry: geometry,
             initialContext: initialContext,
+            contextSource: contextSource,
             frames: frames,
             events: events,
             stopTime: stopTime,

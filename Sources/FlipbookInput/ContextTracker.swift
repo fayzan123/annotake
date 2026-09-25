@@ -25,7 +25,9 @@ public struct FieldLookupRule: Sendable {
 
 /// The frontmost app and window during a recording (design §5, "Context"): app activations come from
 /// NSWorkspace on the main thread; window and title changes come from an AX observer on the AX thread,
-/// which moves to each newly activated app. Titles go only into captions, never into the log.
+/// which moves to each newly activated app. In window recordings, line 2 names the recorded window, whose
+/// title the recording pipeline follows, so switches are all this reports. Titles go only into captions,
+/// never into the log.
 public final class ContextTracker: @unchecked Sendable {
     public struct Hooks: Sendable {
         /// Reserves a slot for an event whose label is still being looked up; returns its token.
@@ -55,6 +57,8 @@ public final class ContextTracker: @unchecked Sendable {
     private var observedName = ""
     private var observedTitle: String?
     private var observerHooks: Hooks?
+    /// False in window recordings, where the focused window's title changes aren't the context.
+    private var followsTitles = true
 
     public init(ax: AXClient, ownBundleID: String) {
         self.ax = ax
@@ -66,17 +70,20 @@ public final class ContextTracker: @unchecked Sendable {
         FrameContext(app: NSWorkspace.shared.frontmostApplication?.localizedName ?? "", window: nil)
     }
 
-    /// Reserves a title slot at once, so the first frame already has the window title, and starts
-    /// following activations, window changes and title changes. Call on the main thread.
-    public func begin(_ hooks: Hooks) {
+    /// Starts following activations and window changes. Following focus, it also reserves a title slot at
+    /// once, so the first frame already has the window title, and follows title changes. Call on the main
+    /// thread.
+    public func begin(_ hooks: Hooks, source: ContextSource) {
         self.hooks = hooks
         let front = NSWorkspace.shared.frontmostApplication
         let pid = front?.processIdentifier
         let name = front?.localizedName ?? ""
-        let token = hooks.reserve(.titleChanged(window: nil))
+        let followsTitles = source == .focus
+        let token = followsTitles ? hooks.reserve(.titleChanged(window: nil)) : nil
         ax.perform { [self] in
+            self.followsTitles = followsTitles
             let title = pid.flatMap(AXClient.windowTitle(pid:))
-            hooks.fill(token, .titleChanged(window: title))
+            if let token { hooks.fill(token, .titleChanged(window: title)) }
             if let pid { observe(pid: pid, name: name, title: title, hooks: hooks) }
         }
         activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -129,7 +136,9 @@ public final class ContextTracker: @unchecked Sendable {
         let app = AXUIElementCreateApplication(pid)
         let context = Unmanaged.passUnretained(self).toOpaque()
         AXObserverAddNotification(observer, app, kAXFocusedWindowChangedNotification as CFString, context)
-        AXObserverAddNotification(observer, app, kAXTitleChangedNotification as CFString, context)
+        if followsTitles {
+            AXObserverAddNotification(observer, app, kAXTitleChangedNotification as CFString, context)
+        }
         CFRunLoopAddSource(runLoop, AXObserverGetRunLoopSource(observer), .commonModes)
         self.observer = observer
         observedApp = app

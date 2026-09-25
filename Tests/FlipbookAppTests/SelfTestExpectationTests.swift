@@ -56,6 +56,9 @@ struct SelfTestExpectationTests {
                 for tile in tiles(SelfTestLayout.banner) { content[tile] = 30 }
             case .shiftList:
                 for tile in tiles(SelfTestLayout.list) { content[tile] = 150 }
+            case .retitle:
+                // Only the title bar changes, and the synthetic screen is the content view alone.
+                break
             }
         }
     }
@@ -73,6 +76,10 @@ struct SelfTestExpectationTests {
                 let changed = (0..<scene.geometry.grid.count).filter { model.shown($0) != before[$0] }
                 let values = Dictionary(uniqueKeysWithValues: changed.map { ($0, model.shown($0)) })
                 frames.append(scene.frame(at: step.time, set: values, cursor: model.pointerTile.map(scene.rect(ofTile:))))
+                // The pipeline reads the recorded window's new title with the next frame.
+                if case .retitle(let title) = change {
+                    events.append(InputEvent(time: step.time, kind: .titleChanged(window: title)))
+                }
             }
             switch step.input {
             case let .reserveThenFill(kind, _, _)?, let .submit(kind)?:
@@ -83,8 +90,8 @@ struct SelfTestExpectationTests {
                 break
             }
         }
-        return RawSession(geometry: scene.geometry, initialContext: SelfTest.initialContext, frames: frames,
-                          events: events, stopTime: stopTime)
+        return RawSession(geometry: scene.geometry, initialContext: SelfTest.initialContext,
+                          contextSource: .recordedWindow, frames: frames, events: events, stopTime: stopTime)
     }
 
     @Test func expectationMatchesSyntheticReplay() {
@@ -95,5 +102,6 @@ struct SelfTestExpectationTests {
             Captions.summary(for: frame, number: offset + 1, total: result.frames.count)
         }
         #expect(captions == SelfTest.expectedCaptions)
+        #expect(result.frames.map { Captions.line2(for: $0.context) } == SelfTest.expectedContexts)
     }
 }

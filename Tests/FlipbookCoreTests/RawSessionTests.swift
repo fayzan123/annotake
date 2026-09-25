@@ -17,6 +17,31 @@ struct RawSessionTests {
         #expect(try RawSessionIO.read(from: directory) == session)
     }
 
+    @Test func roundTripPreservesContextSource() throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let session = Scenes.windowRecording()
+
+        try RawSessionIO.write(session, to: directory)
+        let json = try String(contentsOf: directory.appending(path: "session.json"), encoding: .utf8)
+        #expect(json.contains(#""contextSource" : "recordedWindow""#))
+        #expect(try RawSessionIO.read(from: directory) == session)
+    }
+
+    /// Sessions saved before window recordings named their window follow focus, and focus sessions are
+    /// still written the same way.
+    @Test func olderSessionsFollowFocus() throws {
+        let fixture = try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil))
+            .appending(path: "synthetic-click-flow")
+        #expect(try RawSessionIO.read(from: fixture).contextSource == .focus)
+
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try RawSessionIO.write(Scenes.clickFlow(), to: directory)
+        let json = try String(contentsOf: directory.appending(path: "session.json"), encoding: .utf8)
+        #expect(!json.contains("contextSource"))
+    }
+
     @Test func corruptTilesThrows() throws {
         let directory = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
