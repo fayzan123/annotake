@@ -455,14 +455,14 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - `make cert` runs once. It creates a free self-signed signing identity so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
   - `make` builds and assembles `Flipbook.app`.
   - `make run` builds it and opens it.
-  - `make install` copies it into `~/Applications`.
+  - `make install` copies it into `/Applications`, removing any older copy in `~/Applications`.
   - `make zip` produces a zip for the work Mac.
   - `make selftest` runs the self-test, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
 - **Work Mac, until the app is notarized:**
   - The app is built only on the personal MacBook, using Fayzan's own Claude membership rather than work AI.
-  - AirDrop the zip over and unzip it into `~/Applications`.
-  - Once per update, run `xattr -dr com.apple.quarantine ~/Applications/Flipbook.app`.
+  - AirDrop the zip over and unzip it into `/Applications`.
+  - Once per update, run `xattr -dr com.apple.quarantine /Applications/Flipbook.app`.
 - **Later:** signed and notarized downloads plus a Homebrew tap, once Fayzan starts sharing it ([backlog](v2-backlog.md)).
 
 ## 10. Milestones
