@@ -207,11 +207,14 @@ final class FilmstripStripView: NSView, NSDraggingSource {
 final class FilmstripView: NSView {
     static let padding: CGFloat = 16
     static let headerHeight: CGFloat = 28
+    /// Room under the captions for the scroller, so it never covers them.
+    static let scrollerHeight = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
     static let height = padding * 2 + headerHeight + FilmstripStripView.frameHeight + FilmstripStripView.captionHeight
+        + scrollerHeight
     static let background = NSColor(white: 0.1, alpha: 0.96)
 
     let strip = FilmstripStripView(frame: .zero)
-    let scrollView = NSScrollView(frame: .zero)
+    let scrollView = FilmstripScrollView(frame: .zero)
     var title = "" {
         didSet { needsDisplay = true }
     }
@@ -223,8 +226,10 @@ final class FilmstripView: NSView {
         appearance = NSAppearance(named: .darkAqua)
         scrollView.hasHorizontalScroller = true
         scrollView.hasVerticalScroller = false
+        // The scroller style follows System Settings: always shown while a mouse is plugged in.
+        scrollView.autohidesScrollers = true
+        scrollView.contentView = FlippedClipView()
         scrollView.drawsBackground = false
-        scrollView.scrollerStyle = .overlay
         scrollView.documentView = strip
         addSubview(scrollView)
     }
@@ -243,7 +248,8 @@ final class FilmstripView: NSView {
         super.layout()
         scrollView.frame = CGRect(x: Self.padding, y: Self.padding + Self.headerHeight,
                                   width: bounds.width - 2 * Self.padding,
-                                  height: FilmstripStripView.frameHeight + FilmstripStripView.captionHeight)
+                                  height: FilmstripStripView.frameHeight + FilmstripStripView.captionHeight
+                                      + Self.scrollerHeight)
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -274,6 +280,27 @@ final class FilmstripView: NSView {
         cross.lineCapStyle = .round
         NSColor.white.setStroke()
         cross.stroke()
+    }
+}
+
+/// Keeps the strip at the top, with the scroller's room below it.
+final class FlippedClipView: NSClipView {
+    override var isFlipped: Bool { true }
+}
+
+/// A mouse wheel only turns up and down, and the strip only scrolls sideways, so the wheel scrolls it sideways.
+final class FilmstripScrollView: NSScrollView {
+    /// How far one notch of the wheel moves the strip.
+    static let wheelStep: CGFloat = 40
+
+    override func scrollWheel(with event: NSEvent) {
+        guard !event.hasPreciseScrollingDeltas, event.scrollingDeltaX == 0, let documentView else {
+            return super.scrollWheel(with: event)
+        }
+        let end = max(documentView.frame.width - contentView.bounds.width, 0)
+        let x = min(max(contentView.bounds.minX - event.scrollingDeltaY * Self.wheelStep, 0), end)
+        contentView.scroll(to: CGPoint(x: x, y: contentView.bounds.minY))
+        reflectScrolledClipView(contentView)
     }
 }
 
