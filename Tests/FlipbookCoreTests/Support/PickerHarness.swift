@@ -14,8 +14,8 @@ struct PickerHarness {
     private var nextTick = 0
 
     init(geometry: CaptureGeometry, config: PickerConfig = PickerConfig(),
-         context: FrameContext = FrameContext(app: "TestApp", window: "Main")) {
-        picker = FramePicker(geometry: geometry, config: config, initialContext: context)
+         context: FrameContext = FrameContext(app: "TestApp", window: "Main"), contextSource: ContextSource = .focus) {
+        picker = FramePicker(geometry: geometry, config: config, initialContext: context, contextSource: contextSource)
     }
 
     /// Ticks at k*0.05 for all k*0.05 < f.time, then ingests the frame.

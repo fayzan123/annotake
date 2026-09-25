@@ -37,6 +37,26 @@ enum Scenes {
         return RawSession(geometry: scene.geometry, initialContext: FrameContext(app: "TestApp", window: "Main"),
                           frames: frames, events: events, stopTime: 8.0)
     }
+
+    static let downloads = FrameContext(app: "Finder", window: "Downloads")
+    static let code = FrameContext(app: "Code", window: "main.swift — flipbook")
+
+    /// A window recording of Finder's Downloads window: focus moves to Code, then the window goes to
+    /// Documents, which changes its title.
+    static func windowRecording() -> RawSession {
+        var scene = SceneBuilder()
+        let frames = [
+            scene.frame(at: 0.0),
+            scene.frame(at: 1.2, set: .tiles(0..<12)),
+            scene.frame(at: 2.2, set: .tiles(12..<24)),
+        ]
+        let events = [
+            InputEvent(time: 1.0, kind: .switched(code)),
+            InputEvent(time: 2.1, kind: .titleChanged(window: "Documents")),
+        ]
+        return RawSession(geometry: scene.geometry, initialContext: downloads, contextSource: .recordedWindow,
+                          frames: frames, events: events, stopTime: 3.0)
+    }
 }
 
 /// A frame or an event of a raw session.

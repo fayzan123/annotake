@@ -349,6 +349,26 @@ struct FramePickerTests {
         #expect(kept[1].context == finder)
     }
 
+    /// Window recordings: line 2 names the recorded window, whatever has focus (spec §4.2). A switch is
+    /// still an action, but only a title change changes the context.
+    @Test func windowRecordingKeepsRecordedWindowContext() {
+        var scene = SceneBuilder()
+        var harness = PickerHarness(geometry: scene.geometry, context: Scenes.downloads, contextSource: .recordedWindow)
+        harness.frame(scene.frame(at: 0))
+        harness.event(event(1.0, .switched(Scenes.code)))
+        harness.frame(scene.frame(at: 1.2, set: .tiles(0..<12)))
+        harness.event(event(2.1, .titleChanged(window: "Documents")))
+        harness.frame(scene.frame(at: 2.2, set: .tiles(12..<24)))
+        harness.run(until: 3)
+
+        let kept = harness.picker.keptFrames
+        #expect(kept.map(\.frameIndex) == [0, 1, 2])
+        #expect(kept[0].actions == [.switched(to: Scenes.code)])
+        #expect(kept[1].reason == .switchApp)
+        #expect(kept.map(\.context) == [Scenes.downloads, Scenes.downloads,
+                                        FrameContext(app: "Finder", window: "Documents")])
+    }
+
     @Test func titleChangedUpdatesContextSilently() {
         var (scene, harness) = start()
         harness.event(event(1.0, .titleChanged(window: "New")))

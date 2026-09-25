@@ -19,6 +19,7 @@ public struct FramePicker: Sendable {
     }
 
     private let config: PickerConfig
+    private let contextSource: ContextSource
     private var tracker: ChangeTracker
     private var kept: [KeptFrame] = []
     private var latest: FrameSample?
@@ -38,8 +39,10 @@ public struct FramePicker: Sendable {
     private var candidateCount = 0
     private var stopTime: TimeInterval = 0
 
-    public init(geometry: CaptureGeometry, config: PickerConfig = PickerConfig(), initialContext: FrameContext) {
+    public init(geometry: CaptureGeometry, config: PickerConfig = PickerConfig(), initialContext: FrameContext,
+                contextSource: ContextSource = .focus) {
         self.config = config
+        self.contextSource = contextSource
         self.tracker = ChangeTracker(geometry: geometry, config: config)
         self.context = initialContext
     }
@@ -103,7 +106,7 @@ public struct FramePicker: Sendable {
             scroll = nil
             let out = attach(.switched(to: newContext))
             inputBaseline = latest
-            context = newContext
+            if contextSource == .focus { context = newContext }
             setPending(.switchApp, t)
             return out
         case .titleChanged(let window):

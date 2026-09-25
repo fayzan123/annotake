@@ -34,7 +34,8 @@ public enum SessionReplayer {
         }
         let items = (frames + events).sorted { ($0.time, $0.order) < ($1.time, $1.order) }
 
-        var live = LiveSession(geometry: session.geometry, config: config, initialContext: session.initialContext)
+        var live = LiveSession(geometry: session.geometry, config: config, initialContext: session.initialContext,
+                               contextSource: session.contextSource)
         var log: [ReplayLogEntry] = []
         func record(_ outputs: [LiveSession.Output]) {
             for output in outputs {

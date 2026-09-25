@@ -36,6 +36,14 @@ struct ReplayTests {
         #expect(harness.picker.result() == SessionReplayer.run(session).result)
     }
 
+    /// A window recording replays with its line 2 naming the recorded window.
+    @Test func windowRecordingReplaysRecordedWindowContext() {
+        let result = SessionReplayer.run(Scenes.windowRecording()).result
+        #expect(result.frames.map(\.context) == [Scenes.downloads, Scenes.downloads,
+                                                 FrameContext(app: "Finder", window: "Documents")])
+        #expect(result.summaries == ["Switched to Code — main.swift — flipbook", "Screen changed", "End"])
+    }
+
     @Test func reportListsKeepsAndPicks() {
         let session = Scenes.clickFlow()
         let report = ReplayReport.render(SessionReplayer.run(session), session: session)

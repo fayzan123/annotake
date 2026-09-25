@@ -205,7 +205,11 @@ First launch also registers Flipbook to launch at login (`SMAppService`), becaus
 Google Chrome — Dayforce · Timesheets
 ```
 
-Line 1 is step/total · time · action(s). Line 2 is app — window title.
+Line 1 is step/total · time · action(s). Line 2 is app — window title:
+- **Screen mode:** the app and window that have focus.
+- **Window mode:** the recorded window, whatever has focus: its app, and its title at that step (Checkpoint 2: a window recording of Finder, started from another app, captioned Finder's picture with `Code — main.swift — flipbook`). The title is read by window ID with `CGWindowListCopyWindowInfo` as each frame arrives.
+
+`steps.md` names the same app and window for each step. Actions don't change: `Switched to …` still names the app that got focus.
 
 ### 4.3 steps.md
 
@@ -373,7 +377,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 | Exclude own windows and notification banners | `SCContentFilter(display:excludingApplications:exceptingWindows:)`; panels are created at launch. The content comes from one `SCShareableContent` query that includes off-screen windows (on macOS 15, `com.apple.notificationcenterui` is missing from the on-screen-only list while no banner shows), with a 2 s timeout and a cache refreshed at launch and on display changes. On macOS 26, excluding the app doesn't cover its menu-bar status item: its window is found by window number or frame, and if another process owns it, that app is excluded too, with its other windows listed in `exceptingWindows` |
 | Trigger and input events | `CGEventTap` on a dedicated input thread: listen-only for flagsChanged/keys/mouse. The active (event-modifying) tap exists only while a recording is running. It strips the trigger's modifier from mouse and scroll events during hold recordings, and it consumes the Esc of Right ⌘ + Esc. |
 | Button names | `AXUIElementCopyElementAtPosition` plus role/title/description, looked up on the AX thread (0.5–100 ms; `AXUIElementSetMessagingTimeout` 0.25 s). Chrome web content and Electron apps need a flag, set only while recording: `AXEnhancedUserInterface` on Chrome (it returns −25208 but works), `AXManualAccessibility` on Electron apps. Never take a label from `AXWebArea`/`AXWindow` or above, nor from a container labeled with its window's title (Chrome's tab strip, Checkpoint 1); fall back to `Clicked at (x, y)` |
-| App and window | `NSWorkspace` notifications; AX focused-window title; an AX observer for window and title changes |
+| App and window | `NSWorkspace` notifications; AX focused-window title; an AX observer for window and title changes. In window mode, the recorded window's title by window ID (`CGWindowListCopyWindowInfo`, which Screen Recording permits) |
 | Panels that don't take focus | `NSPanel` with `.nonactivatingPanel`, `.canJoinAllSpaces`, `.fullScreenAuxiliary` |
 | Scaling and encoding | ScreenCaptureKit scales to the output size (sRGB); Core Graphics and Core Text draw strips and markers; ImageIO writes PNGs |
 | Self-test capture | `SCShareableContent.currentProcess` (macOS 14.4+) lets the app capture its own test window without Screen Recording permission |

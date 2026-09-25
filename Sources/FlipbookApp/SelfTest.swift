@@ -9,6 +9,8 @@ import Synchronization
 enum SelfTestLayout {
     static let size = CGSize(width: 800, height: 500)
     static let title = "Flipbook Self-Test"
+    /// The window's title once the dialog has closed.
+    static let savedTitle = "Flipbook Self-Test — Saved"
     static let pointerStart = CGPoint(x: 400, y: 440)
     static let openButton = CGRect(x: 40, y: 40, width: 120, height: 36)
     static let dialog = CGRect(x: 180, y: 110, width: 340, height: 240)
@@ -34,6 +36,8 @@ struct SelfTestStep: Sendable {
         case typeText(String)
         case closeDialogShowBanner
         case shiftList
+        /// Renames the window; the recording follows its title for line 2.
+        case retitle(String)
     }
 
     enum Input: Sendable {
@@ -72,8 +76,8 @@ enum SelfTest {
     /// Gives up if the capture hasn't finished this long after the script's stop.
     static let finishTimeout: TimeInterval = 20
 
-    /// Follows Core's `Scenes.clickFlow()` up to the typing, then adds a later Return, the dialog closing,
-    /// and one scroll. Both the live run and SelfTestExpectationTests read it.
+    /// Follows Core's `Scenes.clickFlow()` up to the typing, then adds a later Return, the dialog closing
+    /// as the window is renamed, and one scroll. Both the live run and SelfTestExpectationTests read it.
     static let script: [SelfTestStep] = [
         SelfTestStep(time: 0.0, change: .pointer(SelfTestLayout.pointerStart)),
         SelfTestStep(time: 0.9, change: .pointer(SelfTestLayout.openCenter)),
@@ -97,6 +101,7 @@ enum SelfTest {
         // After the typing pause has settled at about 6.0, so the two never race.
         SelfTestStep(time: 6.5, input: .submit(.keyReturn)),
         SelfTestStep(time: 6.7, change: .closeDialogShowBanner),
+        SelfTestStep(time: 6.7, change: .retitle(SelfTestLayout.savedTitle)),
         SelfTestStep(time: 7.5, input: .submit(.scroll(fractionOfViewport: 0.9))),
         SelfTestStep(time: 7.55, change: .shiftList),
         SelfTestStep(time: 9.0, input: .stop),
@@ -109,6 +114,16 @@ enum SelfTest {
         "Pressed Return",
         "Scrolled",
         "End",
+    ]
+
+    /// Each frame's line 2: the recorded window, with the title it has at that step.
+    static let expectedContexts = [
+        "Flipbook — Flipbook Self-Test",
+        "Flipbook — Flipbook Self-Test",
+        "Flipbook — Flipbook Self-Test",
+        "Flipbook — Flipbook Self-Test",
+        "Flipbook — Flipbook Self-Test — Saved",
+        "Flipbook — Flipbook Self-Test — Saved",
     ]
 
     /// The kind with its points moved through `transform`.
@@ -178,7 +193,8 @@ enum SelfTest {
                 geometry: CaptureGeometry(outputWidth: output.width, outputHeight: output.height,
                                           pixelsPerPoint: mapping.pixelsPerPoint),
                 store: CaptureStore(root: directory.appending(path: "captures")),
-                initialContext: initialContext, targetDescription: targetDescription, showsCursor: false,
+                initialContext: initialContext, recordedWindowID: window.windowID,
+                targetDescription: targetDescription, showsCursor: false,
                 cursorHotspot: { hotspot.value }, cursorScale: 1),
             filter: filter)
         let finish = FinishSignal()
@@ -242,6 +258,7 @@ enum SelfTest {
         let frames = finished.manifest.result.frames
         report.capture = finished.folder.path
         report.captions = frames.enumerated().map { Captions.summary(for: $1, number: $0 + 1, total: frames.count) }
+        report.contexts = frames.map { Captions.line2(for: $0.context) }
         report.frameIndices = frames.map(\.frameIndex)
 
         if stats.completeFrames < minimumFrames {
@@ -255,6 +272,9 @@ enum SelfTest {
         }
         if report.captions != expectedCaptions {
             report.failures.append("picked captions \(report.captions), expected \(expectedCaptions)")
+        }
+        if report.contexts != expectedContexts {
+            report.failures.append("line 2 reads \(report.contexts), expected \(expectedContexts)")
         }
         if let ready = stats.stopToReadyMilliseconds, ready > stopToReadyMillisecondsLimit {
             report.failures.append(String(format: "stop to a finished capture took %.0f ms", ready))
@@ -282,10 +302,15 @@ enum SelfTest {
 
         do {
             let session = try RawSessionIO.read(from: raw.appending(path: RecordingPipeline.sessionFolderName))
-            report.replayedFrameIndices = SessionReplayer.run(session).result.frames.map(\.frameIndex)
+            let replayed = SessionReplayer.run(session).result.frames
+            report.replayedFrameIndices = replayed.map(\.frameIndex)
             if report.replayedFrameIndices != report.frameIndices {
                 report.failures.append("replaying the raw session picked \(report.replayedFrameIndices), "
                                        + "live picked \(report.frameIndices)")
+            }
+            if replayed.map(\.context) != frames.map(\.context) {
+                report.failures.append("replaying the raw session gave line 2s "
+                                       + "\(replayed.map { Captions.line2(for: $0.context) }), live \(report.contexts)")
             }
         } catch {
             report.failures.append("the raw session doesn't read back: \(error)")
@@ -347,6 +372,8 @@ private struct SelfTestReport: Encodable {
     var outputSize = ""
     var captions: [String] = []
     var expectedCaptions = SelfTest.expectedCaptions
+    var contexts: [String] = []
+    var expectedContexts = SelfTest.expectedContexts
     var frameIndices: [Int] = []
     var replayedFrameIndices: [Int] = []
     var capture: String?
@@ -371,6 +398,7 @@ private struct SelfTestReport: Encodable {
             lines.append(String(format: "export %.0f ms; stop to a finished capture %.0f ms", export, ready))
         }
         lines.append("captions: " + captions.joined(separator: " | "))
+        lines.append("line 2: " + contexts.joined(separator: " | "))
         lines.append("frame indices: \(frameIndices), replayed: \(replayedFrameIndices)")
         if let capture { lines.append("capture: \(capture)") }
         try? Data((lines.joined(separator: "\n") + "\n").utf8)
@@ -433,6 +461,8 @@ final class SelfTestWindow {
             view.bannerVisible = true
         case .shiftList:
             view.listOffset += SelfTestLayout.listShiftRows
+        case .retitle(let title):
+            window.title = title
         }
         view.needsDisplay = true
     }

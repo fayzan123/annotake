@@ -3,6 +3,7 @@ import CoreVideo
 import FlipbookCapture
 import FlipbookCore
 import FlipbookExport
+import FlipbookInput
 import Foundation
 @preconcurrency import ScreenCaptureKit
 import Synchronization
@@ -36,6 +37,9 @@ final class RecordingPipeline: @unchecked Sendable {
         var geometry: CaptureGeometry
         var store: CaptureStore
         var initialContext: FrameContext
+        /// Window recordings: the recorded window, which line 2 names whatever has focus (spec §4.2).
+        /// Nil for screens.
+        var recordedWindowID: CGWindowID?
         /// For steps.md: "Screen: <name>" / "Window: <app> — <title>".
         var targetDescription: String
         var showsCursor: Bool
@@ -51,6 +55,7 @@ final class RecordingPipeline: @unchecked Sendable {
     /// Time zero for every stamp, in `ProcessInfo.systemUptime` seconds.
     let startUptime: TimeInterval
     private let configuration: Configuration
+    private let contextSource: ContextSource
     private let filter: SCContentFilter
     private let followsWindow: Bool
     private let queue = DispatchQueue(label: "com.fayzanmalik.flipbook.recording", qos: .userInteractive)
@@ -75,6 +80,7 @@ final class RecordingPipeline: @unchecked Sendable {
     private var signatureMillisecondsTotal = 0.0
     private var reportedCandidates = 0
     private var logWindow = LogWindow()
+    private var windowTitle: RecordedWindowTitle
 
     var onCandidateCount: (@MainActor @Sendable (Int) -> Void)?
     var onFinished: (@MainActor @Sendable (Result<FinishedCapture, Error>) -> Void)?
@@ -88,7 +94,10 @@ final class RecordingPipeline: @unchecked Sendable {
         mappingNow = Mutex(configuration.mapping)
         var config = PickerConfig()
         config.maxFrames = configuration.settings.maxFrames
-        live = LiveSession(geometry: configuration.geometry, config: config, initialContext: configuration.initialContext)
+        contextSource = configuration.recordedWindowID == nil ? .focus : .recordedWindow
+        live = LiveSession(geometry: configuration.geometry, config: config, initialContext: configuration.initialContext,
+                           contextSource: contextSource)
+        windowTitle = RecordedWindowTitle(configuration.initialContext.window)
         startUptime = ProcessInfo.processInfo.systemUptime
     }
 
@@ -112,7 +121,8 @@ final class RecordingPipeline: @unchecked Sendable {
             do {
                 rawSession = try RawSessionWriter(
                     directory: pending.rawDirectory.appending(path: Self.sessionFolderName),
-                    geometry: configuration.geometry, initialContext: configuration.initialContext)
+                    geometry: configuration.geometry, initialContext: configuration.initialContext,
+                    contextSource: contextSource)
             } catch {
                 log("raw session unavailable: \(error)")
             }
@@ -258,6 +268,11 @@ final class RecordingPipeline: @unchecked Sendable {
         logWindow.note(signature, dirtyRects: captured.dirtyRects)
 
         pixels.put(captured.pixelBuffer, frameIndex: captured.index)
+        // Read as the frame arrives, so the frame's line 2 has the title it shows.
+        if let id = configuration.recordedWindowID,
+           let change = windowTitle.change(read: WindowTitle.read(windowID: id)) {
+            handle(live.receive(InputEvent(time: now, kind: change)))
+        }
         handle(live.receive(FrameSample(index: captured.index, time: now, signature: signature,
                                         dirtyRects: captured.dirtyRects, cursor: cursor)))
         finishIfDone()
@@ -395,6 +410,29 @@ final class RecordingPipeline: @unchecked Sendable {
         return CGImage(width: CVPixelBufferGetWidth(buffer), height: height, bitsPerComponent: 8, bitsPerPixel: 32,
                        bytesPerRow: bytesPerRow, space: sRGB, bitmapInfo: info, provider: provider, decode: nil,
                        shouldInterpolate: false, intent: .defaultIntent)
+    }
+}
+
+/// The recorded window's title in a window recording, whose line 2 names that window whatever has focus
+/// (spec §4.2). The pipeline reads it by window ID as each frame arrives; a new title reaches the picker
+/// as a `titleChanged` just before that frame. Titles never go in the log.
+struct RecordedWindowTitle {
+    private var current: String?
+
+    /// `initial`: the normalized title the recording starts with.
+    init(_ initial: String?) {
+        current = initial
+    }
+
+    /// A `titleChanged` for a title just read, or nil when it's the same. A nil read means the window is
+    /// gone, which keeps the last title.
+    mutating func change(read: String?) -> InputEventKind? {
+        guard let read else { return nil }
+        let normalized = LabelResolver.normalize(read)
+        let title = normalized.isEmpty ? nil : normalized
+        guard title != current else { return nil }
+        current = title
+        return .titleChanged(window: title)
     }
 }
 

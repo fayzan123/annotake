@@ -63,8 +63,10 @@ public struct LiveSession: Sendable {
     /// The last tick or item processed; -infinity before any.
     public private(set) var logicalTime = -TimeInterval.infinity
 
-    public init(geometry: CaptureGeometry, config: PickerConfig = PickerConfig(), initialContext: FrameContext) {
-        picker = FramePicker(geometry: geometry, config: config, initialContext: initialContext)
+    public init(geometry: CaptureGeometry, config: PickerConfig = PickerConfig(), initialContext: FrameContext,
+                contextSource: ContextSource = .focus) {
+        picker = FramePicker(geometry: geometry, config: config, initialContext: initialContext,
+                             contextSource: contextSource)
     }
 
     public var isFinished: Bool { picker.isFinished }
