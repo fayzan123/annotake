@@ -238,7 +238,7 @@ final class RecordingPipeline: @unchecked Sendable {
         let now = elapsed()
         handle(live.advance(to: now))
         if now - logWindow.start >= Self.logInterval {
-            logWindow.flush(at: now, idleFrames: stream.idleFrames)
+            log(logWindow.flush(at: now, idleFrames: stream.idleFrames))
         }
         finishIfDone()
     }
@@ -349,7 +349,7 @@ final class RecordingPipeline: @unchecked Sendable {
         }
         pixels = PixelStore()
         currentStats.idleFrames = stream.idleFrames
-        logWindow.flush(at: elapsed(), idleFrames: stream.idleFrames)
+        log(logWindow.flush(at: elapsed(), idleFrames: stream.idleFrames))
         log("picker finished: \(result.frames.count) frames from \(result.candidateCount) candidates, "
             + "\(currentStats.completeFrames) complete and \(currentStats.idleFrames) idle stream frames")
         guard let pending else { return }
@@ -437,19 +437,24 @@ struct RecordedWindowTitle {
 }
 
 /// Once a second while recording, the log gets one line of stream activity: complete and idle frames,
-/// dirty area, and how many frames really changed. Dirty area with no changed frames shows regions that
-/// are reported dirty but look the same, like M0's bottom-center region on macOS 26.
-private struct LogWindow {
+/// dirty area and the box around it, and how many frames really changed. Dirty area with no changed
+/// frames shows regions that are reported dirty but look the same, like M0's bottom-center region on
+/// macOS 26, and the box says where they are (Checkpoint 2). Boxes are in capture pixels, top-left origin.
+struct LogWindow {
     private(set) var start: TimeInterval = 0
     private var complete = 0
     private var dirtyArea = 0
+    private var dirtyBox: PixelRect?
     private var changed = 0
     private var idleAtStart = 0
     private var previous: FrameSignature?
 
     mutating func note(_ signature: FrameSignature, dirtyRects: [PixelRect]) {
         complete += 1
-        dirtyArea += dirtyRects.reduce(0) { $0 + $1.width * $1.height }
+        for rect in dirtyRects where !rect.isEmpty {
+            dirtyArea += rect.width * rect.height
+            dirtyBox = dirtyBox.map { Self.union($0, rect) } ?? rect
+        }
         if let previous, previous.tileCount == signature.tileCount,
            (0..<signature.tileCount).contains(where: {
                signature.differs(from: previous, tile: $0, threshold: PickerConfig().tileChangeThreshold)
@@ -459,14 +464,27 @@ private struct LogWindow {
         previous = signature
     }
 
-    mutating func flush(at now: TimeInterval, idleFrames: Int) {
-        log(String(format: "stream %.0f–%.0f s: %d complete, %d idle, dirty %d px, %d changed",
-                   start, now, complete, idleFrames - idleAtStart, dirtyArea, changed))
+    /// The line for the window so far; the next window starts at `now`.
+    mutating func flush(at now: TimeInterval, idleFrames: Int) -> String {
+        var line = String(format: "stream %.0f–%.0f s: %d complete, %d idle, dirty %d px",
+                          start, now, complete, idleFrames - idleAtStart, dirtyArea)
+        if let box = dirtyBox {
+            line += " in \(box.width)×\(box.height) at (\(box.x), \(box.y))"
+        }
+        line += ", \(changed) changed"
         start = now
         complete = 0
         dirtyArea = 0
+        dirtyBox = nil
         changed = 0
         idleAtStart = idleFrames
+        return line
+    }
+
+    private static func union(_ a: PixelRect, _ b: PixelRect) -> PixelRect {
+        let minX = min(a.x, b.x), minY = min(a.y, b.y)
+        return PixelRect(x: minX, y: minY, width: max(a.x + a.width, b.x + b.width) - minX,
+                         height: max(a.y + a.height, b.y + b.height) - minY)
     }
 }
 
