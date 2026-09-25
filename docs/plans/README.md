@@ -24,7 +24,8 @@ Rules for every session:
 3. **Session 3: the M2–M4 plan. Done 2026-09-24.** The design is [2026-09-24-m2-m4-design.md](2026-09-24-m2-m4-design.md) and the plan is [2026-09-24-m2-m4-app.md](2026-09-24-m2-m4-app.md); `docs/spec.md` has the changes the design made.
 4. **Session 4: M2 + M3, the recording loop. Done 2026-09-24.** Recording end to end: capture, input, `LiveSession`, export with caption strips and markers, the pill, card, filmstrip, and Recent Captures, plus `make selftest` and `make ui-snapshots`. Checkpoint 1 passed apart from one label bug; the results are in [../checkpoints.md](../checkpoints.md).
 5. **Session 5: M4, the rest of the app. Done 2026-09-24,** run straight after Checkpoint 1 in the same session. The label fix, Settings with the Meet-style picker, the first-launch checklist and launch at login, the full menu with live settings, the retention schedule, and `spikes/` deleted. What both sessions found for later plans is under Session 5 below.
-6. **Next: Checkpoint 2 on both Macs** (the list is in the plan's Task 27), then a short fix session if needed, then M5 (a week of real use; no plan).
+6. **Checkpoint 2 on both Macs. Done 2026-09-25.** Everything passed; the results are in [../checkpoints.md](../checkpoints.md). Fixed during it: Restore Defaults on each settings tab, and `make replay` with capture paths (they have spaces).
+7. **Next: a short fix session** for Checkpoint 2's three minor findings: caption line 2 in window mode, one log line per slider step, and the personal Mac's constant 10 fps dirty frames (log the dirty region's bounding box first). Then M5 (a week of real use; no plan).
 
 ## Session 1: M0 spikes (done)
 

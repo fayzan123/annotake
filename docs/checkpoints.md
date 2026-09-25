@@ -22,7 +22,7 @@ Personal Mac, macOS 15.7. Items follow the plan's Task 20 list. Fayzan's summary
 
 ## Checkpoint 2 (2026-09-24)
 
-Items follow the plan's Task 27 list. Results so far:
+Items follow the plan's Task 27 list. **Everything passed.** Fixed during the checkpoint: Restore Defaults on each settings tab, and `make replay` with capture paths. Left for the next session: the three minor findings (window-mode caption line 2, slider log lines, and the personal Mac's constant 10 fps dirty frames).
 
 0. **Personal Mac setup: done.** Flipbook quit, `tccutil reset All com.fayzanmalik.flipbook`, `make install`, then opened. An earlier run of the Session 5 build had already completed the checklist, so `firstLaunch.v1` and `loginItem.initialized` were also deleted from Flipbook's defaults; without that, the checklist wouldn't have shown. Settings were kept.
 1. **First launch: pass.** The checklist appeared. Each button prompted first and opened System Settings after that. Quit & Reopen brought the checklist back where it was. Double-tapping Right ⌘ closed it and gave a card, and Flipbook is in Login Items. The log: the first launch had all three permissions off and logged `launch at login on`; after the reopens, all three were on; the first capture was ready 1.07 s after stop.
@@ -47,6 +47,7 @@ Items follow the plan's Task 27 list. Results so far:
    - **Menu-bar icon in frames: pass.** macOS 26 gives the icon's window to Control Center (the log's `ownedBy(bundleID: "com.apple.controlcenter")`). Flipbook excluded Control Center along with itself and Notification Center, kept Control Center's 24 other windows as exceptions, and the icon is not in the frames.
    - **Bottom-center dirty region: M0's 10 fps region doesn't recur on the work Mac.** A 10 s hands-off recording was idle most of the time (26 complete, 81 idle): about one complete frame a second, about 295,000 px dirty, 0 changed. That matches the pill's once-a-second clock: the pill is excluded, but macOS still reports its redraw. Negligible cost, and the capture was right (1 frame kept).
      - **The personal Mac (macOS 15.7) is the odd one out:** the same test there got 10 complete frames a second, each with about 60,000 px dirty and 0 changed (107 frames, about 5% of a core). That's something on that Mac's screen, not macOS 26; the source is unknown because the log has totals only. Next: log the dirty region's bounding box in that line.
-   - Drags: **Cursor and Terminal: pass, every frame arrived** on the work Mac. That answers Checkpoint 1's open question for Terminal.app: all frames (unlike VS Code's integrated terminal, which keeps only the first). iTerm and Jira: pending.
+   - Drags: **Cursor, Terminal, Slack, and Jira: pass.** Terminal got every frame, which answers Checkpoint 1's open question for Terminal.app (VS Code's integrated terminal keeps only the first). iTerm: not tested.
    - **Self-test: pass** on the work Mac (macOS 26).
-   - Chrome labels, Slack:
+   - **Chrome labels: pass,** including the Session 5 fix: a click on empty tab-strip space reads `Clicked at (x, y)`, not the window title.
+   - **Slack labels: pass.**
