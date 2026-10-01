@@ -101,3 +101,30 @@ test('blocked storage (a throwing getter or setItem) causes no error, and the th
     assert.equal(page.root.dataset.theme, 'light', `${storage}: and the choice holds for the visit`);
   }
 });
+
+test('isMacDesktop: a Mac browser, but not an iPhone, an iPad, even one asking for the desktop site, or a PC', async () => {
+  const { UA } = await import('../expected.js');
+  const { isMacDesktop } = boot().window.annotakeBoot;
+  for (const [userAgent, maxTouchPoints, expected, name] of [
+    [UA.macSafari, 0, true, 'Mac Safari 18'],
+    [UA.macChrome, 0, true, 'Mac Chrome'],
+    [UA.macFirefox, 0, true, 'Mac Firefox'],
+    [UA.iPhone, 5, false, 'iPhone Safari'],
+    [UA.iPad, 5, false, 'iPad'],
+    [UA.macSafari, 5, false, 'iPad in desktop mode'],
+    [UA.android, 5, false, 'Android Chrome'],
+    [UA.windowsEdge, 0, false, 'Windows Edge'],
+    [UA.linuxFirefox, 0, false, 'Linux Firefox'],
+    ['', 0, false, 'no user agent'],
+  ]) {
+    assert.equal(isMacDesktop(userAgent, maxTouchPoints), expected, name);
+  }
+});
+
+test('data-device is set at load: mac, or other', async () => {
+  const { UA } = await import('../expected.js');
+  assert.equal(boot({ userAgent: UA.macChrome, maxTouchPoints: 0 }).root.dataset.device, 'mac');
+  assert.equal(boot({ userAgent: UA.macSafari, maxTouchPoints: 5 }).root.dataset.device, 'other');
+  assert.equal(boot({ userAgent: UA.iPhone, maxTouchPoints: 5 }).root.dataset.device, 'other');
+  assert.equal(boot({ userAgent: UA.windowsEdge, maxTouchPoints: 0 }).root.dataset.device, 'other');
+});

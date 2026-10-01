@@ -157,9 +157,15 @@ svg { flex: none; }
   border: 0;
 }
 
-/* ---------- Buttons ---------- */
+/* ---------- Mac or not: boot.js sets data-device before the first paint. Without scripts, both show. ---------- */
 
-.btn {
+[data-device="mac"] .other-only,
+[data-device="other"] .mac-only { display: none !important; }
+
+/* ---------- Buttons. On anything but a Mac, the "Email me the link" summary is the main button. ---------- */
+
+.btn,
+[data-device="other"] .getlink > summary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -176,10 +182,13 @@ svg { flex: none; }
   cursor: pointer;
   transition: background-color .3s, color .3s, opacity .15s;
 }
-.btn:hover { opacity: .88; }
+.btn:hover,
+[data-device="other"] .getlink > summary:hover { opacity: .88; }
 .btn svg { width: 15px; height: 15px; }
-.btn-lg { height: 56px; padding: 0 28px; font-size: 18px; }
-.btn-lg svg { width: 18px; height: 18px; }
+.btn-lg,
+[data-device="other"] .getlink > summary { height: 56px; padding: 0 28px; font-size: 18px; }
+.btn-lg svg,
+.getlink > summary svg { width: 18px; height: 18px; }
 
 /* ---------- Header ---------- */
 
@@ -218,6 +227,17 @@ svg { flex: none; }
 
 /* ---------- Hero ---------- */
 
+/* In dark, a soft glow behind the header and the hero. */
+body { position: relative; }
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 900px;
+  pointer-events: none;
+  background: radial-gradient(900px 520px at 50% 12%, var(--glow), transparent 70%);
+}
+
 .hero { position: relative; z-index: 1; padding: 64px 24px 0; text-align: center; }
 .hero h1 {
   font-weight: 600;
@@ -226,6 +246,37 @@ svg { flex: none; }
   letter-spacing: -0.035em;
 }
 .hero h1 span { display: block; color: var(--head-2); }
+.hero .sub {
+  max-width: 760px;
+  margin: 22px auto 30px;
+  font-size: clamp(17px, 1.45vw, 20px);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* The call to action, in the hero and the final call. */
+.cta { max-width: 420px; margin: 0 auto; }
+.note { margin-top: 13px; font-size: 14px; line-height: 1.5; color: var(--ink-3); }
+.note > span { display: block; }
+.note a { color: var(--ink-2); text-underline-offset: 3px; text-decoration-color: var(--line-2); }
+.note a:hover { color: var(--ink); text-decoration-color: currentColor; }
+.dl-hint { margin-top: 14px; font-size: 15px; color: var(--ink-2); }
+
+.getlink > summary { list-style: none; cursor: pointer; }
+.getlink > summary::-webkit-details-marker { display: none; }
+/* Without scripts, under the download: a secondary link. */
+:root:not([data-device]) .getlink { margin-top: 18px; }
+:root:not([data-device]) .getlink > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--line-2);
+  text-underline-offset: 3px;
+}
+:root:not([data-device]) .getlink > summary svg { width: 16px; height: 16px; }
+.getlink[open] + .link-note { display: none; }
 
 /* ---------- Footer ---------- */
 
@@ -258,5 +309,13 @@ svg { flex: none; }
 @media (max-width: 600px) {
   .site-header { padding: 16px 20px; }
   .logo { height: 32px; }
+  .hero { padding: 34px 20px 0; }
+  .hero .sub { margin: 16px auto 24px; font-size: 16.5px; }
+  .sub-more { display: none; }
   .site-footer { padding: 0 20px 28px; }
+}
+
+/* The hero's button is right below, so a narrow header keeps just the logo and the toggle. */
+@media (max-width: 480px) {
+  .site-header .btn { display: none; }
 }
