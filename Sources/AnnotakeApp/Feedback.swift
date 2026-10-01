@@ -136,9 +136,9 @@ extension Feedback {
     static func hardwareModel() -> String {
         var size = 0
         guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 0 else { return "unknown Mac" }
-        var bytes = [CChar](repeating: 0, count: size)
+        var bytes = [UInt8](repeating: 0, count: size)
         guard sysctlbyname("hw.model", &bytes, &size, nil, 0) == 0 else { return "unknown Mac" }
-        return String(cString: bytes)
+        return String(decoding: bytes.prefix { $0 != 0 }, as: UTF8.self)
     }
 
     /// Writes the report to a temporary file, then opens a draft with it: Mail's compose window when it can
