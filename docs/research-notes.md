@@ -1,4 +1,4 @@
-# Flipbook: research notes (2026-09-23)
+# Annotake: research notes (2026-09-23)
 
 These are the facts behind [spec.md](spec.md) and [v2-backlog.md](v2-backlog.md), gathered in three web-research passes on 2026-09-23. **(V)** means the claim was seen in the cited source; **(I)** means it's an inference. Recheck anything version-sensitive before relying on it.
 

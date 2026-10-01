@@ -1,4 +1,4 @@
-# Flipbook: v2 backlog
+# Annotake: v2 backlog
 
 This file lists everything deliberately left out of v1, together with the design notes and research gathered so far, so nobody has to redo the thinking. See [spec.md](spec.md) for v1 and [research-notes.md](research-notes.md) for sources.
 
@@ -75,7 +75,7 @@ This file lists everything deliberately left out of v1, together with the design
 
 **Status:** later, as an opt-in (decided 2026-09-23).
 
-**Use case:** bugs that already happened. Flipbook captures continuously and keeps a rolling buffer of candidate frames. The frame picker runs all the time instead of buffering video.
+**Use case:** bugs that already happened. Annotake captures continuously and keeps a rolling buffer of candidate frames. The frame picker runs all the time instead of buffering video.
 
 **Costs:**
 - Always-on capture keeps macOS's purple recording indicator lit.
@@ -112,7 +112,7 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 - Per Apple TN2450 this needs no sudo, but the mapping is lost on reboot.
   - Re-apply it at launch, when a keyboard connects, and on wake.
   - Merge it with any existing mappings, and restore the originals on quit.
-  - A crash leaves Caps Lock sending F18 until Flipbook relaunches or the Mac reboots.
+  - A crash leaves Caps Lock sending F18 until Annotake relaunches or the Mac reboots.
 - Catch F18 with a Carbon `RegisterEventHotKey`. It reports both press and release, swallows the key, needs no Accessibility permission, and still works under Secure Input.
 - If Karabiner is running, let Karabiner handle the Caps Lock remap instead.
 - It was rejected as the default because people who use Caps Lock would lose it. It's fine as an option.
@@ -121,7 +121,7 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 ## Windows version
 
-- **Build it as a sibling app.** It must pass the same FlipbookCore golden tests, or a port of them, and write an identical output format.
+- **Build it as a sibling app.** It must pass the same AnnotakeCore golden tests, or a port of them, and write an identical output format.
 - **Capture:**
   - Windows.Graphics.Capture, with per-frame `DirtyRegions` (Windows 11 24H2, SDK 10.0.26100).
   - Or DXGI Desktop Duplication, which gives dirty and move rects but may over-report.
@@ -161,7 +161,7 @@ Dropping the card into VS Code's integrated terminal inserted only the first fil
 
 - **Accessibility flags for other Chromium browsers.** v1 sets `AXEnhancedUserInterface` only on Chrome, the one browser M0 tested. Edge, Brave, and Arc are Chromium too and probably need the same flag; test each before adding it.
 - **Drag actions.** A mouse drag is logged as a click at its start point. A `Dragged <label> to <label>` action would need a new Core action kind and a label lookup at the drop point.
-- **A display-capture exclusion check in the self-test.** The self-test records only Flipbook's own window, so it can't prove the pill, cards, or menu-bar icon stay out of real frames. A version that counts pixels of a known color in a display capture (Screen Recording permission required) could check exclusion unattended. The checkpoints look at real frames in the meantime.
+- **A display-capture exclusion check in the self-test.** The self-test records only Annotake's own window, so it can't prove the pill, cards, or menu-bar icon stay out of real frames. A version that counts pixels of a known color in a display capture (Screen Recording permission required) could check exclusion unattended. The checkpoints look at real frames in the meantime.
 
 ## Considered and not planned
 
@@ -171,4 +171,4 @@ Dropping the card into VS Code's integrated terminal inserted only the first fil
   - Revisit if an agent needs the text log separately.
 - **Contact sheet** (a grid of frames in one image): worse for UI text at the same token cost.
 - **Machine-readable capture.json:** v1 writes only `steps.md`. Add it if tools need it.
-- **Agent-specific integrations** (an MCP server, auto-paste into the last-used assistant): Flipbook stays agent-agnostic by design.
+- **Agent-specific integrations** (an MCP server, auto-paste into the last-used assistant): Annotake stays agent-agnostic by design.

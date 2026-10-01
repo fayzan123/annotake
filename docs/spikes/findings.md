@@ -1,5 +1,7 @@
 # M0 spike findings
 
+> Written when the app was called Flipbook; it's Annotake since 2026-09-30 ([distribution design §3](../plans/2026-09-30-distribution-design.md#3-the-name-annotake)).
+
 Results for [the M0 plan](../plans/2026-09-23-m0-spikes.md). Every observation goes here, failures included.
 
 ## Toolchain

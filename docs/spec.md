@@ -1,8 +1,8 @@
-# Flipbook: v1 spec
+# Annotake: v1 spec
 
 **Status:** approved design, 2026-09-23; updated with M0 findings and the M2–M4 design 2026-09-24, and with the distribution design 2026-09-30 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
 
-**Name:** Flipbook is being renamed **Annotake** ([distribution design §3](plans/2026-09-30-distribution-design.md#3-the-name-annotake)). This spec says Flipbook until Stage 1's rename lands.
+**Name:** Annotake, called Flipbook until 2026-09-30 ([distribution design §3](plans/2026-09-30-distribution-design.md#3-the-name-annotake))
 
 Companion docs:
 - [v2-backlog.md](v2-backlog.md): everything deliberately left out of v1, with the design notes gathered so far.
@@ -13,9 +13,9 @@ Companion docs:
 
 ## 1. Summary
 
-Flipbook is a macOS menu-bar app. Hold Right ⌘ (or double-tap it) to record what you do on screen. When you stop, Flipbook keeps only the frames where the screen meaningfully changed, one per step. It captions each frame with what you did (e.g. `Clicked button "Save"`) and shows a floating card that you drag into any AI chat or agent: Cursor, Claude Code, ChatGPT, and so on.
+Annotake is a macOS menu-bar app. Hold Right ⌘ (or double-tap it) to record what you do on screen. When you stop, Annotake keeps only the frames where the screen meaningfully changed, one per step. It captions each frame with what you did (e.g. `Clicked button "Save"`) and shows a floating card that you drag into any AI chat or agent: Cursor, Claude Code, ChatGPT, and so on.
 
-It exists because reproducing a Jira bug for a coding agent meant screenshotting every click by hand. Flipbook turns that into three steps: press a key, reproduce the bug, drag the card.
+It exists because reproducing a Jira bug for a coding agent meant screenshotting every click by hand. Annotake turns that into three steps: press a key, reproduce the bug, drag the card.
 
 ## 2. Principles and constraints
 
@@ -41,15 +41,15 @@ The default trigger is **Right ⌘**. Settings also offers Right ⌥ and fn/Glob
 | Double-tap again while hands-free | Stop → card. |
 | Right ⌘ + Esc while recording | Cancel. Nothing is saved. |
 | Single tap | Nothing. Reserved for the v2 ring. |
-| Another key or mouse button pressed while Right ⌘ is down, before 250 ms | It was a shortcut (⌘C, ⌘-click). Flipbook ignores it and the shortcut works normally. |
+| Another key or mouse button pressed while Right ⌘ is down, before 250 ms | It was a shortcut (⌘C, ⌘-click). Annotake ignores it and the shortcut works normally. |
 
 Rules:
 - A **tap** is a press and release within 250 ms, with no other key or mouse button in between.
-- **Plain Esc always passes through** to the app being recorded, because closing a dialog can be part of the bug. The Esc in Right ⌘ + Esc is consumed by Flipbook and never reaches the app.
+- **Plain Esc always passes through** to the app being recorded, because closing a dialog can be part of the bug. The Esc in Right ⌘ + Esc is consumed by Annotake and never reaches the app.
 - **While recording in either mode:**
   - Right ⌘ shortcuts such as Right ⌘+S pass through normally and don't stop the recording (in hold mode, from the reveal on).
   - Single taps are ignored.
-- **Click cleanup (hold mode only).** The key is held while you click, so during a hold recording Flipbook removes the trigger's modifier (⌘, or ⌥ when Right ⌥ is the trigger) from mouse and scroll events. Clicks stay plain clicks.
+- **Click cleanup (hold mode only).** The key is held while you click, so during a hold recording Annotake removes the trigger's modifier (⌘, or ⌥ when Right ⌥ is the trigger) from mouse and scroll events. Clicks stay plain clicks.
   - In hands-free mode nothing is changed, so a deliberate ⌘-click still works.
 - **Why the reveal:** M0 measured Fayzan's natural Right ⌘ shortcuts at 270–670 ms from ⌘ down to the letter, so 250 ms alone mistook 8 of 10 shortcuts for holds. Clicks are still classified at 250 ms, so a hold-and-click at 300 ms is a plain click (cleaned up), not a ⌘-click.
 - The hold threshold (250 ms), the hold reveal (800 ms) and the double-tap window (300 ms) are adjustable in Settings → Advanced.
@@ -66,7 +66,7 @@ Rules:
 - **Accidental recordings are discarded silently:**
   - a hold released before the reveal: if the pill never appeared, nothing was recorded;
   - a hands-free recording shorter than **0.5 s**.
-- **Never in the frames:** Flipbook's own windows (pill, cards, filmstrip, Settings), its menu-bar icon, and **notification banners**. On macOS 26 the menu-bar icon needs an explicit window exclusion (§6.2).
+- **Never in the frames:** Annotake's own windows (pill, cards, filmstrip, Settings), its menu-bar icon, and **notification banners**. On macOS 26 the menu-bar icon needs an explicit window exclusion (§6.2).
 - **Cursor.** The cursor is visible in frames because it explains hover states, but its movement is ignored when deciding what changed (§5.2).
 
 ### 3.3 What gets recorded
@@ -75,7 +75,7 @@ Rules:
 - **Settings → Record** uses a Google Meet-style picker:
   - **Entire screen:** "Screen with the cursor" (the default) or a specific screen, chosen from thumbnails.
   - **Window:** a thumbnail grid of open windows. Window capture follows the window across screens.
-- **Fallback.** If the chosen window no longer exists, or the chosen screen is disconnected, Flipbook records the cursor's screen and the pill says so: "Window not found — recording your screen".
+- **Fallback.** If the chosen window no longer exists, or the chosen screen is disconnected, Annotake records the cursor's screen and the pill says so: "Window not found — recording your screen".
   - Windows are matched by ID only, never guessed by title.
 
 ### 3.4 The card and filmstrip
@@ -125,7 +125,7 @@ Rules:
 | | Frame size (long edge): 1920 px, or 1568 px compact | 1920 px |
 | | Caption strip | On |
 | | Click markers | On |
-| | Save location | `~/Pictures/Flipbook` |
+| | Save location | `~/Pictures/Annotake` |
 | | Keep captures: 7 days / 30 days / forever | 30 days |
 | Permissions | Status of each permission, with "Open System Settings" | — |
 | Advanced | Hold threshold (150–500 ms) | 250 ms |
@@ -133,7 +133,7 @@ Rules:
 | | Double-tap window (200–500 ms) | 300 ms |
 | | Save raw sessions (for tuning, §8) | Off |
 
-A change applies to the next recording and never interrupts one in progress. A new trigger key or new gesture timings take effect as soon as Flipbook is idle.
+A change applies to the next recording and never interrupts one in progress. A new trigger key or new gesture timings take effect as soon as Annotake is idle.
 
 Each tab with settings (all but Permissions) has a **Restore Defaults** button at its bottom right (Checkpoint 2: a slider is hard to put back exactly). It resets only that tab's settings, and is greyed out while they're already the defaults.
 
@@ -160,10 +160,10 @@ Confirmed by M0:
 - **Screen Recording** is requested by the first `SCShareableContent` call, which fails with error −3801 until it is granted.
 - Input Monitoring and Screen Recording take effect only after a relaunch. Once either button has been pressed, the window offers "Quit & Reopen", and it reopens where you left off. Accessibility applies without one.
 
-Your first recording closes the window. You can also close it at any time: Flipbook works with only 1 and 2, in a degraded mode (§7).
+Your first recording closes the window. You can also close it at any time: Annotake works with only 1 and 2, in a degraded mode (§7).
 
-First launch also registers Flipbook to launch at login (`SMAppService`), because the key has to work right after a restart.
-- It registers only when Flipbook runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Flipbook there.
+First launch also registers Annotake to launch at login (`SMAppService`), because the key has to work right after a restart.
+- It registers only when Annotake runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Annotake there.
 - It can be turned off in Settings → General.
 
 ## 4. Output
@@ -171,25 +171,25 @@ First launch also registers Flipbook to launch at login (`SMAppService`), becaus
 ### 4.1 Folder layout
 
 ```
-~/Pictures/Flipbook/
+~/Pictures/Annotake/
   2026-09-23 at 14.05.12/
     01_0m00s.png
     02_0m03s.png
     …
     steps.md
-    .flipbook          # marker file holding the capture's date: cleanup only ever touches folders that have it
+    .annotake          # marker file holding the capture's date: cleanup only ever touches folders that have it
     .raw/              # used to re-render after trims; internal, not a public format
       capture.json     # name, target, date, render options, picked frames and their actions, removals
       frame-000017.png # unrendered picked frames, named by frame index
       removed/         # frames removed in the filmstrip
       session/         # raw session, only with Advanced → Save raw sessions (§8)
-  .flipbook-tmp/       # captures being written
+  .annotake-tmp/       # captures being written
 ```
 
-- Captures are written to a temp folder inside the save location (`.flipbook-tmp/`) and moved into place once complete, which is a rename on the same volume. A crash never leaves a half-finished capture, and leftovers are removed at the next launch.
+- Captures are written to a temp folder inside the save location (`.annotake-tmp/`) and moved into place once complete, which is a rename on the same volume. A crash never leaves a half-finished capture, and leftovers are removed at the next launch.
 - A capture whose folder name is already taken gets " (2)", " (3)", and so on.
 - `.raw/capture.json` exists so the filmstrip and Recent Captures work after a relaunch. It is not the machine-readable capture file the backlog defers.
-- **Cleanup** runs at launch and every 24 h. It moves capture folders older than the retention period to the Trash, but only if they contain `.flipbook`, and it reads the date from that marker.
+- **Cleanup** runs at launch and every 24 h. It moves capture folders older than the retention period to the Trash, but only if they contain `.annotake`, and it reads the date from that marker.
 
 ### 4.2 Frames
 
@@ -210,14 +210,14 @@ Google Chrome — Dayforce · Timesheets
 
 Line 1 is step/total · time · action(s). Line 2 is app — window title:
 - **Screen mode:** the app and window that have focus.
-- **Window mode:** the recorded window, whatever has focus: its app, and its title at that step (Checkpoint 2: a window recording of Finder, started from another app, captioned Finder's picture with `Code — main.swift — flipbook`). The title is read by window ID with `CGWindowListCopyWindowInfo` as each frame arrives.
+- **Window mode:** the recorded window, whatever has focus: its app, and its title at that step (Checkpoint 2: a window recording of Finder, started from another app, captioned Finder's picture with the focused editor's window, `Code — main.swift — …`). The title is read by window ID with `CGWindowListCopyWindowInfo` as each frame arrives.
 
 `steps.md` names the same app and window for each step. Actions don't change: `Switched to …` still names the app that got focus.
 
 ### 4.3 steps.md
 
 ```
-# Flipbook capture — 2026-09-23 at 14.05.12
+# Annotake capture — 2026-09-23 at 14.05.12
 Screen: Built-in Retina Display · 0:21 · 8 frames (from 12 candidates)
 
 1. 0:00 · Google Chrome — Dayforce · Timesheets · Start
@@ -249,7 +249,7 @@ Not logged as actions:
 
 Never recorded:
 - typed text,
-- anything in password fields. Secure text fields (`AXSecureTextField`) are never read. Flipbook does not rely on macOS to hide typing there: in M0, keystrokes in a Safari password field still reached the event tap with Secure Input off. Only the key *kind* is ever used.
+- anything in password fields. Secure text fields (`AXSecureTextField`) are never read. Annotake does not rely on macOS to hide typing there: in M0, keystrokes in a Safari password field still reached the event tap with Secure Input off. Only the key *kind* is ever used.
 - audio.
 
 ## 5. Frame picking
@@ -289,7 +289,7 @@ Every number here is a starting point. Numbers are tuned against recorded sessio
 - **Scrolling.** Each time scrolling has moved ≥ 80% of a screen since the last kept frame, the latest frame is kept immediately, without waiting to settle.
 - **Start and stop.**
   - The first frame is always kept.
-  - At stop, Flipbook waits up to 1 s for the screen to settle, then keeps the final state if it differs from the last kept frame.
+  - At stop, Annotake waits up to 1 s for the screen to settle, then keeps the final state if it differs from the last kept frame.
 
 ### 5.4 Each frame is "the screen, plus what I did on it"
 
@@ -303,7 +303,7 @@ Non-click actions attach the same way: typing, Return, shortcuts, switches, and 
 
 ### 5.5 Fitting the cap
 
-When more than N frames were kept (N = 20 by default), Flipbook repeatedly removes the frame whose removal loses the least. This is a greedy method in the style of Visvalingam–Whyatt line simplification:
+When more than N frames were kept (N = 20 by default), Annotake repeatedly removes the frame whose removal loses the least. This is a greedy method in the style of Visvalingam–Whyatt line simplification:
 
 ```
 cost(k) = D(prev,k) + D(k,next) − D(prev,next)   # what k adds over its neighbors
@@ -318,26 +318,26 @@ First and last frames are pinned. Remove the lowest-cost frame, update its neigh
 ## 6. Architecture
 
 - **Toolchain:** native Swift (Swift 6.2), built with SwiftPM and a Makefile. There is no Xcode project.
-- **App identity:** bundle id `com.fayzanmalik.flipbook`, `LSUIElement` (menu-bar only), minimum macOS 15.0.
+- **App identity:** bundle id `com.fayzanmalik.annotake`, `LSUIElement` (menu-bar only), minimum macOS 15.0.
 
 ```
 Sources/
-  FlipbookCore/     Foundation only, no macOS frameworks:
+  AnnotakeCore/     Foundation only, no macOS frameworks:
                     frame picker (§5), LiveSession (the ordered feed, §6.1), gesture recognizer (§3.1),
                     cap fitting (§5.5), caption and steps.md text, raw sessions and replay
-  FlipbookCapture/  ScreenCaptureKit: target resolution, exclusions, stream, output size,
+  AnnotakeCapture/  ScreenCaptureKit: target resolution, exclusions, stream, output size,
                     frame → tile signatures, point mapping
-  FlipbookInput/    event taps: trigger key and click cleanup; clicks/keys/scrolls;
+  AnnotakeInput/    event taps: trigger key and click cleanup; clicks/keys/scrolls;
                     Accessibility labels and flags; active app/window tracking
-  FlipbookExport/   caption strips, click markers, PNGs + steps.md, capture folders,
+  AnnotakeExport/   caption strips, click markers, PNGs + steps.md, capture folders,
                     filmstrip trims, retention cleanup
-  FlipbookApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
+  AnnotakeApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
                     card, filmstrip, Settings, first launch, self-test (§8)
-  Flipbook/         the executable: main.swift only
-  flipbook-replay/  CLI: runs a saved raw session through FlipbookCore and prints its decisions
+  Annotake/         the executable: main.swift only
+  annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
 Tests/
-  FlipbookCoreTests/     unit and golden tests; Fixtures/ holds raw sessions (never work data, see §8)
-  FlipbookCaptureTests/, FlipbookInputTests/, FlipbookExportTests/, FlipbookAppTests/
+  AnnotakeCoreTests/     unit and golden tests; Fixtures/ holds raw sessions (never work data, see §8)
+  AnnotakeCaptureTests/, AnnotakeInputTests/, AnnotakeExportTests/, AnnotakeAppTests/
 ```
 
 The app is a library plus a one-file executable so its tests can import it the normal way.
@@ -394,7 +394,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 | Input Monitoring missing | The key doesn't work, but the menu bar Start/Stop still does. Settings shows the fix. Detected with `CGPreflightListenEventAccess()`, not by tap creation. |
 | Accessibility missing | Still records. Hold-mode clicks keep the trigger's modifier (⌘), and captions say `Clicked at (x, y)`. |
 | Any permission missing | The menu shows "Fix permissions…", which opens the first-launch checklist (§3.7). |
-| Accessibility revoked while click cleanup runs | macOS can block all clicks until reboot if an active tap outlives its permission. Flipbook checks trust every 2 s and removes the active tap immediately. |
+| Accessibility revoked while click cleanup runs | macOS can block all clicks until reboot if an active tap outlives its permission. Annotake checks trust every 2 s and removes the active tap immediately. |
 | macOS disables the event tap (timeout or user input) | Re-enabled automatically. |
 | An app reacts to the Accessibility flags | Cursor shows "Screen reader usage detected…" once the flag is set. Flags are set only while recording and cleared at stop, unless VoiceOver is running. Checkpoint 1 verifies that apps behave normally after the flags are cleared. |
 | Password field / Secure Input | The trigger still works (M0). Key events may still arrive there; only their kind is used, and the text is never logged. |
@@ -428,7 +428,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - single tap ignored.
 - **Golden tests:** raw sessions paired with the frames that should be kept. A raw session holds tile signatures, dirty rects, and events. It's saved into the capture's `.raw/session/` when Advanced → Save raw sessions is on.
   - `make test` fails if picking changes.
-  - `flipbook-replay` prints the picker's decisions, for tuning.
+  - `annotake-replay` prints the picker's decisions, for tuning.
 - **Module unit tests:** Capture, Input, Export, and the app each test their pure logic:
   - output size, signatures, and point mapping;
   - key classification, and label rules over a fake Accessibility tree;
@@ -436,8 +436,8 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - the session state machine, the pill text, and card stacking.
 
   Event taps, the stream, AX calls, and the UI are covered by the self-test and the checkpoints.
-- **Self-test:** `make selftest` opens a test window of Flipbook's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports frames, timings, and picked captions in `selftest.json`. `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
-- **Log:** `~/Library/Logs/Flipbook.log` records gestures, state changes, timings, and errors. It never records labels, window titles, or keys.
+- **Self-test:** `make selftest` opens a test window of Annotake's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports frames, timings, and picked captions in `selftest.json`. `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
+- **Log:** `~/Library/Logs/Annotake.log` records gestures, state changes, timings, and errors. It never records labels, window titles, or keys.
 - **Fixture privacy:** sessions recorded on the work Mac never go in the repo, because window titles and labels can be internal. Work sessions stay local, or have all text stripped before use.
 - **Manual checklist (Fayzan).** It's run at the two checkpoints in [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md) §10:
   - Drag the card into Cursor chat, Claude Code in Terminal, ChatGPT and Claude web, Slack, and Jira.
@@ -455,8 +455,8 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 - **One-time prerequisite:** Command Line Tools 26.3, the newest that runs on macOS 15.7. It includes the macOS 26.2 SDK and Swift 6.2. Install it from Software Update or developer.apple.com/download.
 - **Tests:** `make test` runs Swift Testing with the Command Line Tools' framework path added, because plain `swift test` can't find `Testing` without Xcode, and XCTest isn't in the CLT at all (M0).
 - **Make targets:**
-  - `make cert` runs once. It creates a free self-signed signing identity so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
-  - `make` builds and assembles `Flipbook.app`.
+  - `make cert` runs once. It creates a free self-signed signing identity, "Annotake Local Signing", so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
+  - `make` builds and assembles `Annotake.app`.
   - `make run` builds it and opens it.
   - `make install` copies it into `/Applications`, removing any older copy in `~/Applications`.
   - `make zip` produces a zip for the work Mac.
@@ -472,12 +472,12 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   1. **Gestures and click cleanup.** Do Right ⌘ gestures and click cleanup work in Chrome, Safari, Cursor, and Finder? Which permission does each part need?
      - If click cleanup is unreliable, hold mode becomes look-only and click-through flows use double-tap.
   2. **Button names.** Are they readable in Chrome and in Electron apps (Cursor, Slack)?
-     - These apps may only expose web content to Accessibility after Flipbook sets `AXEnhancedUserInterface` or `AXManualAccessibility` on them (inferred; verify).
+     - These apps may only expose web content to Accessibility after Annotake sets `AXEnhancedUserInterface` or `AXManualAccessibility` on them (inferred; verify).
   3. **Capture behavior.** Measure capture start latency and dirty-rect/idle behavior on macOS 15.7 and 26.
   4. **Dropping into Cursor.** Does Cursor's chat accept 20 dropped PNGs, and in order?
      - If not, revisit the drag payload.
   5. **Exclusion.** Confirm the pill and card never appear in recordings.
-- **M1: Core. Done 2026-09-24.** Frame picker, gesture recognizer, cap fitting, tests, `flipbook-replay`.
+- **M1: Core. Done 2026-09-24.** Frame picker, gesture recognizer, cap fitting, tests, `annotake-replay`.
 - **M2: Recording end to end.** Right ⌘ → capture → frames in a folder, with no polish.
 - **M3: Output.** Caption strips, click markers, `steps.md`, the card, and filmstrip trimming.
 - **M4: The rest of the app.** Settings with the Meet-style picker, first launch, menu bar, retention cleanup, sounds.
@@ -505,7 +505,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 
 ## 12. Risks
 
-- **Permission re-prompts.** macOS re-asks for Screen Recording permission monthly, on both 15 and 26, and Flipbook can only surface this clearly.
+- **Permission re-prompts.** macOS re-asks for Screen Recording permission monthly, on both 15 and 26, and Annotake can only surface this clearly.
   - The system picker avoids the prompt, but it requires choosing a target every time, which breaks instant capture.
 - **macOS 27** shipped 2026-09-14 and is untested.
 - **Limits of click cleanup.** Click cleanup can't change the global modifier state.
@@ -538,7 +538,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Frames and events reach the picker through `LiveSession`, one time-ordered queue (2026-09-24, M2–M4 design) | A click's label arrives up to ~100 ms after the click. Ordering keeps each click on the screen it happened on, and makes raw sessions replay exactly as they ran live. |
 | A change under a pointer that stayed put counts (2026-09-24) | After a click the pointer sits on what it clicked, so a ticked checkbox produced no frame. |
 | A hold released before the reveal is discarded (2026-09-24) | If the pill never appeared, nothing was recorded. |
-| `--selftest` records Flipbook's own scripted window (2026-09-24) | It needs no permission, so unattended implementation sessions can test the real capture path. |
+| `--selftest` records Annotake's own scripted window (2026-09-24) | It needs no permission, so unattended implementation sessions can test the real capture path. |
 | Clicks and scrolls outside the recorded area aren't logged (2026-09-24) | The frames can't show them. |
 | First launch is one checklist; the menu gains "Fix permissions…" (2026-09-24) | Fewer clicks than a wizard, and Screen Recording expires monthly. |
 | Launch at login only from an Applications folder (2026-09-24) | A development build never leaves a stale login item. |

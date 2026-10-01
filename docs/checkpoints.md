@@ -1,5 +1,7 @@
 # Checkpoint results
 
+> Written when the app was called Flipbook; it's Annotake since 2026-09-30 ([distribution design §3](plans/2026-09-30-distribution-design.md#3-the-name-annotake)).
+
 ## Checkpoint 1 (2026-09-24)
 
 Personal Mac, macOS 15.7. Items follow the plan's Task 20 list. Fayzan's summary: "Pretty much everything passed." The failures below are fixed in Session 5 (Task 21).
