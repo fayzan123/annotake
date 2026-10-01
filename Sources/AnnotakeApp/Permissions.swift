@@ -20,8 +20,8 @@ enum Permissions {
                accessibility: AXIsProcessTrusted())
     }
 
-    /// The system prompt for one permission, from the first-launch checklist.
-    static func request(_ permission: ChecklistModel.Permission) {
+    /// The system prompt for one permission, from the first run.
+    static func request(_ permission: OnboardingModel.Permission) {
         switch permission {
         case .screenRecording: _ = CGRequestScreenCaptureAccess()
         case .inputMonitoring: _ = CGRequestListenEventAccess()
@@ -33,5 +33,11 @@ enum Permissions {
         let status = status()
         log("permissions: screen recording \(status.screenRecording), input monitoring \(status.inputMonitoring), "
             + "accessibility \(status.accessibility)")
+    }
+}
+
+extension Permissions.Status {
+    var byPermission: [OnboardingModel.Permission: Bool] {
+        [.accessibility: accessibility, .inputMonitoring: inputMonitoring, .screenRecording: screenRecording]
     }
 }
