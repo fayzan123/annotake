@@ -1,6 +1,7 @@
 // The page's module entry. boot.js has already set the theme; this wires the parts that respond to the visitor.
 import { initGate } from './gate.js';
 import { initLinkForm } from './linkform.js';
+import { initSteps } from './steps.js';
 
 const boot = window.annotakeBoot;
 const root = document.documentElement;
@@ -45,3 +46,5 @@ wireDownloads();
 for (const form of document.querySelectorAll('form.linkform')) initLinkForm(form);
 const gate = document.querySelector('.gate-wrap');
 if (gate) initGate(gate, { reducedMotion });
+const how = document.querySelector('section.how');
+if (how) initSteps(how, { reducedMotion });
