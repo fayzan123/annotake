@@ -22,7 +22,7 @@ It exists because reproducing a Jira bug for a coding agent meant screenshotting
 - **Ease of use first.** The flow is: press the key, reproduce the bug, drag the card. Nothing may add a step, a confirmation, or a wait to it. Defaults work with no setup, and failures degrade instead of blocking a recording.
 - **Built for Fayzan's own workflow first, and now for other developers too.** Setup must be as easy as Wispr Flow or Loom: download, grant the permissions, start ([distribution design](plans/2026-09-30-distribution-design.md)). Competitors don't drive product decisions; pricing and positioning look at them.
 - **No AI in the product.** No LLMs, no ML models, no API keys, no bills. Frames are picked by pixel comparison, and "what you clicked" comes from macOS Accessibility.
-- **Nothing you record leaves your Mac.** Frames, captions, `steps.md`, window titles, button names, and keys never leave it, which keeps it acceptable on a work Mac. Today the app makes no network calls at all. The [distribution design](plans/2026-09-30-distribution-design.md) adds them in stages: a daily update check (Stage 1), then sign-in, the plan, and daily counts (Stage 2). A recording never waits on the network.
+- **Nothing you record leaves your Mac.** Frames, captions, `steps.md`, window titles, button names, and keys never leave it, which keeps it acceptable on a work Mac. The app's only network call is a daily update check (Sparkle, §6.2), which sends only the app's version and never a system profile. The [distribution design](plans/2026-09-30-distribution-design.md) adds sign-in, the plan, and daily counts in Stage 2. A recording never waits on the network.
 - **Agent-agnostic.** The output is plain PNGs plus a text log, with no integration into any specific agent.
 - **Bare-bones v1.** Anything the core loop doesn't need goes to the backlog.
 - **Native Swift, macOS 15 and later** (§6). It must work on Fayzan's personal Mac (15.7) and his work Mac (26).
@@ -110,6 +110,7 @@ Rules:
   - Recent Captures ▸ (last 5)
   - Open Captures Folder
   - Settings…
+  - Check for Updates… (Sparkle checks now and shows the result)
   - Quit
 - There is no Dock icon.
 
@@ -349,14 +350,14 @@ Sources/
                     filmstrip trims, retention cleanup
   AnnotakeApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
                     card, filmstrip, Settings, first launch, self-test (§8)
-  Annotake/         the executable: main.swift only
+  Annotake/         the executable: main.swift, and SparkleUpdater.swift (Sparkle is linked only here)
   annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
 Tests/
   AnnotakeCoreTests/     unit and golden tests; Fixtures/ holds raw sessions (never work data, see §8)
   AnnotakeCaptureTests/, AnnotakeInputTests/, AnnotakeExportTests/, AnnotakeAppTests/
 ```
 
-The app is a library plus a one-file executable so its tests can import it the normal way.
+The app is a library plus a small executable so its tests can import it the normal way. `AnnotakeApp` defines an `Updater` protocol, and the executable injects a Sparkle-backed one, so the libraries and their tests link no network code. `--selftest` and `--render-ui` never create the updater.
 
 **Why Core has no macOS code:** it is the part the golden tests pin down. It is also the part a future Windows version would reuse, or port against the same tests.
 
@@ -401,6 +402,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 | Scaling and encoding | ScreenCaptureKit scales to the output size (sRGB); Core Graphics and Core Text draw strips and markers; ImageIO writes PNGs |
 | Self-test capture | `SCShareableContent.currentProcess` (macOS 14.4+) lets the app capture its own test window without Screen Recording permission |
 | Settings, launch at login | SwiftUI, `UserDefaults`, `SMAppService` |
+| Updates | Sparkle 2.10 (`SPUStandardUpdaterController`), embedded in `Contents/Frameworks` and signed inside out with the app's identity. Info.plist: `SUFeedURL` (the `appcast.xml` in `fayzan123/annotake-releases`), `SUEnableAutomaticChecks` true and `SUScheduledCheckInterval` 86400 (a daily check with no opt-in prompt), `SUEnableSystemProfiling` false, and `SUPublicEDKey`: every update's zip must carry an EdDSA signature from the matching private key |
 
 ## 7. Permissions and failure handling
 
@@ -472,6 +474,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 - **Tests:** `make test` runs Swift Testing with the Command Line Tools' framework path added, because plain `swift test` can't find `Testing` without Xcode, and XCTest isn't in the CLT at all (M0).
 - **Make targets:**
   - `make icon` redraws the app icon; the `.icns` is committed.
+  - `make sparkle-keys` runs once. It creates Sparkle's EdDSA key in the login keychain (account `annotake`), exports the private half to `.signing/sparkle-private-key` for signing updates without prompts, and writes the public half to `Resources/sparkle-public-key.txt`, which is committed. Losing the private key means existing installs can never be updated, so it's backed up in a password manager.
   - `make cert` runs once. It creates a free self-signed signing identity, "Annotake Local Signing", so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
   - `make devid-csr` writes `.signing/devid.csr`, the request to upload to Apple for a Developer ID Application certificate (G2 Sub-CA). `make devid-import CER=<file>` imports the certificate Apple issues, with Apple's Developer ID G2 intermediate (without Xcode nothing installs it), into `.signing/annotake-signing.keychain-db`, and writes the team id to `.signing/team-id`.
   - `make` builds and assembles `Annotake.app`: one app for Apple silicon and Intel, from two release builds (`--triple arm64-apple-macosx15.0` and `x86_64-apple-macosx15.0`) merged with `lipo`. Two `--arch` flags would need Xcode's XCBuild.
@@ -480,7 +483,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - `make zip` produces a zip for the work Mac.
   - `make selftest` runs the self-test, `make selftest-intel` runs it as Intel through Rosetta, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
-- **Signing:** every build is signed with the hardened runtime, nested code first. The bundler uses the Developer ID Application identity once it's in the signing keychain, and "Annotake Local Signing" until then (`SIGN_IDENTITY` overrides both). Development and release builds then share one signature, so permissions granted to one carry over to the other. A release (`RELEASE=1`) requires the Developer ID and adds a secure timestamp; other builds use `--timestamp=none`. Secrets stay in `.signing/` (gitignored) or the keychain, never in the repo.
+- **Signing:** every build is signed with the hardened runtime, nested code first. The bundler uses the Developer ID Application identity once it's in the signing keychain, and "Annotake Local Signing" until then (`SIGN_IDENTITY` overrides both). Development and release builds then share one signature, so permissions granted to one carry over to the other. A release (`RELEASE=1`) requires the Developer ID and adds a secure timestamp; other builds use `--timestamp=none`. Secrets stay in `.signing/` (gitignored) or the keychain, never in the repo. The hardened runtime loads only libraries signed by the app's own team, and the local identity has none, so only builds without a Developer ID carry `com.apple.security.cs.disable-library-validation`, to load their own Sparkle. The app is assembled and signed in a temporary folder and then copied to `build/`, because iCloud Drive tags bundle folders in `~/Documents` faster than they can be stripped and signed.
 - **Versions:** `VERSION` holds the marketing version (`0.2.0`), and the build number is the commit count (`git rev-list --count HEAD`). The bundler writes them into `CFBundleShortVersionString` and `CFBundleVersion`, and each launch logs them, e.g. `launched Annotake 0.2.0 (78)`.
 - **The app is built only on the personal MacBook,** using Fayzan's own Claude membership rather than work AI.
 - **Other Macs, until the app is notarized** (the work Mac and friends' Macs): `curl -fsSL https://raw.githubusercontent.com/fayzan123/flipbook-releases/main/install.sh | sh` installs or updates the latest release from the public, releases-only repo. Files `curl` downloads get no quarantine flag, so there's no `xattr` step, and permissions survive updates. Details: [distribution design §5.1](plans/2026-09-30-distribution-design.md#51-the-early-install-done-2026-09-30).

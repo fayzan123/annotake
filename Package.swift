@@ -9,6 +9,10 @@ let package = Package(
         .executable(name: "Annotake", targets: ["Annotake"]),
         .executable(name: "annotake-replay", targets: ["annotake-replay"]),
     ],
+    dependencies: [
+        // Updates, linked only into the executable, so the libraries and their tests have no network code.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
+    ],
     targets: [
         .target(name: "AnnotakeCore"),
         .target(name: "AnnotakeCapture", dependencies: ["AnnotakeCore"]),
@@ -16,7 +20,9 @@ let package = Package(
         .target(name: "AnnotakeExport", dependencies: ["AnnotakeCore"]),
         .target(name: "AnnotakeApp",
                 dependencies: ["AnnotakeCore", "AnnotakeCapture", "AnnotakeInput", "AnnotakeExport"]),
-        .executableTarget(name: "Annotake", dependencies: ["AnnotakeApp"]),
+        .executableTarget(name: "Annotake",
+                          dependencies: ["AnnotakeApp", .product(name: "Sparkle", package: "Sparkle")],
+                          linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
         .executableTarget(name: "annotake-replay", dependencies: ["AnnotakeCore"]),
         .testTarget(name: "AnnotakeCoreTests", dependencies: ["AnnotakeCore"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AnnotakeCaptureTests", dependencies: ["AnnotakeCapture", "AnnotakeCore"]),
