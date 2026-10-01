@@ -33,7 +33,8 @@ Rules for every session:
    - The design covers how the app reaches other developers and makes money, and the rename from Flipbook to Annotake: [2026-09-30-distribution-design.md](2026-09-30-distribution-design.md). Friends can already install the current build with the one-line command in its §5.1.
    - The plan: [2026-09-30-stage-1-build.md](2026-09-30-stage-1-build.md).
 10. **Session 8: the Stage 1 build. Done 2026-09-30.** Flipbook is Annotake everywhere, with migration from Flipbook; one signed app for Intel and Apple silicon, with an icon, version numbers, Sparkle updates, Send Feedback, a step-by-step first run, the move to Applications, and `make release` with a disk image (369 tests). What it decided and skipped is under Session 8 below.
-11. **Next: Checkpoint 3** on both Macs (the plan's Task 15), then the Stage 2 design and plan ([distribution design §11](2026-09-30-distribution-design.md#11-sessions)).
+11. **Checkpoint 3 on both Macs. Done 2026-10-01.** The results are in [../checkpoints.md](../checkpoints.md).
+12. **Next: the friends round** ([distribution design §5](2026-09-30-distribution-design.md#5-stage-1-the-friends-round)), on a release whose Send Feedback goes to Fayzan's Gmail, and alongside it the Stage 2 design and plan ([§11](2026-09-30-distribution-design.md#11-sessions)).
 
 ## Session 1: M0 spikes (done)
 
