@@ -2,6 +2,7 @@
 import { acmeWindow, setAcme, stateAfter } from './acme.js';
 import { initGate } from './gate.js';
 import { initLinkForm } from './linkform.js';
+import { buildLogo, playLogo } from './logo.js';
 import { initSteps } from './steps.js';
 
 const boot = window.annotakeBoot;
@@ -49,6 +50,9 @@ const gate = document.querySelector('.gate-wrap');
 if (gate) initGate(gate, { reducedMotion });
 const how = document.querySelector('section.how');
 if (how) initSteps(how, { reducedMotion });
+
+const giant = document.querySelector('.giant[data-animate]');
+if (giant) playLogo(buildLogo(giant), { reducedMotion });
 
 // The Finder window's thumbnails: the three frames, each after its click. Without scripts they stay plain grey.
 document.querySelectorAll('.finder .tic').forEach((thumbnail, i) => {

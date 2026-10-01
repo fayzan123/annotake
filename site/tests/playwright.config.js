@@ -18,7 +18,9 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
   },
   projects: [
-    { name: 'chrome', use: { browserName: 'chromium', channel: 'chrome' } },
+    // Now and then (about 1 run in 15 on 2026-10-01) the installed Chrome never finishes creating a test's context.
+    // One retry, in a fresh worker, gets past it; Playwright still reports the test as flaky.
+    { name: 'chrome', retries: 1, use: { browserName: 'chromium', channel: 'chrome' } },
     { name: 'webkit', use: { browserName: 'webkit' } },
     { name: 'firefox', use: { browserName: 'firefox' } },
   ],

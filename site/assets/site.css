@@ -946,6 +946,8 @@ body::before {
 
 .site-footer { max-width: 1280px; margin: 0 auto; padding: 0 40px 36px; }
 .giant svg { display: block; width: 100%; height: auto; color: var(--ink); fill: var(--red); }
+/* The live logo's front reel winds red with this stroke. */
+.giant .sweep { stroke: var(--red); }
 .legal {
   display: flex;
   flex-wrap: wrap;
