@@ -93,3 +93,18 @@ test:
 .PHONY: replay
 replay:
 	swift run annotake-replay "$(SESSION)"
+# The site (site/): plain HTML, CSS, and JavaScript, plus one Vercel function, site/api/link.js. Its tests live in
+# site/tests, with the only npm packages, dev-only. Each target installs them first if they're missing.
+# make site-dev serves the site at http://localhost:4173 the way vercel.json says, with /api/link in dry-run mode.
+# make site-test runs the unit tests, then the page tests in Chrome, WebKit, and Firefox (FILTER= greps the page tests).
+SITE_TESTS := site/tests
+.PHONY: site-deps site-dev site-unit site-test
+site-deps:
+	@test -d $(SITE_TESTS)/node_modules || (cd $(SITE_TESTS) && npm ci)
+site-dev: site-deps
+	node $(SITE_TESTS)/server.mjs --port 4173 --root site
+# Node 22's --test takes files or globs, not a directory, so the glob is quoted for Node to expand.
+site-unit: site-deps
+	cd $(SITE_TESTS) && node --test --test-reporter=spec 'unit/*.test.js'
+site-test: site-unit
+	cd $(SITE_TESTS) && npx playwright test $(if $(FILTER),--grep '$(FILTER)')

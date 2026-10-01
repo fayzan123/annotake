@@ -1,0 +1,10 @@
+{
+  "name": "annotake-site-tests",
+  "private": true,
+  "type": "module",
+  "description": "The site's tests: Playwright page tests and node:test unit tests. Dev-only; never deployed.",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0"
+  }
+}
