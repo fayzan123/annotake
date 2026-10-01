@@ -132,6 +132,14 @@ struct OnboardingModel: Equatable {
         if step == .reopen { advance() }
     }
 
+    /// The window was closed. Missing permissions come back at the next launch; the practice run, the drop
+    /// box, and Fix permissions… don't.
+    mutating func closed() {
+        if persisted.mode == .fixPermissions || [.practice, .dropCard, .done].contains(step) {
+            persisted.completed = true
+        }
+    }
+
     private func isGranted(_ permission: Permission) -> Bool {
         granted[permission] == true
     }

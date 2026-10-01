@@ -105,7 +105,7 @@ Rules:
 
 - **Icon:** shows idle or recording (tinted red while recording).
 - **Menu:**
-  - Fix permissions… (only when a permission is missing; it opens the first-launch checklist, §3.7)
+  - Fix permissions… (only when a permission is missing; it opens the first run's permission steps, §3.7)
   - Start/Stop Recording (a fallback when the key isn't available; it starts a hands-free recording)
   - Recent Captures ▸ (last 5)
   - Open Captures Folder
@@ -146,23 +146,30 @@ Choosing fn shows a note with three warnings:
 
 ### 3.7 First launch
 
-First launch shows one checklist window with three permissions, then asks you to double-tap Right ⌘ (or the chosen trigger) to try it:
-1. **Screen Recording:** required to record.
-2. **Input Monitoring:** needed to see Right ⌘, clicks, and keys.
-3. **Accessibility:** needed for click cleanup and button names.
+The first run is one window, "Welcome to Annotake" (560 pt wide), showing one step at a time, like Wispr Flow's ([distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build)). Every key name follows the trigger key (Right ⌘ below).
+1. **Welcome:** "Annotake: Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). If Annotake retired an installed Flipbook (§3.8), it says so. Get Started.
+2. **The three permissions, one at a time,** in this order, because Accessibility applies without a relaunch:
+   - **Accessibility:** "So Annotake can name the buttons you click, and keep ⌘ out of your clicks while you hold the key."
+   - **Input Monitoring:** "So Annotake can notice Right ⌘, and your clicks and keys while you record. It never records what you type."
+   - **Screen Recording:** "So Annotake can capture your screen while you record."
 
-Each permission's row:
-- explains why in one sentence,
-- has a button: the first press shows the system prompt, and later presses deep-link to the right System Settings pane,
-- re-checks the permission live.
+   Each one shows its reason, then "Annotake sees your screen only while you record. Nothing you record leaves your Mac.", a picture of the row to turn on in System Settings (the app's icon and name, and its switch, ringed), the path to it, and a ✓ for each permission already granted. Allow… shows macOS's prompt; after that, Open System Settings deep-links to the pane, and Continue moves on without waiting for the grant to show. A grant made anywhere, in any order, moves the step on, and a permission that's already granted is never asked for.
+3. **Reopen,** only when Input Monitoring or Screen Recording was requested and isn't granted yet, because those apply only after a relaunch. Quit & Reopen saves where the window is, relaunches, and the window comes back at the next step.
+4. **A practice run** in the same window: double-tap Right ⌘, click a real Open button and tick a real Remember me box (so Accessibility names them), and double-tap again. A recording saved earlier in the first run skips it.
+5. **A drop box:** "Now drag the card here." A dropped card shows how many frames it held and the first three, then "Next time, drag it into Claude Code, Cursor, or ChatGPT." Skip or Continue.
+6. **You're set:** hold the key for quick recordings, Right ⌘ + Esc cancels, and everything else is in the menu-bar icon.
+
+- **Existing Flipbook users** (§3.8) skip the welcome and the practice run and go straight to the permissions, which say "Annotake replaces Flipbook, so macOS asks for these again."
+- **Where it is** is saved after every change (`onboarding.v1`), and the window shows at each launch until it's done. Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
+- **Fix permissions…** in the menu shows the first run where it is, or once it's done, a pass over the missing permissions alone. Closing that pass finishes it.
+- **In Stage 2,** a sign-in step goes after the welcome.
+- Annotake works without Accessibility, in a degraded mode (§7).
 
 Confirmed by M0:
 - **Input Monitoring** covers the listen-only tap (Right ⌘, clicks, keys). Request it with `CGRequestListenEventAccess()`, and check it with `CGPreflightListenEventAccess()`: `tapCreate` succeeds even without the permission, but no events arrive.
 - **Accessibility** covers the active tap (click cleanup, consuming the Esc of Right ⌘ + Esc), button names, and setting the Chrome/Electron flags (§6.2). Request it with `AXIsProcessTrustedWithOptions` and the prompt option. "Post events" access is never needed.
-- **Screen Recording** is requested by the first `SCShareableContent` call, which fails with error −3801 until it is granted.
-- Input Monitoring and Screen Recording take effect only after a relaunch. Once either button has been pressed, the window offers "Quit & Reopen", and it reopens where you left off. Accessibility applies without one.
-
-Your first recording closes the window. You can also close it at any time: Annotake works with only 1 and 2, in a degraded mode (§7).
+- **Screen Recording** is requested by the first `SCShareableContent` call, which fails with error −3801 until it is granted. The first run requests it with `CGRequestScreenCaptureAccess()`.
+- Input Monitoring and Screen Recording take effect only after a relaunch. Accessibility applies without one.
 
 First launch also registers Annotake to launch at login (`SMAppService`), because the key has to work right after a restart.
 - It registers only when Annotake runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Annotake there.
@@ -412,7 +419,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 | Screen Recording missing or expired (macOS re-prompts monthly) | Pill shows "Screen Recording permission needed" with Open Settings. Nothing is saved. |
 | Input Monitoring missing | The key doesn't work, but the menu bar Start/Stop still does. Settings shows the fix. Detected with `CGPreflightListenEventAccess()`, not by tap creation. |
 | Accessibility missing | Still records. Hold-mode clicks keep the trigger's modifier (⌘), and captions say `Clicked at (x, y)`. |
-| Any permission missing | The menu shows "Fix permissions…", which opens the first-launch checklist (§3.7). |
+| Any permission missing | The menu shows "Fix permissions…", which opens the first run's permission steps (§3.7). |
 | Accessibility revoked while click cleanup runs | macOS can block all clicks until reboot if an active tap outlives its permission. Annotake checks trust every 2 s and removes the active tap immediately. |
 | macOS disables the event tap (timeout or user input) | Re-enabled automatically. |
 | An app reacts to the Accessibility flags | Cursor shows "Screen reader usage detected…" once the flag is set. Flags are set only while recording and cleared at stop, unless VoiceOver is running. Checkpoint 1 verifies that apps behave normally after the flags are cleared. |
@@ -569,6 +576,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | `--selftest` records Annotake's own scripted window (2026-09-24) | It needs no permission, so unattended implementation sessions can test the real capture path. |
 | Clicks and scrolls outside the recorded area aren't logged (2026-09-24) | The frames can't show them. |
 | First launch is one checklist; the menu gains "Fix permissions…" (2026-09-24) | Fewer clicks than a wizard, and Screen Recording expires monthly. |
+| The first run becomes one step at a time, with a welcome, a practice run, and a drop box (2026-09-30) | Strangers need to understand it and succeed once without help, as with Wispr Flow. [Distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build) |
 | Launch at login only from an Applications folder (2026-09-24) | A development build never leaves a stale login item. |
 | Distribution in three stages (friends round, beta, paywall and launch), moved forward by bars, not dates (2026-09-30) | Outside validation comes before productising, and Fayzan sets the pace. [Distribution design](plans/2026-09-30-distribution-design.md) |
 | Closed source and freemium: a weekly soft limit, a hard stop at 2.5×, Pro at $9/month or $72/year (2026-09-30) | Reputation first, with revenue as proof. Wispr's cap design, without the slowdown |

@@ -145,6 +145,24 @@ struct OnboardingModelTests {
         #expect(model.step == .dropCard)
     }
 
+    /// Closing the window: missing permissions come back at the next launch; the practice run, the drop box,
+    /// and Fix permissions… don't.
+    @Test func closingLeavesOnlyPermissionsToComeBack() {
+        for step: Model.Step in [.welcome, .permission(.inputMonitoring), .reopen] {
+            var model = model(at: step, requested: [.inputMonitoring])
+            model.closed()
+            #expect(model.showsAtLaunch)
+        }
+        for step: Model.Step in [.practice, .dropCard, .done] {
+            var model = model(at: step, granted: allGranted)
+            model.closed()
+            #expect(!model.showsAtLaunch)
+        }
+        var fixing = Model(granted: noneGranted, persisted: Model.fixingPermissions(granted: noneGranted))
+        fixing.closed()
+        #expect(!fixing.showsAtLaunch)
+    }
+
     @Test func fixPermissionsStartsAtFirstMissing() {
         let persisted = Model.fixingPermissions(granted: [.accessibility: true, .inputMonitoring: true,
                                                           .screenRecording: false])

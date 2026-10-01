@@ -43,6 +43,7 @@ ui-snapshots: app
 	rm -rf build/ui && mkdir -p build/ui
 	open -W -n build/Annotake.app --args --render-ui "$(CURDIR)/build/ui"
 	ls build/ui
+	@if [ -s build/ui/problems.txt ]; then cat build/ui/problems.txt; exit 1; fi
 cert:
 	scripts/make-cert.sh
 # The Developer ID Application certificate: the request to upload to Apple, then the certificate it issues.
