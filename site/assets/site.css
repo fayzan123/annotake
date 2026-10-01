@@ -404,11 +404,15 @@ body::before {
 .legal a { color: var(--ink-2); text-decoration: none; }
 .legal a:hover { color: var(--ink); text-decoration: underline; }
 
-/* ---------- The 404 page ---------- */
+/* ---------- The 404 page, and the page the link form gets back without scripts ---------- */
 
-.notfound { max-width: 760px; margin: 0 auto; padding: 120px 24px 160px; text-align: center; }
-.notfound h1 { font-weight: 600; font-size: clamp(34px, 4.2vw, 56px); line-height: 1.05; letter-spacing: -0.03em; }
-.notfound p { margin-top: 22px; font-size: 18px; }
+.notfound,
+.message { max-width: 760px; margin: 0 auto; padding: 120px 24px 160px; text-align: center; }
+.notfound h1,
+.message h1 { font-weight: 600; font-size: clamp(34px, 4.2vw, 56px); line-height: 1.05; letter-spacing: -0.03em; }
+.notfound p,
+.message p { margin-top: 22px; font-size: 18px; color: var(--ink-2); }
+.message-link { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); user-select: all; -webkit-user-select: all; }
 
 /* ---------- Narrow screens ---------- */
 
