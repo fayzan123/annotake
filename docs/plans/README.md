@@ -230,7 +230,7 @@ Plan: [2026-09-30-stage-1-build.md](2026-09-30-stage-1-build.md), Tasks 1–15. 
 
 Before you leave it running:
 - **Keep the Mac awake and unlocked,** for example with `caffeinate -dims` in a spare terminal tab. The self-test can't capture while the Mac is asleep or locked.
-- **The first build downloads Sparkle,** which takes several minutes.
+- **The first build downloads Sparkle,** which took about 19 minutes on 2026-09-30.
 - **The Apple Developer membership doesn't need to be active yet.** The session prepares the certificate request and signs with the local identity. The Developer ID, notarization, and the first real release happen at the checkpoint.
 
 Your part is Checkpoint 3 at the end, on both Macs. The list is in the plan's Task 15:

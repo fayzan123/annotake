@@ -548,10 +548,10 @@ enum MenuModel {
 - `.package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0")`.
 - The `Annotake` executable target depends on `.product(name: "Sparkle", package: "Sparkle")`, with `linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]`.
 - No other target depends on Sparkle.
-- The first resolve clones Sparkle's repository, which takes several minutes.
+- The first resolve clones Sparkle's repository and downloads `Sparkle-for-Swift-Package-Manager.zip`. On 2026-09-30 the download alone took about 19 minutes, so start it early: run `swift package resolve` first thing in this task.
 
 **Keys (`scripts/sparkle-keys.sh`):**
-1. Finds Sparkle's tools with `find .build/artifacts -type f -name generate_keys -print -quit`. If they aren't there, it downloads `Sparkle-2.10.0.tar.xz` from the GitHub release into `.build/sparkle-tools` and uses its `bin/`.
+1. Finds Sparkle's tools. After a resolve they're in `.build/artifacts/sparkle/Sparkle/bin/` (`generate_keys`, `sign_update`, `generate_appcast`), as checked on 2026-09-30. Look them up with `find .build/artifacts -type f -name generate_keys -print -quit` rather than hard-coding the path. If they aren't found, the script fails and says to run `swift package resolve`.
 2. Runs `generate_keys`, which stores the private key in the login keychain.
 3. Writes `generate_keys -p` to `Resources/sparkle-public-key.txt`.
 4. Exports the private key with `generate_keys -x .signing/sparkle-private-key`.
