@@ -3,8 +3,8 @@ import AppKit
 /// Send Feedback… (spec §3.5, §8): a draft to `address` with the facts, the recent log, and the latest crash
 /// report. It only prepares the draft; the user sends it. The log never holds labels, window titles, or keys.
 enum Feedback {
-    /// The one place the address is defined.
-    static let address = "feedback@annotake.app"
+    /// The one place the address is defined: Fayzan's own inbox, until feedback@annotake.app receives mail.
+    static let address = "fayzanm786@gmail.com"
     static let logLines = 400
     static let crashReportMaxAge: TimeInterval = 7 * 86_400
     static let crashReportMaxBytes = 200_000
