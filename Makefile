@@ -11,7 +11,8 @@ UNIVERSAL := .build/universal
 VERSION := $(shell cat VERSION)
 BUILD := $(shell git rev-list --count HEAD)
 RELEASE ?= 0
-.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon devid-csr devid-import sparkle-keys
+.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon devid-csr devid-import sparkle-keys \
+	dmg-background dmg-venv release
 app:
 	swift build -c release --product Annotake --triple $(ARM_TRIPLE)
 	swift build -c release --product Annotake --triple $(X86_TRIPLE)
@@ -23,8 +24,9 @@ run: app
 	open build/Annotake.app
 install: app
 	rm -rf /Applications/Annotake.app ~/Applications/Annotake.app && ditto build/Annotake.app /Applications/Annotake.app
+# Without resource forks, extended attributes, or ACLs: iCloud's tags and the provenance attribute stay out.
 zip: app
-	cd build && rm -f Annotake.zip && ditto -c -k --keepParent Annotake.app Annotake.zip
+	cd build && rm -f Annotake.zip && ditto -c -k --keepParent --norsrc --noextattr --noacl Annotake.app Annotake.zip
 selftest: app
 	rm -rf build/selftest && mkdir -p build/selftest
 	caffeinate -u -t 2 || true
@@ -46,6 +48,23 @@ ui-snapshots: app
 	@if [ -s build/ui/problems.txt ]; then cat build/ui/problems.txt; exit 1; fi
 cert:
 	scripts/make-cert.sh
+# Redraws the disk image's background; Resources/dmg-background.tiff is committed.
+dmg-background:
+	rm -rf build/dmg-background
+	swift scripts/make-dmg-background.swift build/dmg-background
+	tiffutil -cathidpicheck build/dmg-background/background.tiff build/dmg-background/background@2x.tiff \
+		-out Resources/dmg-background.tiff
+# dmgbuild, which lays out the disk image, in its own Python environment.
+DMG_VENV := .build/dmgbuild-venv
+dmg-venv:
+	rm -rf $(DMG_VENV)
+	/usr/bin/python3 -m venv $(DMG_VENV)
+	$(DMG_VENV)/bin/pip install -q dmgbuild==1.6.5
+# A release: make release NOTES="what changed" [DRY_RUN=1] (scripts/release.sh). DRY_RUN=1 runs it all
+# locally, without credentials, and publishes nothing.
+export NOTES DRY_RUN
+release:
+	scripts/release.sh
 # The Developer ID Application certificate: the request to upload to Apple, then the certificate it issues.
 devid-csr:
 	scripts/devid.sh csr
