@@ -365,9 +365,11 @@ Sources/
                     card, filmstrip, Settings, first launch, self-test (§8)
   Annotake/         the executable: main.swift, and SparkleUpdater.swift (Sparkle is linked only here)
   annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
+  AnnotakeRelease/  Foundation only: the Sparkle feed (appcast) writer
+  annotake-appcast/ CLI: adds a release to the feed; make release runs it
 Tests/
   AnnotakeCoreTests/     unit and golden tests; Fixtures/ holds raw sessions (never work data, see §8)
-  AnnotakeCaptureTests/, AnnotakeInputTests/, AnnotakeExportTests/, AnnotakeAppTests/
+  AnnotakeCaptureTests/, AnnotakeInputTests/, AnnotakeExportTests/, AnnotakeReleaseTests/, AnnotakeAppTests/
 ```
 
 The app is a library plus a small executable so its tests can import it the normal way. `AnnotakeApp` defines an `Updater` protocol, and the executable injects a Sparkle-backed one, so the libraries and their tests link no network code. `--selftest` and `--render-ui` never create the updater.
