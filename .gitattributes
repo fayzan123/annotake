@@ -1,2 +1,4 @@
 *.bin binary
 *.png binary
+*.icns binary
+*.tiff binary
