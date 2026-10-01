@@ -53,3 +53,22 @@ Items follow the plan's Task 27 list. **Everything passed.** Fixed during the ch
    - **Self-test: pass** on the work Mac (macOS 26).
    - **Chrome labels: pass,** including the Session 5 fix: a click on empty tab-strip space reads `Clicked at (x, y)`, not the window title.
    - **Slack labels: pass.**
+
+## Checkpoint 3 (2026-10-01, in progress)
+
+Items follow the Stage 1 plan's Task 15 list. Steps 0–7 so far; the next session records the rest. Fixed during it: Developer ID signing, the self-test on a 1× monitor, a `make release` that picks up after a slow notarization, and three first-run bugs.
+
+0. **Before starting:** the Apple Developer membership is active (team `GX473Q97WQ`). The domain and `feedback@annotake.app`: not reported yet.
+1. **The Developer ID certificate: pass, with two fixes.** `make devid-import` imported `Developer ID Application: Fayzan Malik (GX473Q97WQ)`.
+   - **Signing with it failed** with `errSecInternalComponent`. The log showed `leaf MissingIntermediate`: while signing, `codesign` checks the chain again without the keychains on the search list, so Apple's G2 intermediate has to be in the login keychain, where Xcode would put it. `make devid-import` now puts it there, and the bundler puts it back if it's missing.
+   - **`make selftest` then failed** only because its window opened on the 1× Lenovo T24i-10: an 800×528 capture, and an extra Start frame. The window now opens on the sharpest screen.
+   - After both, builds carry the Developer ID (team `GX473Q97WQ`; Sparkle signed by the same team; no library-validation exception), and `make selftest` and `make selftest-intel` pass.
+2. **The notarization login: done another way.** The App Store Connect API page asked to request access, so the profile uses an app-specific password instead: `xcrun notarytool store-credentials annotake-notary --apple-id … --team-id GX473Q97WQ`. Validated.
+3. **Backups:** the Developer ID export ran; macOS asked for the signing keychain's password, `annotake-local`, once per key. Storing both secrets: not reported yet.
+4. **The releases repo: renamed** to `fayzan123/annotake-releases`.
+5. **The first release: pass, after a fix.** Apple took 49 minutes over the app's first notarization, past the script's 30-minute wait, and the run stopped before publishing. `make release` now picks up where it left off. It finished 0.2.0 (93) from the same commit by stapling the ticket Apple had issued, and Apple notarized the disk image within minutes. Checked on GitHub's copies: the zip's Sparkle signature verifies, and Gatekeeper accepts the disk image and the app as notarized, with the tickets stapled.
+6. **The old command: pass.** The old `flipbook-releases` address serves the new installer, so no stub repo is needed.
+7. **Installing like a stranger: pass, with three first-run fixes.** From the log: migration imported the settings, moved `~/Pictures/Flipbook` to `~/Pictures/Annotake`, and renamed both captures' markers; Flipbook was quit and moved to the Trash (no App Management block); a practice recording and a dropped card (3 frames) finished the first run.
+   - **macOS asked for Input Monitoring and Screen Recording as soon as Annotake launched,** before the first run reached them: the launch created the key's event tap and listed the screens. Each grant from those prompts made macOS quit and reopen Annotake, so the window kept closing. Fixed: neither happens before its permission is granted, and a grant noticed while the window is behind System Settings brings it back in front.
+   - **The relaunch forgot that this Mac is an existing user** and ran the new-user flow (welcome, practice run, drop box): nothing had saved the fresh state yet. And that fresh state started at the welcome, which the existing-user flow doesn't have, so Get Started would have skipped every permission. Fixed: a step the mode doesn't have means its first step, and the fresh state is saved at once.
+   - Not reported yet: the first-open dialog, and the move offer (7.3).
