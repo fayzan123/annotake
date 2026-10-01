@@ -129,11 +129,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startRetentionSchedule()
 
         // 6. The screen and window list, kept fresh.
+        //    Listing them makes macOS ask for Screen Recording, so before it's granted the list waits for the
+        //    first recording, and the first run asks at its own step (Checkpoint 3).
         let contentCache = ShareableContentCache()
-        contentCache.refresh()
+        if Permissions.status().screenRecording { contentCache.refresh() }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { _ in
-                MainActor.assumeIsolated { contentCache.refresh() }
+                MainActor.assumeIsolated {
+                    if Permissions.status().screenRecording { contentCache.refresh() }
+                }
             }
         self.contentCache = contentCache
 

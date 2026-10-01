@@ -187,3 +187,30 @@ struct OnboardingModelTests {
             bundleURL: home.appending(path: "Documents/GitHub/annotake/build/Annotake.app"), home: home))
     }
 }
+
+/// The live view model: a grant noticed by polling brings the window forward with the next step, since the
+/// window has usually fallen behind System Settings by then (Checkpoint 3).
+@MainActor
+struct OnboardingViewModelTests {
+    final class Granted: @unchecked Sendable {
+        var status = Permissions.Status(screenRecording: false, inputMonitoring: false, accessibility: false)
+    }
+
+    @Test func grantBringsTheWindowForward() {
+        let granted = Granted()
+        let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil,
+                                            persisted: .init(step: .permission(.accessibility)),
+                                            retiredFlipbook: false, status: { granted.status })
+        var forward = 0
+        viewModel.onGrantAdvanced = { forward += 1 }
+
+        viewModel.refresh()
+        #expect(forward == 0)
+        granted.status.accessibility = true
+        viewModel.refresh()
+        #expect(forward == 1)
+        #expect(viewModel.model.step == .permission(.inputMonitoring))
+        viewModel.refresh()
+        #expect(forward == 1)
+    }
+}

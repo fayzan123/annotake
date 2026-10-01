@@ -117,7 +117,13 @@ public final class InputMonitor: @unchecked Sendable {
         let ready = DispatchSemaphore(value: 0)
         let thread = Thread { [self] in
             runLoop = CFRunLoopGetCurrent()
-            createListenTap()
+            // Creating the tap makes macOS ask for Input Monitoring, and without it a tap gets no events until
+            // Annotake reopens (M0). So before it's granted there's no tap, and the first run asks at its own step.
+            if isListening {
+                createListenTap()
+            } else {
+                InputLog.write("listen tap not created: no Input Monitoring yet; the key works after Annotake reopens")
+            }
             // Keeps the run loop alive even if the tap couldn't be created.
             let keepAlive = CFRunLoopTimerCreateWithHandler(nil, .greatestFiniteMagnitude, 0, 0, 0) { _ in }
             CFRunLoopAddTimer(runLoop, keepAlive, .commonModes)
