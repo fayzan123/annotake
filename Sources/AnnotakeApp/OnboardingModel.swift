@@ -21,8 +21,6 @@ struct OnboardingModel: Equatable {
     enum Mode: String, Codable {
         /// A new user: the welcome, the permissions, and a practice run.
         case firstRun
-        /// The old app was used on this Mac (spec §3.8): straight to the permissions, which macOS asks for again.
-        case existingUser
         /// From "Fix permissions…".
         case fixPermissions
     }
@@ -48,8 +46,7 @@ struct OnboardingModel: Equatable {
     private(set) var persisted: Persisted
 
     /// Starts where `persisted` left off, past any permission that's been granted since. A step the mode doesn't
-    /// have, like a fresh existing user's default welcome, means the mode's first step (Checkpoint 3: otherwise
-    /// Get Started skipped every permission).
+    /// have means the mode's first step.
     init(granted: [Permission: Bool], persisted: Persisted) {
         self.granted = granted
         self.persisted = persisted
@@ -83,7 +80,7 @@ struct OnboardingModel: Equatable {
         let permissions = Permission.allCases.map(Step.permission)
         switch mode {
         case .firstRun: return [.welcome] + permissions + [.reopen, .practice, .dropCard, .done]
-        case .existingUser, .fixPermissions: return permissions + [.reopen, .done]
+        case .fixPermissions: return permissions + [.reopen, .done]
         }
     }
 

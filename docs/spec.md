@@ -149,7 +149,7 @@ Choosing fn shows a note with three warnings:
 ### 3.7 First launch
 
 The first run is one window, "Welcome to Annotake" (560 pt wide), showing one step at a time, like Wispr Flow's ([distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build)). Every key name follows the trigger key (Right ⌘ below).
-1. **Welcome:** the Annotake logo (§6), "Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). If Annotake retired an installed Flipbook (§3.8), it says so. Get Started.
+1. **Welcome:** the Annotake logo (§6), "Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). Get Started.
 2. **The three permissions, one at a time,** in this order, because Accessibility applies without a relaunch:
    - **Accessibility:** "So Annotake can name the buttons you click, and keep ⌘ out of your clicks while you hold the key."
    - **Input Monitoring:** "So Annotake can notice Right ⌘, and your clicks and keys while you record. It never records what you type."
@@ -161,9 +161,8 @@ The first run is one window, "Welcome to Annotake" (560 pt wide), showing one st
 5. **A drop box:** "Now drag the card here." A dropped card shows how many frames it held and the first three, then "Next time, drag it into Claude Code, Cursor, or ChatGPT." Skip or Continue.
 6. **You're set:** hold the key for quick recordings, Right ⌘ + Esc cancels, and everything else is in the menu-bar icon.
 
-- **Existing Flipbook users** (§3.8) skip the welcome and the practice run and go straight to the permissions, which say "Annotake replaces Flipbook, so macOS asks for these again."
 - **Nothing is asked for before its step.** Listing screens makes macOS ask for Screen Recording, and creating the key's event tap makes it ask for Input Monitoring, so until each is granted Annotake does neither at launch; neither works before then anyway (M0). A grant noticed by the once-a-second check brings the window back in front of System Settings at the next step (Checkpoint 3).
-- **Where it is** is saved at once and after every change (`onboarding.v1`), and the window shows at each launch until it's done. Saving at once matters for existing users: macOS can quit Annotake for a permission before any step changes, and the relaunch, where migration has already run, must still know (Checkpoint 3). Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
+- **Where it is** is saved after every change (`onboarding.v1`), and the window shows at each launch until it's done. Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
 - **Fix permissions…** in the menu shows the first run where it is, or once it's done, a pass over the missing permissions alone. Closing that pass finishes it.
 - **In Stage 2,** a sign-in step goes after the welcome.
 - Annotake works without Accessibility, in a degraded mode (§7).
@@ -182,20 +181,6 @@ Confirmed by M0:
 First launch also registers Annotake to launch at login (`SMAppService`), because the key has to work right after a restart.
 - It registers only when Annotake runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Annotake there.
 - It can be turned off in Settings → General.
-
-### 3.8 Coming from Flipbook
-
-Annotake was called Flipbook until 2026-09-30, and it's a new app to macOS: a new bundle id (`com.fayzanmalik.annotake`) and a new signature. Its first launch brings Flipbook's settings and captures over, once, before it reads its own settings ([distribution design §3.1](plans/2026-09-30-distribution-design.md#31-the-rename)).
-- **Settings.** Flipbook's settings are copied from its `com.fayzanmalik.flipbook` domain, value by value; unreadable values fall back to their defaults. Its first-run state isn't copied, because macOS asks for the permissions again for the new app.
-- **The captures folder.** If the save location was Flipbook's default, `~/Pictures/Flipbook`:
-  - it's renamed `~/Pictures/Annotake`, and the save location follows it;
-  - if `~/Pictures/Annotake` already exists, the old folder stays where it is, Annotake saves to `~/Pictures/Annotake`, and the log says so;
-  - if the rename fails, the old folder stays the save location.
-- **A custom save location** stays as it is.
-- **Markers.** In the save location, each capture's `.flipbook` marker is renamed `.annotake`, and Flipbook's `.flipbook-tmp` is deleted. Captures it can't reach, such as on a drive that's unplugged at first launch, keep their `.flipbook` marker. It's read like `.annotake` but never written, so those captures still show in Recent Captures and are still cleaned up (§4.1).
-- **Existing users.** Flipbook was used on this Mac if its settings, its captures folder, or any of its preferences exist. Existing users skip the welcome and the practice run, and go straight to the permissions (§3.7).
-- **The old app.** Annotake quits a running Flipbook (forcing it after 2 s) and moves every copy in `/Applications` or `~/Applications` to the Trash, so only Annotake answers the trigger key. Copies elsewhere, such as development builds, stay. A new user's welcome says "Flipbook was moved to the Trash. Annotake replaces it."; existing users skip the welcome, and their permission steps say "Annotake replaces Flipbook, so macOS asks for these again."
-- The log records only what happened and how many markers were renamed, never paths.
 
 ## 4. Output
 
@@ -221,7 +206,6 @@ Annotake was called Flipbook until 2026-09-30, and it's a new app to macOS: a ne
 - A capture whose folder name is already taken gets " (2)", " (3)", and so on.
 - `.raw/capture.json` exists so the filmstrip and Recent Captures work after a relaunch. It is not the machine-readable capture file the backlog defers.
 - **Cleanup** runs at launch and every 24 h. It moves capture folders older than the retention period to the Trash, but only if they contain `.annotake`, and it reads the date from that marker.
-- **Captures made by Flipbook** have a `.flipbook` marker instead. Migration renames it (§3.8). Where it couldn't, `.flipbook` counts as the marker for listing and cleanup when there's no readable `.annotake`; it's never written.
 
 ### 4.2 Frames
 
@@ -366,7 +350,7 @@ Sources/
   AnnotakeExport/   caption strips, click markers, PNGs + steps.md, capture folders,
                     filmstrip trims, retention cleanup
   AnnotakeApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
-                    card, filmstrip, Settings, the first run, migration from Flipbook, Send Feedback,
+                    card, filmstrip, Settings, the first run, Send Feedback,
                     the move to Applications, self-test (§8), the brand mark and logo
   Annotake/         the executable: main.swift, and SparkleUpdater.swift (Sparkle is linked only here)
   annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
@@ -522,7 +506,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   The work is done in a temporary folder outside iCloud Drive; the zip, the disk image, and a dry run's feed end up in `build/release`.
 
   Apple took 49 minutes over the first notarization (Checkpoint 3), so a release survives a slow one. The script uploads, then waits up to `NOTARY_TIMEOUT` (30 minutes by default). If Apple isn't done by then, it stops before publishing. Running the same command again picks up where it left off: the signed app, the disk image, and Apple's submission ids stay in a work folder for that version and build until it's published, and anything Apple has notarized by then just gets its ticket stapled.
-- **Installing:** the disk image at `https://github.com/fayzan123/annotake-releases/releases/latest/download/Annotake.dmg`, or `curl -fsSL https://raw.githubusercontent.com/fayzan123/annotake-releases/main/install.sh | sh`. The command checks for macOS 15 or later, downloads the latest zip, verifies its signature, quits a running Annotake or Flipbook, installs to `/Applications` (or `~/Applications` without admin rights), removes Flipbook.app from both and resets its permissions (`tccutil reset All com.fayzanmalik.flipbook`), and opens Annotake. Files `curl` downloads get no quarantine flag. The repo is `flipbook-releases` until it's renamed at Checkpoint 3; GitHub redirects the old address.
+- **Installing:** the disk image at `https://github.com/fayzan123/annotake-releases/releases/latest/download/Annotake.dmg`, or `curl -fsSL https://raw.githubusercontent.com/fayzan123/annotake-releases/main/install.sh | sh`. The command checks for macOS 15 or later, downloads the latest zip, verifies its signature, quits a running Annotake, installs to `/Applications` (or `~/Applications` without admin rights), removes a copy left in the other Applications folder, and opens Annotake. It finds Annotake by its bundle id, never by name alone, so an app that shares the name is never touched. Files `curl` downloads get no quarantine flag.
 - **Updates** come through Sparkle (§6.2): a daily check of the feed, and Check for Updates… in the menu.
 - **Next:** a Homebrew tap in Stage 3 ([distribution design](plans/2026-09-30-distribution-design.md)).
 
@@ -576,7 +560,6 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 - **Accessibility flags change other apps.** Setting them makes Cursor offer screen-reader mode, and may affect others. Hence recording-only, and clearing them is verified at Checkpoint 1.
 - **Chrome may expose web content late.** M0 saw labels on the next click, about 4 s after setting the flag, so the first Chrome clicks after a recording starts may be unlabeled. Checkpoint 1 measures it.
 - **Unexplained dirty rects on macOS 26.** A bottom-center region was reported dirty at 10 fps with nobody touching the Mac. Tile comparison should ignore it; it's rechecked at Checkpoint 2, once the real pill ticks every second.
-- **Retiring Flipbook.** macOS's App Management protection may stop Annotake from moving Flipbook.app to the Trash. Flipbook is then quit but stays installed, the failure is logged, and it has to be dragged to the Trash by hand. Checkpoint 3 shows whether it happens.
 - **The self-test needs an awake, unlocked Mac.** While the Mac is asleep or locked, capture delivers no frames, so unattended sessions retry the self-test later.
 
 ## 13. Decision log (2026-09-23)
@@ -609,6 +592,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Closed source and freemium: a weekly soft limit, a hard stop at 2.5×, Pro at $9/month or $72/year (2026-09-30) | Reputation first, with revenue as proof. Wispr's cap design, without the slowdown |
 | Accounts, with sign-in first; "nothing you record leaves your Mac" replaces "never touches the network" (2026-09-30) | Counting users, emails, referrals, and team plans need accounts. Nothing recorded is ever sent |
 | Rename to Annotake, internals included, in the Developer ID build (2026-09-30) | "Flipbook" search results and domains are crowded, and one name everywhere avoids confusion |
+| No upgrade path from Flipbook (2026-10-01) | Only Fayzan ever installed Flipbook. The migration, the old app's retirement, and the existing-user first run went with it; they also matched "Flipbook" by name, so another app or folder with that name could have been moved or deleted. |
 | Updates through Sparkle 2, linked only into the executable (2026-09-30, Session 8) | Fixes reach everyone fast, and the libraries and their tests keep no network code |
 | One app for Intel and Apple silicon (2026-09-30, Session 8) | Friends and coworkers may have Intel Macs, and one download fits everyone |
 | Builds signed without a Developer ID opt out of library validation (2026-09-30, Session 8) | The self-signed identity has no team, so the hardened runtime wouldn't load the app's own Sparkle. Developer ID builds share one team and don't need it |

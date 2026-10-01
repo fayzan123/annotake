@@ -1,7 +1,7 @@
 import Foundation
 
 /// Moves captures older than the retention period to the Trash (spec §4.1). Only folders with a capture
-/// marker (`.annotake`, or the legacy one) are ever touched, and their age comes from the marker's date.
+/// marker (`.annotake`) are ever touched, and their age comes from the marker's date.
 public enum Retention {
     static let secondsPerDay: TimeInterval = 86_400
 

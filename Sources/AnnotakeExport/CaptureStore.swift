@@ -36,7 +36,6 @@ public struct PendingCapture: Sendable {
 public struct CaptureStore: Sendable {
     /// Marks a folder as a capture and holds its date; cleanup only ever touches folders that have it.
     public static let markerName = ".annotake"
-    public static let legacyMarkerName = ".flipbook"   // read-only: captures made by Flipbook
     public static let tempFolderName = ".annotake-tmp"
     public static let rawFolderName = ".raw"
 
@@ -114,11 +113,9 @@ public struct CaptureStore: Sendable {
             .sorted { $0.date > $1.date }
     }
 
-    /// The date in the folder's marker (ISO 8601), or nil without a readable one. Without a readable
-    /// `markerName`, the legacy marker counts, so captures that migration couldn't reach stay listed and
-    /// still expire (spec §3.8).
+    /// The date in the folder's marker (ISO 8601), or nil without a readable one.
     public static func readMarker(in folder: URL) -> Date? {
-        date(inMarker: folder.appending(path: markerName)) ?? date(inMarker: folder.appending(path: legacyMarkerName))
+        date(inMarker: folder.appending(path: markerName))
     }
 
     private static func date(inMarker url: URL) -> Date? {

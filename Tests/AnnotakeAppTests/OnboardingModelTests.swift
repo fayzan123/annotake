@@ -21,12 +21,10 @@ struct OnboardingModelTests {
         ])
     }
 
-    @Test func existingUserSkipsWelcomeAndPractice() {
-        let steps: [Model.Step] = [
+    @Test func fixPermissionsSkipsWelcomeAndPractice() {
+        #expect(Model.steps(for: .fixPermissions) == [
             .permission(.accessibility), .permission(.inputMonitoring), .permission(.screenRecording), .reopen, .done,
-        ]
-        #expect(Model.steps(for: .existingUser) == steps)
-        #expect(Model.steps(for: .fixPermissions) == steps)
+        ])
     }
 
     @Test func grantedPermissionsAreSkipped() {
@@ -96,9 +94,9 @@ struct OnboardingModelTests {
         firstRun.relaunched()
         #expect(firstRun.step == .practice)
 
-        var existing = model(at: .reopen, mode: .existingUser, requested: [.screenRecording])
-        existing.relaunched()
-        #expect(existing.step == .done)
+        var fixing = model(at: .reopen, mode: .fixPermissions, requested: [.screenRecording])
+        fixing.relaunched()
+        #expect(fixing.step == .done)
 
         // Relaunching anywhere else changes nothing.
         var elsewhere = model(at: .practice)
@@ -163,16 +161,14 @@ struct OnboardingModelTests {
         #expect(!fixing.showsAtLaunch)
     }
 
-    /// A fresh existing user's state has the default step, the welcome, which their steps don't include
-    /// (Checkpoint 3): it starts at their first step instead, so Get Started can't skip the permissions.
-    @Test func existingUserStartsAtThePermissions() {
-        #expect(Model(granted: noneGranted, persisted: .init(mode: .existingUser)).step == .permission(.accessibility))
-        let accessibilityGranted: [Permission: Bool] = [.accessibility: true, .inputMonitoring: false, .screenRecording: false]
-        #expect(Model(granted: accessibilityGranted, persisted: .init(mode: .existingUser)).step
-                == .permission(.inputMonitoring))
-        #expect(Model(granted: allGranted, persisted: .init(mode: .existingUser)).step == .done)
+    /// A step the mode doesn't have means the mode's first step, past any permission already granted.
+    @Test func aStepTheModeLacksMeansItsFirstStep() {
         #expect(Model(granted: noneGranted, persisted: .init(mode: .fixPermissions, step: .practice)).step
                 == .permission(.accessibility))
+        let accessibilityGranted: [Permission: Bool] = [.accessibility: true, .inputMonitoring: false, .screenRecording: false]
+        #expect(Model(granted: accessibilityGranted, persisted: .init(mode: .fixPermissions, step: .welcome)).step
+                == .permission(.inputMonitoring))
+        #expect(Model(granted: allGranted, persisted: .init(mode: .fixPermissions, step: .welcome)).step == .done)
     }
 
     @Test func fixPermissionsStartsAtFirstMissing() {
@@ -184,7 +180,7 @@ struct OnboardingModelTests {
     }
 
     @Test func persistedRoundTrips() throws {
-        let persisted = Model.Persisted(mode: .existingUser, step: .permission(.inputMonitoring),
+        let persisted = Model.Persisted(mode: .fixPermissions, step: .permission(.inputMonitoring),
                                         requested: [.accessibility, .inputMonitoring], recorded: true)
         let decoded = try JSONDecoder().decode(Model.Persisted.self, from: JSONEncoder().encode(persisted))
         #expect(decoded == persisted)
@@ -212,7 +208,7 @@ struct OnboardingViewModelTests {
         let granted = Granted()
         let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil,
                                             persisted: .init(step: .permission(.accessibility)),
-                                            retiredFlipbook: false, status: { granted.status }, report: { _ in })
+                                            status: { granted.status }, report: { _ in })
         var forward = 0
         viewModel.onAdvancedElsewhere = { forward += 1 }
 
@@ -231,7 +227,7 @@ struct OnboardingViewModelTests {
     @Test func savedRecordingBringsTheDropBoxForward() {
         let all = Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: true)
         let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil, persisted: .init(step: .practice),
-                                            retiredFlipbook: false, status: { all }, report: { _ in })
+                                            status: { all }, report: { _ in })
         var forward = 0
         viewModel.onAdvancedElsewhere = { forward += 1 }
         viewModel.recordingSaved()
@@ -239,19 +235,5 @@ struct OnboardingViewModelTests {
         #expect(forward == 1)
         viewModel.recordingSaved()
         #expect(forward == 1)
-    }
-
-    /// A fresh state is saved at once (Checkpoint 3): macOS can quit Annotake for a permission before any step
-    /// changes, and the relaunch, where migration has already run, mustn't forget that this is an existing user.
-    @Test func freshStateIsSavedAtOnce() {
-        let suite = "annotake-tests-\(UUID())"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
-        _ = OnboardingController(trigger: .rightCommand, defaults: defaults, existingUser: true, retiredFlipbook: true)
-        #expect(OnboardingViewModel.load(from: defaults)?.mode == .existingUser)
-        let relaunch = OnboardingController(trigger: .rightCommand, defaults: defaults, existingUser: false,
-                                            retiredFlipbook: false)
-        #expect(OnboardingViewModel.load(from: defaults)?.mode == .existingUser)
-        _ = relaunch
     }
 }

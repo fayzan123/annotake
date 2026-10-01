@@ -75,9 +75,9 @@ enum UISnapshots {
         let all = Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: true)
         var heights: [String] = []
         func onboarding(_ name: String, _ persisted: OnboardingModel.Persisted, status: Permissions.Status,
-                        retiredFlipbook: Bool = false, change: (OnboardingViewModel) -> Void = { _ in }) {
+                        change: (OnboardingViewModel) -> Void = { _ in }) {
             let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil, persisted: persisted,
-                                                retiredFlipbook: retiredFlipbook, status: { status })
+                                                status: { status })
             change(viewModel)
             writeSwiftUI(OnboardingView(viewModel: viewModel), to: directory, as: name)
             // The window has a fixed height: the content at its own height must fit in it.
@@ -92,13 +92,11 @@ enum UISnapshots {
             try? Data((heights.joined(separator: "\n") + "\n").utf8)
                 .write(to: directory.appending(path: "onboarding-heights.txt"))
         }
-        onboarding("onboarding-welcome.png", .init(), status: none, retiredFlipbook: true)
+        onboarding("onboarding-welcome.png", .init(), status: none)
         onboarding("onboarding-accessibility.png", .init(step: .permission(.accessibility)), status: none)
         onboarding("onboarding-screen-recording-requested.png",
                    .init(step: .permission(.screenRecording), requested: [.accessibility, .inputMonitoring, .screenRecording]),
                    status: two)
-        // A fresh existing user, as the first launch makes one: it must open at the permissions (Checkpoint 3).
-        onboarding("onboarding-existing-user.png", .init(mode: .existingUser), status: none)
         onboarding("onboarding-reopen.png", .init(step: .reopen, requested: [.screenRecording]), status: two)
         onboarding("onboarding-practice.png", .init(step: .practice), status: all)
         onboarding("onboarding-drop.png", .init(step: .dropCard), status: all)

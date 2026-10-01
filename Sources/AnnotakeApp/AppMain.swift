@@ -96,9 +96,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusMenu: StatusMenu?
     private var contentCache: ShareableContentCache?
     private var screenObserver: NSObjectProtocol?
-    /// What migration brought over from the old app, and whether the old app was retired (spec §3.8).
-    private var migration: MigrationPlan?
-    private var retiredFlipbook = false
     private let makeUpdater: @MainActor () -> any Updater
     private var updater: (any Updater)?
 
@@ -112,23 +109,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         InputLog.setHandler { log($0) }
 
         // 2. Opened from the disk image or Downloads: the offer to move to Applications, which relaunches from
-        //    there. Before anything else, so migration and the first run happen in the copy that stays.
+        //    there. Before anything else, so the first run happens in the copy that stays.
         MoveToApplications.offerIfNeeded(defaults: .standard)
 
-        // 3. Coming from the old app (spec §3.8): its settings and captures, once, and only Annotake answers the key.
-        migration = Migration.run(defaults: .standard, home: FileManager.default.homeDirectoryForCurrentUser)
-        retiredFlipbook = LegacyApp.retire()
-
-        // 4. Settings.
+        // 3. Settings.
         let settingsStore = SettingsStore(defaults: .standard)
         let settings = settingsStore.settings
 
-        // 5. Crash leftovers, then retention: now, then on wake and hourly once 24 h have passed.
+        // 4. Crash leftovers, then retention: now, then on wake and hourly once 24 h have passed.
         self.settingsStore = settingsStore
         CaptureStore(root: settings.saveLocation).removeLeftovers()
         startRetentionSchedule()
 
-        // 6. The screen and window list, kept fresh.
+        // 5. The screen and window list, kept fresh.
         //    Listing them makes macOS ask for Screen Recording, so before it's granted the list waits for the
         //    first recording, and the first run asks at its own step (Checkpoint 3).
         let contentCache = ShareableContentCache()
@@ -141,7 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         self.contentCache = contentCache
 
-        // 7. The pill.
+        // 6. The pill.
         let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel())
         let cards = CardController()
         let filmstrip = FilmstripController()
@@ -155,7 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.cards = cards
         self.filmstrip = filmstrip
 
-        // 8. The menu, and the Settings window it opens.
+        // 7. The menu, and the Settings window it opens.
         let settingsModel = SettingsModel(store: settingsStore)
         settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
         let settingsWindow = SettingsWindowController(
@@ -185,24 +178,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.statusMenu = statusMenu
         self.statusMenu = statusMenu
 
-        // 9. The key.
+        // 8. The key.
         let monitor = InputMonitor(trigger: settings.triggerKey, gestures: settings.gestureConfig,
                                    layout: CurrentKeyboardLayout(), delegate: controller)
         controller.inputMonitor = monitor
         monitor.start()
         self.monitor = monitor
 
-        // 10. The first run, until it's done (an existing user starts at the permissions), and the login item.
+        // 9. The first run, until it's done, and the login item.
         Permissions.logStatus()
-        let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard,
-                                              existingUser: migration?.existingUser ?? false,
-                                              retiredFlipbook: retiredFlipbook)
+        let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard)
         controller.onRecordingSaved = { [weak onboarding] in onboarding?.recordingSaved() }
         onboarding.showIfNeeded()
         self.onboarding = onboarding
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)
 
-        // 11. Updates: the app's first network call, a daily check (spec §6.2).
+        // 10. Updates: the app's first network call, a daily check (spec §6.2).
         updater = makeUpdater()
     }
 

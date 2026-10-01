@@ -1,10 +1,11 @@
 #!/bin/sh
-# Installs Annotake's latest build, or updates the one you have. It also replaces Flipbook, its old name.
+# Installs Annotake's latest build, or updates the one you have.
 #
 #   curl -fsSL https://raw.githubusercontent.com/fayzan123/annotake-releases/main/install.sh | sh
 #
 # It downloads Annotake.zip from the latest release, checks its signature, puts Annotake in /Applications
-# (or ~/Applications if you can't write there), removes Flipbook, and opens Annotake.
+# (or ~/Applications if you can't write there), and opens Annotake. Annotake is recognized by its bundle id,
+# never by name alone, so another app that shares the name is never touched.
 #
 # For testing: ANNOTAKE_INSTALL_DIR=<folder> installs there instead, and quits, opens, and removes nothing.
 # ANNOTAKE_ZIP_URL=<url> downloads another zip, file:// included.
@@ -39,7 +40,6 @@ main() {
 
   if [ "$testing" = 0 ]; then
     quit Annotake com.fayzanmalik.annotake
-    quit Flipbook com.fayzanmalik.flipbook
   fi
 
   mkdir -p "$dest"
@@ -52,21 +52,12 @@ main() {
     return
   fi
 
-  # Keep one copy: another in the other Applications folder would confuse launch at login. Flipbook goes
-  # too, from both, so only Annotake answers Right ⌘, and its old permission rows leave System Settings.
-  replaced=0
+  # Keep one copy: another in the other Applications folder would confuse launch at login.
   for folder in /Applications "$HOME/Applications"; do
-    if [ "$folder" != "$dest" ] && [ -d "$folder/Annotake.app" ]; then
+    if [ "$folder" != "$dest" ] && [ "$(bundle_id "$folder/Annotake.app")" = com.fayzanmalik.annotake ]; then
       rm -rf "$folder/Annotake.app" 2>/dev/null || true
     fi
-    if [ -d "$folder/Flipbook.app" ]; then
-      rm -rf "$folder/Flipbook.app" 2>/dev/null && replaced=1
-    fi
   done
-  tccutil reset All com.fayzanmalik.flipbook >/dev/null 2>&1 || true
-  if [ "$replaced" = 1 ]; then
-    echo "Flipbook, Annotake's old name, was removed."
-  fi
 
   open "$dest/Annotake.app"
   echo "Annotake is installed in $dest and opening now."
@@ -74,18 +65,30 @@ main() {
   echo "It updates itself; running this command again also updates it."
 }
 
-# Quits a running app by name and bundle id: politely, then after 5 s, firmly.
+# Quits a running app, found by its bundle id: politely, then after 5 s, firmly.
 quit() {
-  if pgrep -xq "$1"; then
+  pid=$(running_pid "$2")
+  if [ -n "$pid" ]; then
     echo "Quitting the $1 that's running…"
     osascript -e "tell application id \"$2\" to quit" >/dev/null 2>&1 || true
     i=0
-    while pgrep -xq "$1" && [ "$i" -lt 50 ]; do
+    while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 50 ]; do
       sleep 0.1
       i=$((i + 1))
     done
-    pkill -x "$1" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
   fi
+}
+
+# The bundle id in an app's Info.plist, or nothing when there's no app there.
+bundle_id() {
+  [ -f "$1/Contents/Info.plist" ] || return 0
+  /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$1/Contents/Info.plist" 2>/dev/null || true
+}
+
+# The process id of the running app with this bundle id, or nothing.
+running_pid() {
+  lsappinfo info -only pid -app "$1" 2>/dev/null | sed -n 's/^"pid"=\([0-9][0-9]*\)$/\1/p'
 }
 
 fail() {
