@@ -8,6 +8,9 @@ const PORT = 4174;
 export default defineConfig({
   testDir: 'pages',
   fullyParallel: true,
+  // Five or more Google Chromes starting at once left one stuck creating its first context (in 2 of 3 runs on
+  // 2026-10-01, a 10-core Mac); four never did.
+  workers: 4,
   forbidOnly: !!process.env.CI,
   reporter: [['line']],
   use: {

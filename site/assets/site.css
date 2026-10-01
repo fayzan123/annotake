@@ -612,11 +612,12 @@ body::before {
 
 /* ---------- How it works: a vertical strip of three frames. Canvases are 720 × 450 units; 1 em is one unit. ---------- */
 
-.how { padding: 140px 20px 40px; }
+/* The film sizes itself to the window, so only the heading needs side padding. */
+.how { padding: 140px 0 40px; }
 .how h2,
 .privacy h2,
 .final h2 { font-weight: 600; line-height: 1.04; letter-spacing: -0.03em; }
-.how h2 { margin-bottom: 48px; text-align: center; font-size: clamp(34px, 4.2vw, 56px); }
+.how h2 { margin-bottom: 48px; padding: 0 20px; text-align: center; font-size: clamp(34px, 4.2vw, 56px); }
 .film {
   --cw: min(752px, calc(94vw - 68px));
   position: relative;
