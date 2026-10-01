@@ -334,6 +334,7 @@ First and last frames are pinned. Remove the lowest-cost frame, update its neigh
 
 - **Toolchain:** native Swift (Swift 6.2), built with SwiftPM and a Makefile. There is no Xcode project.
 - **App identity:** bundle id `com.fayzanmalik.annotake`, `LSUIElement` (menu-bar only), minimum macOS 15.0.
+- **Icon:** `Resources/AppIcon.icns`, drawn by `scripts/make-icon.swift` (`make icon`): a dark body in the caption strip's color, three fanned frames, and the click marker's red ring on the front one. Sizes up to 64 px come from a simplified drawing with a bolder ring, so the ring stays red at 32 px.
 
 ```
 Sources/
@@ -470,6 +471,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 - **One-time prerequisite:** Command Line Tools 26.3, the newest that runs on macOS 15.7. It includes the macOS 26.2 SDK and Swift 6.2. Install it from Software Update or developer.apple.com/download.
 - **Tests:** `make test` runs Swift Testing with the Command Line Tools' framework path added, because plain `swift test` can't find `Testing` without Xcode, and XCTest isn't in the CLT at all (M0).
 - **Make targets:**
+  - `make icon` redraws the app icon; the `.icns` is committed.
   - `make cert` runs once. It creates a free self-signed signing identity, "Annotake Local Signing", so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
   - `make` builds and assembles `Annotake.app`: one app for Apple silicon and Intel, from two release builds (`--triple arm64-apple-macosx15.0` and `x86_64-apple-macosx15.0`) merged with `lipo`. Two `--arch` flags would need Xcode's XCBuild.
   - `make run` builds it and opens it.

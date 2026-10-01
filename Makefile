@@ -11,7 +11,7 @@ UNIVERSAL := .build/universal
 VERSION := $(shell cat VERSION)
 BUILD := $(shell git rev-list --count HEAD)
 RELEASE ?= 0
-.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean
+.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon
 app:
 	swift build -c release --product Annotake --triple $(ARM_TRIPLE)
 	swift build -c release --product Annotake --triple $(X86_TRIPLE)
@@ -45,6 +45,11 @@ ui-snapshots: app
 	ls build/ui
 cert:
 	scripts/make-cert.sh
+# Redraws the app icon; Resources/AppIcon.icns is committed.
+icon:
+	rm -rf build/AppIcon.iconset && mkdir -p build Resources
+	swift scripts/make-icon.swift build/AppIcon.iconset
+	iconutil -c icns build/AppIcon.iconset -o Resources/AppIcon.icns
 clean:
 	rm -rf .build build
 CLT_FW := /Library/Developer/CommandLineTools/Library/Developer/Frameworks
