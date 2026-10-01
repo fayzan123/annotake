@@ -105,6 +105,16 @@ struct SelfTestExpectationTests {
         #expect(result.frames.map { Captions.line2(for: $0.context) } == SelfTest.expectedContexts)
     }
 
+    /// The script's picks hold on a Retina screen; on a 1× monitor the drawn pointer covers fewer tiles and
+    /// the picker keeps an extra frame, so the window goes on the sharpest screen, the main one on a tie.
+    @Test func windowGoesOnTheSharpestScreen() {
+        #expect(SelfTestLayout.preferredScreen(scales: [1, 2]) == 1)
+        #expect(SelfTestLayout.preferredScreen(scales: [2, 1]) == 0)
+        #expect(SelfTestLayout.preferredScreen(scales: [2, 1, 2]) == 0)
+        #expect(SelfTestLayout.preferredScreen(scales: [1]) == 0)
+        #expect(SelfTestLayout.preferredScreen(scales: []) == nil)
+    }
+
     /// `make selftest-intel` runs under Rosetta, where signature timings measure translation, not a Mac.
     @Test func signatureLimitLoosensOnlyUnderTranslation() {
         #expect(SelfTest.signatureLimit(translated: false) == SelfTest.signatureMillisecondsLimit)
