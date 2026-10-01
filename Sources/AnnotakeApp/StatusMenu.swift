@@ -14,12 +14,34 @@ enum MenuModel {
     }
 }
 
+/// The menu-bar icon: the mark (BrandMark), as a template image so it takes the menu bar's color. While recording,
+/// the front reel turns red and the rest keeps the menu bar's color.
+enum MenuBarIcon {
+    /// In points. The mark is narrow, so it gets the full height of a menu-bar symbol like photo.stack.
+    static let height: CGFloat = 18
+
+    @MainActor
+    static func image(recording: Bool) -> NSImage {
+        let width = (height * BrandMark.bounds.width / BrandMark.bounds.height).rounded(.up)
+        let image = NSImage(size: NSSize(width: width, height: height), flipped: true) { rect in
+            guard let context = NSGraphicsContext.current?.cgContext else { return false }
+            // A template's color comes from its alpha, so it's drawn opaque. While recording, the ink is the label
+            // color, resolved as the icon draws, so it follows the menu bar between light and dark.
+            let ink = recording ? NSColor.labelColor.cgColor : NSColor.black.cgColor
+            BrandMark.draw(in: context, rect: rect, ink: ink, frontReel: recording ? NSColor.systemRed.cgColor : ink)
+            return true
+        }
+        // Redrawn every time, never from a cached bitmap in the appearance it was first drawn in.
+        image.cacheMode = .never
+        image.isTemplate = !recording
+        image.accessibilityDescription = recording ? "Annotake, recording" : "Annotake"
+        return image
+    }
+}
+
 /// The menu-bar icon and its menu. The menu is rebuilt from MenuModel each time it opens.
 @MainActor
 final class StatusMenu: NSObject, NSMenuDelegate {
-    static let idleSymbol = "photo.stack"
-    static let recordingSymbol = "record.circle.fill"
-
     struct Actions {
         var fixPermissions: () -> Void
         var startStop: () -> Void
@@ -47,17 +69,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         setRecording(false)
     }
 
-    /// The icon: a template stack of photos, or a red record symbol while recording.
+    /// The icon: the mark, its front reel red while recording.
     func setRecording(_ recording: Bool) {
-        var image = NSImage(systemSymbolName: recording ? Self.recordingSymbol : Self.idleSymbol,
-                            accessibilityDescription: "Annotake")
-        if recording {
-            image = image?.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [.systemRed]))
-            image?.isTemplate = false
-        } else {
-            image?.isTemplate = true
-        }
-        statusItem.button?.image = image
+        statusItem.button?.image = MenuBarIcon.image(recording: recording)
     }
 
     /// The status item's window, for keeping the icon out of frames on macOS 26.

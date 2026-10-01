@@ -103,7 +103,7 @@ Rules:
 
 ### 3.5 Menu bar
 
-- **Icon:** shows idle or recording (tinted red while recording).
+- **Icon:** the Annotake mark (§6), as a template image in the menu bar's own color. While recording, its front reel turns red.
 - **Menu:**
   - Fix permissions… (only when a permission is missing; it opens the first run's permission steps, §3.7)
   - Start/Stop Recording (a fallback when the key isn't available; it starts a hands-free recording)
@@ -137,6 +137,8 @@ Rules:
 
 A change applies to the next recording and never interrupts one in progress. A new trigger key or new gesture timings take effect as soon as Annotake is idle.
 
+Every tab ends in a footer bar: the Annotake logo on the left and the version on the right, e.g. "Version 0.2.0 (99)", selectable for bug reports.
+
 Each tab with settings (all but Permissions) has a **Restore Defaults** button at its bottom right (Checkpoint 2: a slider is hard to put back exactly). It resets only that tab's settings, and is greyed out while they're already the defaults.
 
 Choosing fn shows a note with three warnings:
@@ -147,7 +149,7 @@ Choosing fn shows a note with three warnings:
 ### 3.7 First launch
 
 The first run is one window, "Welcome to Annotake" (560 pt wide), showing one step at a time, like Wispr Flow's ([distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build)). Every key name follows the trigger key (Right ⌘ below).
-1. **Welcome:** "Annotake: Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). If Annotake retired an installed Flipbook (§3.8), it says so. Get Started.
+1. **Welcome:** the Annotake logo (§6), "Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). If Annotake retired an installed Flipbook (§3.8), it says so. Get Started.
 2. **The three permissions, one at a time,** in this order, because Accessibility applies without a relaunch:
    - **Accessibility:** "So Annotake can name the buttons you click, and keep ⌘ out of your clicks while you hold the key."
    - **Input Monitoring:** "So Annotake can notice Right ⌘, and your clicks and keys while you record. It never records what you type."
@@ -349,7 +351,8 @@ First and last frames are pinned. Remove the lowest-cost frame, update its neigh
 
 - **Toolchain:** native Swift (Swift 6.2), built with SwiftPM and a Makefile. There is no Xcode project.
 - **App identity:** bundle id `com.fayzanmalik.annotake`, `LSUIElement` (menu-bar only), minimum macOS 15.0.
-- **Icon:** `Resources/AppIcon.icns`, drawn by `scripts/make-icon.swift` (`make icon`): a dark body in the caption strip's color, three fanned frames, and the click marker's red ring on the front one. Sizes up to 64 px come from a simplified drawing with a bolder ring, so the ring stays red at 32 px.
+- **Brand:** the mark is a two-reel movie camera standing on a capital A, its tripod, and the logo uses the mark as the A of "Annotake", followed by "nnotake" in Jost SemiBold with its single-story a, outlined. The mark is charcoal `#1C1C1E` (white on dark) with the front reel in the click marker's red, `#FF3B30`. `AnnotakeApp/BrandMark.swift` holds the mark's shapes and `Wordmark.swift` the outlined letters, so the app icon, the menu-bar icon (§3.5), and the welcome step's logo (§3.7) draw the same thing.
+- **Icon:** `Resources/AppIcon.icns`, drawn by `scripts/make-icon.swift` (`make icon` compiles it with `BrandMark.swift`): the mark in white, its front reel red, on a dark body in the caption strip's color. One drawing serves every size.
 
 ```
 Sources/
@@ -364,7 +367,7 @@ Sources/
                     filmstrip trims, retention cleanup
   AnnotakeApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
                     card, filmstrip, Settings, the first run, migration from Flipbook, Send Feedback,
-                    the move to Applications, self-test (§8)
+                    the move to Applications, self-test (§8), the brand mark and logo
   Annotake/         the executable: main.swift, and SparkleUpdater.swift (Sparkle is linked only here)
   annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
   AnnotakeRelease/  Foundation only: the Sparkle feed (appcast) writer
@@ -593,6 +596,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Hold mode reveals at 800 ms; a key before that discards it as a shortcut (2026-09-24) | M0: natural Right ⌘ shortcuts take 270–670 ms to the letter, so 250 ms alone misfired 8 of 10 times. A longer threshold would turn early clicks into ⌘-clicks. |
 | Card lingers ~5 s after a drop (2026-09-24) | Every drop target reported success, even Slack keeping 10 of 20. |
 | Exclude the menu-bar icon explicitly (2026-09-24) | On macOS 26 it appeared in frames despite excluding the app. |
+| The mark: a movie camera on an A (2026-10-01) | "Take" is a film take, and the A starts the name. The red reel is the click marker's red, and in the menu bar it turns red only while recording. Jost, not Avenir Next: it's free to use on the website too. |
 | Frames and events reach the picker through `LiveSession`, one time-ordered queue (2026-09-24, M2–M4 design) | A click's label arrives up to ~100 ms after the click. Ordering keeps each click on the screen it happened on, and makes raw sessions replay exactly as they ran live. |
 | A change under a pointer that stayed put counts (2026-09-24) | After a click the pointer sits on what it clicked, so a ticked checkbox produced no frame. |
 | A hold released before the reveal is discarded (2026-09-24) | If the pill never appeared, nothing was recorded. |

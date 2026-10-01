@@ -27,6 +27,7 @@ enum UISnapshots {
         write(CardView(state: .failed(folder: URL(fileURLWithPath: NSHomeDirectory()))), to: directory, as: "card-error.png")
 
         write(filmstrip(), to: directory, as: "filmstrip.png")
+        write(menuBarIcon(), to: directory, as: "menubar.png")
 
         var problems: [String] = []
         renderSettings(to: directory, problems: &problems)
@@ -45,22 +46,23 @@ enum UISnapshots {
         defaults.removePersistentDomain(forName: suite)
         defer { defaults.removePersistentDomain(forName: suite) }
         let model = SettingsModel(store: SettingsStore(defaults: defaults))
+        // Each tab on its page, with the footer bar, as the window shows it.
+        func tab(_ view: some View, as name: String) { writeSwiftUI(SettingsPage { view }, to: directory, as: name) }
 
-        writeSwiftUI(GeneralTab(model: model, loginItem: { .available }), to: directory, as: "settings-general.png")
-        writeSwiftUI(GeneralTab(model: model, loginItem: { .notInApplications }), to: directory,
-                     as: "settings-general-not-in-applications.png")
+        tab(GeneralTab(model: model, loginItem: { .available }), as: "settings-general.png")
+        tab(GeneralTab(model: model, loginItem: { .notInApplications }), as: "settings-general-not-in-applications.png")
         let picker = samplePicker()
-        writeSwiftUI(RecordTab(model: model, picker: picker), to: directory, as: "settings-record.png")
+        tab(RecordTab(model: model, picker: picker), as: "settings-record.png")
         model.update { $0.recordTarget = .window(windowID: 12, title: "Checkout — Safari") }
-        writeSwiftUI(RecordTab(model: model, picker: picker), to: directory, as: "settings-record-windows.png")
+        tab(RecordTab(model: model, picker: picker), as: "settings-record-windows.png")
         model.update { $0.recordTarget = .cursorScreen }
-        writeSwiftUI(OutputTab(model: model), to: directory, as: "settings-output.png")
-        writeSwiftUI(PermissionsTab(status: {
+        tab(OutputTab(model: model), as: "settings-output.png")
+        tab(PermissionsTab(status: {
             Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: false)
-        }), to: directory, as: "settings-permissions.png")
-        writeSwiftUI(AdvancedTab(model: model), to: directory, as: "settings-advanced.png")
+        }), as: "settings-permissions.png")
+        tab(AdvancedTab(model: model), as: "settings-advanced.png")
         model.update { $0.triggerKey = .fn }
-        writeSwiftUI(GeneralTab(model: model, loginItem: { .available }), to: directory, as: "settings-general-fn.png")
+        tab(GeneralTab(model: model, loginItem: { .available }), as: "settings-general-fn.png")
 
         renderOnboarding(to: directory, problems: &problems)
     }
@@ -137,6 +139,41 @@ enum UISnapshots {
         window.contentView = hosting
         hosting.layoutSubtreeIfNeeded()
         write(hosting, to: directory, as: name)
+    }
+
+    /// The menu-bar icon, idle then recording, on a light and a dark menu bar. The idle icon is a template, so it's
+    /// tinted the way the menu bar draws it.
+    @MainActor
+    private static func menuBarIcon() -> NSView {
+        let bar = NSSize(width: 110, height: 24)
+        let image = NSImage(size: NSSize(width: bar.width, height: bar.height * 2), flipped: true) { _ in
+            let bars: [(NSAppearance.Name, NSColor)] = [(.aqua, NSColor(white: 0.93, alpha: 1)),
+                                                        (.darkAqua, NSColor(white: 0.16, alpha: 1))]
+            for (row, (name, background)) in bars.enumerated() {
+                let y = CGFloat(row) * bar.height
+                background.setFill()
+                NSRect(x: 0, y: y, width: bar.width, height: bar.height).fill()
+                NSAppearance(named: name)?.performAsCurrentDrawingAppearance {
+                    for (column, recording) in [false, true].enumerated() {
+                        let icon = MenuBarIcon.image(recording: recording)
+                        let rect = NSRect(x: 30 + CGFloat(column) * 40, y: y + (bar.height - icon.size.height) / 2,
+                                          width: icon.size.width, height: icon.size.height)
+                        let drawn = icon.isTemplate ? NSImage(size: icon.size, flipped: false) { bounds in
+                            icon.draw(in: bounds)
+                            NSColor.labelColor.set()
+                            bounds.fill(using: .sourceAtop)
+                            return true
+                        } : icon
+                        drawn.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true,
+                                   hints: nil)
+                    }
+                }
+            }
+            return true
+        }
+        let view = NSImageView(frame: NSRect(origin: .zero, size: image.size))
+        view.image = image
+        return view
     }
 
     /// Four frames, the second removed, the third hovered.
