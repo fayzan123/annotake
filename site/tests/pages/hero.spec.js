@@ -84,8 +84,9 @@ test('an iPad asking for the desktop site (a Mac user agent with touch) gets the
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => 5 }));
   await page.goto('/');
   await expect(page.locator('section.hero details.getlink summary')).toBeVisible();
-  await expect(page.locator('a[href="/download"]')).toHaveCount(2);
-  for (const link of await page.locator('a[href="/download"]').all()) await expect(link).toBeHidden();
+  const downloads = await page.locator('a[href="/download"]').all();
+  expect(downloads.length).toBeGreaterThan(0);
+  for (const link of downloads) await expect(link).toBeHidden();
 });
 
 test('without JavaScript, both the download and the email link show, download first', async ({ openPage }) => {

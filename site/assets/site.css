@@ -695,7 +695,7 @@ body::before {
 }
 .win .acme { font-size: calc(var(--s) * 1em); }
 
-.canvas .pill {
+.canvas > .pill {
   bottom: 1.6em;
   height: 2.3em;
   padding: 0 1em;
@@ -704,10 +704,10 @@ body::before {
   opacity: 0;
   transform: translate(-50%, .8em);
 }
-.canvas .pill.show { opacity: 1; transform: translate(-50%, 0); }
-.canvas .ring { width: 30em; height: 30em; border-width: 4em; box-shadow: 0 0 0 1.6em rgba(255, 255, 255, .95); }
-.canvas .press { width: 30em; height: 30em; }
-.canvas .cursor { width: 19em; height: 28em; }
+.canvas > .pill.show { opacity: 1; transform: translate(-50%, 0); }
+.canvas > .ring { width: 30em; height: 30em; border-width: 4em; box-shadow: 0 0 0 1.6em rgba(255, 255, 255, .95); }
+.canvas > .press { width: 30em; height: 30em; }
+.canvas > .cursor { width: 19em; height: 28em; }
 .cursor.gone { opacity: 0; }
 
 /* Step 1: the key */
@@ -837,6 +837,111 @@ body::before {
 }
 .appcard.gone { opacity: 0; transform: scale(.6); }
 
+/* ---------- Nothing you record leaves your Mac ---------- */
+
+.privacy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: 72px;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 160px 32px 60px;
+}
+.privacy h2 { font-size: clamp(34px, 4vw, 54px); }
+.privacy h2 span { display: block; color: var(--head-2); }
+.facts { margin-top: 36px; }
+.fact { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 18px 0; border-top: 1px solid var(--line); }
+.fact dt { font-size: 17px; font-weight: 600; }
+.fact dd { color: var(--ink-2); font-size: 16.5px; line-height: 1.5; }
+.fact code {
+  padding: .1em .35em;
+  border-radius: 5px;
+  background: var(--code-bg);
+  color: var(--ink);
+  font: 500 .9em ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* The recording's folder in Finder, with steps.md in Quick Look over its corner. A picture: aria-hidden. */
+.finder-wrap { position: relative; padding-bottom: 128px; }
+.finder {
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--fd-bg);
+  color: var(--fd-ink);
+  font-family: system-ui, -apple-system, sans-serif;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .13), 0 0 0 1px var(--fd-edge);
+}
+.finder > .bar,
+.ql > .bar { display: flex; align-items: center; border-bottom: 1px solid var(--fd-edge); }
+.finder > .bar { gap: 8px; height: 46px; padding: 0 14px; background: var(--fd-bar); }
+.finder > .bar i { width: 12px; height: 12px; border-radius: 50%; }
+.finder > .bar i:nth-child(1) { background: #FF5F57; }
+.finder > .bar i:nth-child(2) { background: #FEBC2E; }
+.finder > .bar i:nth-child(3) { background: #28C840; }
+.finder > .bar .title { margin-left: 16px; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.finder > .body { display: grid; grid-template-columns: 148px 1fr; }
+.finder > .body > .side { padding: 12px 10px 16px; border-right: 1px solid var(--fd-edge); background: var(--fd-side); font-size: 12.5px; }
+.finder > .body > .side .h { margin: 2px 8px 6px; color: var(--fd-ink-3); font-size: 11px; font-weight: 600; }
+.finder > .body > .side .it { margin-bottom: 1px; padding: 4px 8px; border-radius: 6px; }
+.finder > .body > .side .it.on { background: var(--fd-sel); font-weight: 600; }
+.finder .list { min-width: 0; padding-bottom: 64px; font-size: 12.5px; }
+.finder .list > .row { display: grid; grid-template-columns: minmax(0, 1fr) 64px 92px; align-items: center; gap: 10px; padding: 7px 14px; }
+.finder .list > .row.head { padding: 8px 14px; border-bottom: 1px solid var(--fd-edge); color: var(--fd-ink-3); font-size: 11px; font-weight: 600; }
+.finder .list > .row:nth-child(even):not(.head) { background: var(--fd-zebra); }
+.finder .list > .row > .n { display: flex; align-items: center; gap: 10px; min-width: 0; white-space: nowrap; }
+.finder .list > .row > .m { color: var(--fd-ink-3); }
+.finder .tic {
+  flex: none;
+  width: 30px;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #E6E6EB;
+  font-size: calc(30px / 196);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+}
+.finder .dic {
+  flex: none;
+  width: 14px;
+  height: 18px;
+  margin: 0 8px;
+  border-radius: 2px;
+  background: #FFFFFF repeating-linear-gradient(180deg, transparent 0 4px, #C7C7CC 4px 5px) 3px 4px / 8px 100% no-repeat;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
+}
+.finder > .path {
+  padding: 9px 14px;
+  border-top: 1px solid var(--fd-edge);
+  color: var(--fd-ink-3);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ql {
+  position: absolute;
+  right: -28px;
+  bottom: 0;
+  width: 404px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--ql-bg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .22), 0 0 0 1px var(--fd-edge);
+}
+.ql > .bar { justify-content: center; height: 30px; color: var(--fd-ink-3); font: 600 12px system-ui, -apple-system, sans-serif; }
+.ql > pre {
+  padding: 13px 16px 15px;
+  color: var(--fd-ink);
+  font: 11px/1.62 ui-monospace, "SF Mono", Menlo, monospace;
+  white-space: pre-wrap;
+}
+
+/* ---------- The final call ---------- */
+
+.final { padding: 180px 24px 150px; text-align: center; }
+.final h2 { margin-bottom: 32px; font-size: clamp(36px, 4.6vw, 64px); letter-spacing: -0.035em; }
+
 /* ---------- Footer ---------- */
 
 .site-footer { max-width: 1280px; margin: 0 auto; padding: 0 40px 36px; }
@@ -876,6 +981,25 @@ body::before {
   .hero .sub { margin: 16px auto 24px; font-size: 16.5px; }
   .sub-more { display: none; }
   .site-footer { padding: 0 20px 28px; }
+}
+
+@media (max-width: 900px) {
+  .privacy { grid-template-columns: minmax(0, 1fr); gap: 48px; padding: 120px 24px 40px; }
+  .ql { right: 0; }
+  .fact { grid-template-columns: 1fr; gap: 4px; }
+  .final { padding: 140px 20px 110px; }
+}
+
+/* A phone's Finder drops its sidebar and Kind column, and Quick Look sits under it, overlapping a little. */
+@media (max-width: 600px) {
+  .privacy { padding: 100px 20px 30px; }
+  .finder-wrap { padding-bottom: 0; }
+  .finder > .body { grid-template-columns: 1fr; }
+  .finder > .body > .side,
+  .finder .kind { display: none; }
+  .finder .list > .row { grid-template-columns: minmax(0, 1fr) 56px; }
+  .finder .list { padding-bottom: 40px; }
+  .ql { position: relative; right: auto; width: auto; margin: -28px 0 0 18px; }
 }
 
 /* The hero's button is right below, so a narrow header keeps just the logo and the toggle. */
