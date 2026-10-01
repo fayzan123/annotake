@@ -57,3 +57,12 @@ export async function useTheme(page, theme) {
     } catch {}
   }, theme);
 }
+
+/**
+ * Installs Playwright's fake clock, paused, so nothing on the page moves until the test calls `page.clock.runFor`.
+ * Call it before `goto`. (An installed clock that isn't paused keeps flowing in real time.)
+ */
+export async function pauseClock(page) {
+  await page.clock.install({ time: new Date('2026-10-01T09:41:00') });
+  await page.clock.pauseAt(new Date('2026-10-01T09:41:01'));
+}

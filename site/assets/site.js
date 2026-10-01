@@ -18,4 +18,23 @@ function wireThemeToggles() {
   update();
 }
 
+/**
+ * A download click lets the browser fetch the disk image, says "Downloading…" for 2 s, and shows what to do with it:
+ * the hint in the same call to action, or the hero's when the header's button was clicked.
+ */
+function wireDownloads() {
+  for (const link of document.querySelectorAll('a[href="/download"]')) {
+    const label = link.querySelector('.label');
+    let timer;
+    link.addEventListener('click', () => {
+      label.textContent = 'Downloading…';
+      clearTimeout(timer);
+      timer = setTimeout(() => { label.textContent = 'Download for Mac'; }, 2000);
+      const hint = link.closest('.cta')?.querySelector('.dl-hint') ?? document.querySelector('.dl-hint');
+      if (hint) hint.hidden = false;
+    });
+  }
+}
+
 wireThemeToggles();
+wireDownloads();
