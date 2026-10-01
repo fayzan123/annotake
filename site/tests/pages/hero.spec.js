@@ -71,6 +71,7 @@ test.describe('on an iPhone', () => {
     await expect(summary).toHaveText('Email me the link');
     await expect(hero.locator('.link-note')).toHaveText(
       'Annotake is a Mac app. Get the link in your inbox and download it there.');
+    await expect(hero.locator('.link-note')).toBeVisible();
     await expect(hero.locator('a[href="/download"]')).toBeHidden();
     await expect(hero.locator('p.note.mac-only')).toBeHidden();
     await expect(page.locator('header a[href="/download"]')).toBeHidden();
