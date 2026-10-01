@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-DIR=.signing; NAME="Flipbook Local Signing"; PASS=flipbook-local
-KC="$PWD/$DIR/flipbook-signing.keychain-db"
+DIR=.signing; NAME="Annotake Local Signing"; PASS=annotake-local
+KC="$PWD/$DIR/annotake-signing.keychain-db"
 if [ -f "$KC" ] && security find-identity -p codesigning "$KC" | grep -q "$NAME"; then
   echo "Signing identity already exists"; exit 0
 fi

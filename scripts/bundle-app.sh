@@ -6,7 +6,7 @@ if [ $# -ne 4 ]; then
 fi
 EXE=$1; NAME=$2; ID=$3; OUT=$4
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-KC="$ROOT/.signing/flipbook-signing.keychain-db"
+KC="$ROOT/.signing/annotake-signing.keychain-db"
 APP="$OUT/$NAME.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -32,10 +32,10 @@ plutil -lint "$APP/Contents/Info.plist" >/dev/null
 # ~/Documents may be synced by iCloud Drive, which tags new bundles with Finder/file-provider
 # attributes that codesign rejects ("resource fork, Finder information, or similar detritus").
 # It can tag the bundle again between the strip and the signing, so try a few times.
-security unlock-keychain -p flipbook-local "$KC"
+security unlock-keychain -p annotake-local "$KC"
 for attempt in 1 2 3; do
   xattr -cr "$APP"
-  if codesign --force --options runtime --timestamp=none --keychain "$KC" --sign "Flipbook Local Signing" "$APP"; then
+  if codesign --force --options runtime --timestamp=none --keychain "$KC" --sign "Annotake Local Signing" "$APP"; then
     break
   fi
   if [ "$attempt" -eq 3 ]; then exit 1; fi
