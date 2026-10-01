@@ -163,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSWorkspace.shared.open(folder)
             },
             settings: { [weak settingsWindow] in settingsWindow?.show() },
+            sendFeedback: { Feedback.send() },
             checkForUpdates: { [weak self] in self?.updater?.checkForUpdates() },
             recentCaptures: { [weak controller, weak cards] in
                 guard let controller, let cards else { return [] }

@@ -17,7 +17,8 @@ struct MenuModelTests {
     @Test func orderIsFixed() {
         let titles = ["2026-09-24 at 16.46.58 · 10 frames", "2026-09-24 at 16.46.03 · 4 frames"]
         #expect(MenuModel.items(missingPermission: true, recording: false, recentTitles: titles) == [
-            .fixPermissions, .startRecording, .recent(titles), .openFolder, .settings, .checkForUpdates, .quit,
+            .fixPermissions, .startRecording, .recent(titles), .openFolder, .settings, .sendFeedback,
+            .checkForUpdates, .quit,
         ])
     }
 
