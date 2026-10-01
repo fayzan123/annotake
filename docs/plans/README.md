@@ -35,7 +35,8 @@ Rules for every session:
 10. **Session 8: the Stage 1 build. Done 2026-09-30.** Flipbook is Annotake everywhere, with migration from Flipbook; one signed app for Intel and Apple silicon, with an icon, version numbers, Sparkle updates, Send Feedback, a step-by-step first run, the move to Applications, and `make release` with a disk image (369 tests). What it decided and skipped is under Session 8 below.
 11. **Checkpoint 3 on both Macs. Done 2026-10-01.** The results are in [../checkpoints.md](../checkpoints.md).
 12. **Next: the friends round** ([distribution design §5](2026-09-30-distribution-design.md#5-stage-1-the-friends-round)), on a release whose Send Feedback goes to Fayzan's Gmail, and alongside it the Stage 2 design and plan ([§11](2026-09-30-distribution-design.md#11-sessions)).
-13. **Session 9: the landing page design. Done 2026-10-01.** Pulled ahead of the rest of Stage 2: annotake.app offers the download directly (no waitlist), with a privacy policy, Terms, and the link by email for phones. The design is [2026-10-01-landing-page-design.md](2026-10-01-landing-page-design.md); its plan comes next.
+13. **Session 9: the landing page design and plan. Done 2026-10-01.** Pulled ahead of the rest of Stage 2: annotake.app offers the download directly (no waitlist), with a privacy policy, Terms, and the link by email for phones. The design is [2026-10-01-landing-page-design.md](2026-10-01-landing-page-design.md), and the plan is [2026-10-01-landing-page-build.md](2026-10-01-landing-page-build.md).
+14. **Next: Session 10, the landing page build,** then Checkpoint 4, which connects the site to Vercel, email, and DNS. It can run alongside the friends round.
 
 ## Session 1: M0 spikes (done)
 
@@ -287,4 +288,44 @@ Prompt:
 
 ```
 In ~/Documents/GitHub/flipbook, run Session 8: execute Tasks 1–15 of docs/plans/2026-09-30-stage-1-build.md, test-first as its header says. Read docs/plans/2026-09-30-distribution-design.md, docs/spec.md, and the plan before starting. Don't use any superpowers skills. Run tests only with `make test` (never plain `swift test`), and commit after each task. Never launch the full app; use `make selftest`, `make selftest-intel`, `make ui-snapshots`, and `make release DRY_RUN=1`. I'm not here, so never stop to ask me anything: follow the plan header's "No stops until the end" rules, deciding or skipping, recording it, and carrying on. When Task 15 passes, push main, rename the GitHub repo as Task 15 says, and give me the Checkpoint 3 list with your Decisions and Skipped lists first.
+```
+
+## Session 10: the landing page build
+
+Plan: [2026-10-01-landing-page-build.md](2026-10-01-landing-page-build.md), Tasks 1–15. Design: [2026-10-01-landing-page-design.md](2026-10-01-landing-page-design.md). The approved mockups are in [mockups/2026-10-01-landing-page/](mockups/2026-10-01-landing-page/).
+
+1. The site skeleton, the local server, and the test harness
+2. The brand, generated from BrandMark.swift
+3. Tokens, the font, the theme, and the page frame
+4. The hero and the Mac check
+5. The email check and the link form
+6. The link function
+7. Through the gate
+8. How it works
+9. The privacy block and the final call
+10. The footer and the logo animation
+11. The privacy policy, the Terms, the licenses, and the 404 page
+12. Search, sharing, and the preview image
+13. Whole-page checks
+14. The checkpoint tools
+15. Docs, the session notes, and Checkpoint 4
+
+Before you leave it running:
+- **The first `make site-test` downloads Playwright's WebKit and Firefox,** a few hundred MB. A failed download is covered by the plan's network rules. Chrome tests use your installed Google Chrome, so keep it installed.
+- **The session needs no screen and no permissions.** Keep the Mac awake anyway (`caffeinate -dims` in a spare terminal tab) so it doesn't stall.
+- **Nothing goes live during the session.** It never deploys, creates accounts, or touches DNS, so nothing reaches annotake.app until Checkpoint 4.
+
+Your part is Checkpoint 4 at the end, in the plan's Task 15:
+- the Resend and ImprovMX accounts, and their DNS records;
+- the Vercel project, its settings, and the firewall rule;
+- registering annotake.com;
+- the first deploy, with the smoke and burst checks;
+- a real link email to your phone;
+- the look on your iPhone and both Macs;
+- reading the policies.
+
+Prompt:
+
+```
+In ~/Documents/GitHub/annotake, run Session 10: execute Tasks 1–15 of docs/plans/2026-10-01-landing-page-build.md, test-first as its header says. Read docs/plans/2026-10-01-landing-page-design.md, the mockups in docs/plans/mockups/2026-10-01-landing-page/, and the plan before starting. Don't use any superpowers skills. Run the app's tests only with `make test` (never plain `swift test`) and the site's with `make site-test` and `make site-unit`, and commit after each task. Never launch the full app, never deploy, never create accounts or touch DNS, and never send a real email. I'm not here, so never stop to ask me anything: follow the plan header's "No stops until the end" rules, deciding or skipping, recording it, and carrying on. When Task 15 passes, push main and give me the Checkpoint 4 list with your Decisions and Skipped lists first.
 ```

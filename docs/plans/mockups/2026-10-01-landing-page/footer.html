@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotake: footer logo animation (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #FFFFFF; --ink: #1C1C1E; --ink-2: #515154; --ink-3: #6E6E73; --line: #e5e5ea; --btn-bg: #1C1C1E; --btn-fg: #fff; --red: #FF3B30; }
+  :root[data-theme="dark"] { --bg: #141416; --ink: #F5F5F7; --ink-2: #AEAEB2; --ink-3: #8E8E93; --line: #2c2c2e; --btn-bg: #fff; --btn-fg: #1C1C1E; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: Jost, system-ui, sans-serif; -webkit-font-smoothing: antialiased; transition: background .3s, color .3s; }
+  .review { max-width: 1200px; margin: 0 auto; padding: 22px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .review p { color: var(--ink-3); font-size: 15px; max-width: 640px; line-height: 1.45; }
+  .review .ctl { display: flex; gap: 8px; flex: none; }
+  .review button { border: 1px solid var(--line); background: transparent; color: var(--ink); font: 500 14px Jost, sans-serif; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+  .review button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .final { text-align: center; padding: 120px 24px 130px; }
+  .final h2 { font-weight: 600; font-size: clamp(36px, 4.6vw, 64px); letter-spacing: -0.035em; line-height: 1.04; margin-bottom: 32px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; background: var(--btn-bg); color: var(--btn-fg); text-decoration: none;
+         height: 56px; padding: 0 28px; font: 500 18px Jost, sans-serif; }
+  .btn svg { width: 18px; height: 18px; }
+  .final .note { font-size: 14px; color: var(--ink-3); margin-top: 13px; line-height: 1.5; }
+  .final .note a { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  footer { max-width: 1280px; margin: 0 auto; padding: 0 40px 36px; }
+  .giant { width: 100%; height: auto; display: block; overflow: visible; }
+  .giant .ink { fill: var(--ink); transition: fill .3s; }
+  .giant .sweep { fill: none; stroke: var(--red); }
+  .legal { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 30px; padding-top: 22px;
+           border-top: 1px solid var(--line); font-size: 14.5px; color: var(--ink-3); }
+  .legal nav { display: flex; gap: 22px; flex-wrap: wrap; }
+  .legal a { color: var(--ink-2); text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="review">
+    <p>The footer logo, at full width like Wispr’s. When it scrolls into view the tripod unfolds into the A, the camera settles, and the front reel winds red. Replay it, or slow it down.</p>
+    <div class="ctl"><button id="replay">Replay</button><button id="slow">Slow motion</button><button id="theme">Light / Dark</button></div>
+  </div>
+
+  <section class="final">
+    <h2>Try it on your next bug.</h2>
+    <a class="btn" href="#"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M5.5 8.5 10 13l4.5-4.5M4 16.5h12"/></svg>Download for Mac</a>
+    <p class="note">Free during the beta · macOS 15 or later · Apple silicon and Intel<br>By downloading, you agree to the <a href="#">Terms</a>.</p>
+  </section>
+
+  <footer>
+    <svg class="giant" id="giant" viewBox="-6 -244 644.06 252" aria-label="Annotake">
+      <g class="ink"><polygon id="legL"/><polygon id="legR"/><rect id="bar"/></g>
+      <g id="camera">
+        <g class="ink">
+          <path d="M10.89 -163.76 H110.11 C116.12 -163.76 121 -158.88 121 -152.87 V-106.89 C121 -100.88 116.12 -96 110.11 -96 H10.89 C4.88 -96 0 -100.88 0 -106.89 V-152.87 C0 -158.88 4.88 -163.76 10.89 -163.76 Z"/>
+          <path d="M119.79 -145.61 L151.25 -159.53 L151.25 -100.23 L119.79 -114.15 Z"/>
+          <path fill-rule="evenodd" d="M0 -198.85 A27.83 27.83 0 1 0 55.66 -198.85 A27.83 27.83 0 1 0 0 -198.85 Z M15.12 -198.85 A12.71 12.71 0 1 0 40.54 -198.85 A12.71 12.71 0 1 0 15.12 -198.85 Z"/>
+          <path fill-rule="evenodd" d="M65.34 -198.85 A27.83 27.83 0 1 0 121 -198.85 A27.83 27.83 0 1 0 65.34 -198.85 Z M80.47 -198.85 A12.71 12.71 0 1 0 105.88 -198.85 A12.71 12.71 0 1 0 80.47 -198.85 Z"/>
+        </g>
+        <circle class="sweep" id="sweep" cx="93.17" cy="-198.85" r="20.27" stroke-width="15.12" transform="rotate(-90 93.17 -198.85)"/>
+      </g>
+      <g class="ink" id="word"></g>
+    </svg>
+    <div class="legal">
+      <span>© 2026 Fayzan Malik · Made in Ontario, Canada</span>
+      <nav><a href="#">Privacy</a><a href="#">Terms</a><a href="#">hello@annotake.app</a></nav>
+    </div>
+  </footer>
+
+<script>
+  document.getElementById('word').innerHTML = '<path d="M169.45 -40V0H188.53V-42.04Q188.53 -53.84 182.8 -60.52Q177.06 -67.2 165.35 -67.2Q158.37 -67.2 153.44 -64.26Q148.51 -61.31 145.47 -55.73V-65.71H127V0H145.47V-40Q145.47 -44.18 147.08 -47.19Q148.69 -50.2 151.65 -51.82Q154.61 -53.43 158.51 -53.43Q164.27 -53.43 166.86 -49.99Q169.45 -46.55 169.45 -40Z"/><path d="M248.59 -40V0H267.67V-42.04Q267.67 -53.84 261.94 -60.52Q256.2 -67.2 244.49 -67.2Q237.51 -67.2 232.58 -64.26Q227.65 -61.31 224.61 -55.73V-65.71H206.14V0H224.61V-40Q224.61 -44.18 226.22 -47.19Q227.84 -50.2 230.8 -51.82Q233.76 -53.43 237.65 -53.43Q243.41 -53.43 246 -49.99Q248.59 -46.55 248.59 -40Z"/><path d="M280.8 -32.86Q280.8 -22.69 285.57 -14.94Q290.35 -7.18 298.61 -2.88Q306.88 1.43 317.25 1.43Q327.69 1.43 335.92 -2.88Q344.14 -7.18 348.92 -14.94Q353.69 -22.69 353.69 -32.86Q353.69 -43.16 348.92 -50.88Q344.14 -58.59 335.92 -62.9Q327.69 -67.2 317.25 -67.2Q306.88 -67.2 298.61 -62.9Q290.35 -58.59 285.57 -50.88Q280.8 -43.16 280.8 -32.86ZM299.71 -32.86Q299.71 -38.49 302.06 -42.71Q304.41 -46.94 308.38 -49.27Q312.35 -51.59 317.25 -51.59Q322.14 -51.59 326.11 -49.27Q330.08 -46.94 332.43 -42.71Q334.78 -38.49 334.78 -32.86Q334.78 -27.22 332.43 -23.04Q330.08 -18.86 326.11 -16.52Q322.14 -14.18 317.25 -14.18Q312.35 -14.18 308.38 -16.52Q304.41 -18.86 302.06 -23.04Q299.71 -27.22 299.71 -32.86Z"/><path d="M358.39 -65.71V-50.1H398.9V-65.71H358.39ZM369.71 -88.57V0H387.57V-88.57H369.71Z"/><path d="M458.14 -65.71V0H476.2V-65.71H458.14ZM403.65 -32.86Q403.65 -21.98 408.11 -14.3Q412.57 -6.61 419.82 -2.59Q427.06 1.43 435.31 1.43Q443.59 1.43 449.89 -2.71Q456.18 -6.86 459.84 -14.57Q463.49 -22.29 463.49 -32.86Q463.49 -43.57 459.84 -51.21Q456.18 -58.86 449.89 -63Q443.59 -67.14 435.31 -67.14Q427.06 -67.14 419.82 -63.12Q412.57 -59.1 408.11 -51.49Q403.65 -43.88 403.65 -32.86ZM422.88 -32.86Q422.88 -38.78 425.31 -43.02Q427.74 -47.27 431.84 -49.55Q435.94 -51.84 440.71 -51.84Q444.8 -51.84 448.73 -49.61Q452.67 -47.39 455.2 -43.14Q457.73 -38.9 457.73 -32.86Q457.73 -26.82 455.2 -22.57Q452.67 -18.33 448.73 -16.1Q444.8 -13.88 440.71 -13.88Q435.94 -13.88 431.84 -16.16Q427.74 -18.45 425.31 -22.72Q422.88 -27 422.88 -32.86Z"/><path d="M493.02 -111.43V0H510.88V-111.43H493.02ZM534.92 -65.71 506.65 -38.57 538.02 0H559.96L528.84 -38.57L557.1 -65.71H534.92Z"/><path d="M597.8 1.43Q609.71 1.43 618.17 -3.21Q626.63 -7.86 631.84 -17.12L615.63 -22.18Q612.86 -17.41 608.45 -15.03Q604.04 -12.65 598 -12.65Q592.51 -12.65 588.68 -15.08Q584.86 -17.51 582.89 -22.11Q580.92 -26.71 580.98 -33.27Q581.06 -40.16 582.98 -44.77Q584.9 -49.37 588.59 -51.72Q592.29 -54.08 597.69 -54.08Q602.1 -54.08 605.36 -52.14Q608.61 -50.2 610.45 -46.71Q612.29 -43.22 612.29 -38.41Q612.29 -37.41 611.8 -35.94Q611.31 -34.47 610.69 -33.51L615.63 -40.08H573.02V-28.78H631.86Q631.98 -29.61 632.02 -30.99Q632.06 -32.37 632.06 -33.73Q632.06 -44.29 628.07 -51.77Q624.08 -59.24 616.48 -63.19Q608.88 -67.14 598 -67.14Q587.06 -67.14 579.06 -62.95Q571.06 -58.76 566.71 -51.07Q562.37 -43.39 562.37 -32.86Q562.37 -22.47 566.72 -14.79Q571.08 -7.1 579.07 -2.84Q587.06 1.43 597.8 1.43Z"/>';
+
+  // The tripod, as in BrandMark.swift: legs 0.95 stems thick, splayed 26 degrees, feet 121 apart.
+  // Each leg pivots on the point where the two centre lines meet, hidden in the camera body, so the feet stay
+  // on the baseline and the camera rides up as the legs close, just like a real tripod.
+  const RAD = Math.PI / 180, OPEN = 26 * RAD, HALF = 0.95 * 20.71 / 2, MID = 60.5;
+  const LC = (MID - HALF / Math.cos(OPEN)) / Math.sin(OPEN);   // centre line, foot to pivot: 113.0
+  const PIVOT_OPEN = -LC * Math.cos(OPEN);                      // -101.6
+  const ABOVE = -112 - PIVOT_OPEN;                               // legs run 10.4 past the pivot, inside the body
+  const BAR_Y = -38, BAR_H = 0.85 * 20.71, C = 2 * Math.PI * 20.27;
+  const legL = document.getElementById('legL'), legR = document.getElementById('legR'), bar = document.getElementById('bar');
+  const camera = document.getElementById('camera'), sweep = document.getElementById('sweep');
+  sweep.setAttribute('stroke-dasharray', C);
+
+  function pose(theta, wind) {
+    const t = Math.tan(theta), w = HALF / Math.cos(theta);
+    const foot = MID - LC * Math.sin(theta), pivot = -LC * Math.cos(theta), top = pivot + ABOVE;
+    const xAt = y => foot + (-y) * t;                             // left leg's centre line at height y
+    const L = [[xAt(0) - w, 0], [xAt(0) + w, 0], [xAt(top) + w, top], [xAt(top) - w, top]];
+    legL.setAttribute('points', L.map(p => p.join(',')).join(' '));
+    legR.setAttribute('points', L.map(([x, y]) => [2 * MID - x, y].join(',')).join(' '));
+    const bx = xAt(BAR_Y), bw = Math.max(0, 2 * (MID - bx));
+    bar.setAttribute('x', bx); bar.setAttribute('width', bw); bar.setAttribute('y', BAR_Y - BAR_H / 2); bar.setAttribute('height', BAR_H);
+    camera.setAttribute('transform', `translate(0 ${pivot - PIVOT_OPEN})`);
+    sweep.setAttribute('stroke-dashoffset', C * (1 - wind));
+  }
+
+  const ease = {
+    back: x => { const c1 = 1.55, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
+    inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  };
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+  let speed = 1, raf = 0, start = 0;
+  function play() {
+    cancelAnimationFrame(raf); start = performance.now();
+    const step = now => {
+      const ms = (now - start) * speed;
+      const open = ease.back(clamp01((ms - 250) / 950));
+      const wind = ease.inOut(clamp01((ms - 1150) / 650));
+      pose(OPEN * open, wind);
+      if (ms < 1900) raf = requestAnimationFrame(step);
+    };
+    pose(0, 0); raf = requestAnimationFrame(step);
+  }
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  pose(reduce ? OPEN : 0, reduce ? 1 : 0);
+  if (!reduce) new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) play(); else { cancelAnimationFrame(raf); pose(0, 0); } }),
+                                        { threshold: .6 }).observe(document.getElementById('giant'));
+
+  const root = document.documentElement;
+  root.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.getElementById('theme').onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; };
+  document.getElementById('replay').onclick = play;
+  document.getElementById('slow').onclick = e => { speed = speed === 1 ? .25 : 1; e.target.classList.toggle('on', speed !== 1); play(); };
+  document.querySelector('.btn').onclick = e => e.preventDefault();
+</script>
+</body>
+</html>
