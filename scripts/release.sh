@@ -144,8 +144,10 @@ if [ -f "$DMG" ] && [ -s "$WORK/dmg.notary-id" ] && ! dry; then
   echo "reusing the disk image an earlier run submitted to Apple"
 else
   rm -f "$DMG"
-  [ -x "$VENV/bin/dmgbuild" ] || make dmg-venv
-  "$VENV/bin/dmgbuild" -s scripts/dmg-settings.py -D app="$APP" -D icon="$ROOT/Resources/AppIcon.icns" \
+  # As a module, not through bin/dmgbuild, whose first line names the project folder's path: renaming the
+  # folder would break it.
+  "$VENV/bin/python3" -c 'import dmgbuild' 2>/dev/null || make dmg-venv
+  "$VENV/bin/python3" -m dmgbuild -s scripts/dmg-settings.py -D app="$APP" -D icon="$ROOT/Resources/AppIcon.icns" \
     -D background="$ROOT/Resources/dmg-background.tiff" Annotake "$DMG"
   security unlock-keychain -p annotake-local "$KC"
   if dry; then TIMESTAMP=--timestamp=none; else TIMESTAMP=--timestamp; fi
