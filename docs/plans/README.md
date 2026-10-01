@@ -27,8 +27,10 @@ Rules for every session:
 6. **Checkpoint 2 on both Macs. Done 2026-09-25.** Everything passed; the results are in [../checkpoints.md](../checkpoints.md). Fixed during it: Restore Defaults on each settings tab, and `make replay` with capture paths (they have spaces).
 7. **Session 6: the Checkpoint 2 fixes. Done 2026-09-25.** Caption line 2 names the recorded window in window mode, a slider drag logs one line, and the `stream` log line says where the dirty area is. Your checks are in its section below.
 8. **M5: real use,** under way since Checkpoint 2 (no plan).
-9. **Session 7: the distribution design. Done 2026-09-30.** It covers how the app reaches other developers and makes money, and the rename from Flipbook to Annotake: [2026-09-30-distribution-design.md](2026-09-30-distribution-design.md). Friends can already install the current build with the one-line command in its §5.1.
-10. **Next: the Stage 1 plan,** written with `superpowers:writing-plans`.
+9. **Session 7: the distribution design and the Stage 1 plan. Done 2026-09-30.**
+   - The design covers how the app reaches other developers and makes money, and the rename from Flipbook to Annotake: [2026-09-30-distribution-design.md](2026-09-30-distribution-design.md). Friends can already install the current build with the one-line command in its §5.1.
+   - The plan: [2026-09-30-stage-1-build.md](2026-09-30-stage-1-build.md).
+10. **Next: Session 8, the Stage 1 build,** then Checkpoint 3.
 
 ## Session 1: M0 spikes (done)
 
@@ -204,4 +206,47 @@ Prompt:
 
 ```
 In ~/Documents/GitHub/flipbook, run Session 6 in docs/plans/README.md: the three Checkpoint 2 fixes, each test-first. Read docs/spec.md, docs/checkpoints.md, and the Session 6 section before starting. Don't use any superpowers skills. Run tests only with `make test`, and commit after each fix. Never launch the full app; use `make selftest` and `make ui-snapshots`. Stop only if macOS shows a permission prompt you can't answer, or a fix needs a decision from me. When all three are done, push main to origin, run `make zip`, and give me the "Your part" list from the Session 6 section.
+```
+
+## Session 8: the Stage 1 build
+
+Plan: [2026-09-30-stage-1-build.md](2026-09-30-stage-1-build.md), Tasks 1–15. Design: [2026-09-30-distribution-design.md](2026-09-30-distribution-design.md) §5.2.
+
+1. The rename to Annotake, internals included
+2. The rename in the docs
+3. Migrating from Flipbook: settings, the captures folder, and retiring the old app
+4. Version numbers
+5. Intel and Apple silicon in one app
+6. The app icon
+7. Developer ID signing, with the local identity as a fallback
+8. Sparkle updates and Check for Updates…
+9. Send Feedback
+10. The first run's rules
+11. The first-run window
+12. Move to Applications
+13. The appcast writer
+14. The disk image, the release script, and the Annotake installer
+15. Final checks, push, the repo rename, and Checkpoint 3
+
+Before you leave it running:
+- **Keep the Mac awake and unlocked,** for example with `caffeinate -dims` in a spare terminal tab. The self-test can't capture while the Mac is asleep or locked.
+- **The first build downloads Sparkle,** which takes several minutes.
+- **The Apple Developer membership doesn't need to be active yet.** The session prepares the certificate request and signs with the local identity. The Developer ID, notarization, and the first real release happen at the checkpoint.
+
+Your part is Checkpoint 3 at the end, on both Macs. The list is in the plan's Task 15:
+- the certificate and notarization key;
+- backing up two secrets;
+- renaming the releases repo;
+- the first `make release`;
+- installing like a stranger;
+- an update through Sparkle;
+- Send Feedback;
+- the first run as a new user;
+- the work Mac;
+- renaming the local folder once the session is closed.
+
+Prompt:
+
+```
+In ~/Documents/GitHub/flipbook, run Session 8: execute Tasks 1–15 of docs/plans/2026-09-30-stage-1-build.md, test-first as its header says. Read docs/plans/2026-09-30-distribution-design.md, docs/spec.md, and the plan before starting. Don't use any superpowers skills. Run tests only with `make test` (never plain `swift test`), and commit after each task. Never launch the full app; use `make selftest`, `make selftest-intel`, `make ui-snapshots`, and `make release DRY_RUN=1`. Stop only if macOS shows a permission or keychain prompt you can't answer, or a test expectation in the plan looks wrong (tell me why; don't change it). When Task 15 passes, push main, rename the GitHub repo as Task 15 says, and give me the Checkpoint 3 list.
 ```
