@@ -138,3 +138,8 @@ test('the PNG icons are 32 and 180 px square', async () => {
   assert.deepEqual(await pngSize('img/favicon-32.png'), [32, 32]);
   assert.deepEqual(await pngSize('img/apple-touch-icon.png'), [180, 180]);
 });
+
+test('the touch icon is opaque, so iOS has no transparent margin to fill with black', async () => {
+  const bytes = await readFile(new URL('img/apple-touch-icon.png', assets));
+  assert.equal(bytes[25], 2, 'PNG color type 2: RGB, no alpha');
+});

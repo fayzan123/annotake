@@ -48,6 +48,7 @@ test('a good address reaches the sent state, and the request holds the cleaned a
   const bodies = await routeLink(page, route => route.fulfill({ json: { ok: true } }));
   const form = await openForm(page);
   await expect(form.getByLabel('Your email')).toBeFocused();
+  await expect(page.locator('section.hero .link-note')).toBeHidden();
   await form.getByLabel('Your email').fill('  Sam+annotake@Example.com ');
   await form.getByRole('button', { name: 'Send link' }).click();
   const sent = page.locator('section.hero .linkform-sent');
