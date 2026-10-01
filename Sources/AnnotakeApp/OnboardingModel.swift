@@ -47,10 +47,14 @@ struct OnboardingModel: Equatable {
     private(set) var granted: [Permission: Bool]
     private(set) var persisted: Persisted
 
-    /// Starts where `persisted` left off, past any permission that's been granted since.
+    /// Starts where `persisted` left off, past any permission that's been granted since. A step the mode doesn't
+    /// have, like a fresh existing user's default welcome, means the mode's first step (Checkpoint 3: otherwise
+    /// Get Started skipped every permission).
     init(granted: [Permission: Bool], persisted: Persisted) {
         self.granted = granted
         self.persisted = persisted
+        let steps = Self.steps(for: persisted.mode)
+        if !steps.contains(persisted.step), let first = steps.first { self.persisted.step = first }
         if case .permission(let permission) = step, isGranted(permission) { advance() }
     }
 

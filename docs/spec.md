@@ -161,7 +161,7 @@ The first run is one window, "Welcome to Annotake" (560 pt wide), showing one st
 
 - **Existing Flipbook users** (§3.8) skip the welcome and the practice run and go straight to the permissions, which say "Annotake replaces Flipbook, so macOS asks for these again."
 - **Nothing is asked for before its step.** Listing screens makes macOS ask for Screen Recording, and creating the key's event tap makes it ask for Input Monitoring, so until each is granted Annotake does neither at launch; neither works before then anyway (M0). A grant noticed by the once-a-second check brings the window back in front of System Settings at the next step (Checkpoint 3).
-- **Where it is** is saved after every change (`onboarding.v1`), and the window shows at each launch until it's done. Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
+- **Where it is** is saved at once and after every change (`onboarding.v1`), and the window shows at each launch until it's done. Saving at once matters for existing users: macOS can quit Annotake for a permission before any step changes, and the relaunch, where migration has already run, must still know (Checkpoint 3). Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
 - **Fix permissions…** in the menu shows the first run where it is, or once it's done, a pass over the missing permissions alone. Closing that pass finishes it.
 - **In Stage 2,** a sign-in step goes after the welcome.
 - Annotake works without Accessibility, in a degraded mode (§7).
