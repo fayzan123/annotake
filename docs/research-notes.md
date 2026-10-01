@@ -194,3 +194,95 @@ These are the facts behind [spec.md](spec.md) and [v2-backlog.md](v2-backlog.md)
   - Claude Code's video-input request [#12676](https://github.com/anthropics/claude-code/issues/12676) is open, with 45 👍 as of 2026-09-23.
   - Cursor forum threads ask for video input.
   - The 84EM blog describes extracting ffmpeg `fps=1` frames for Claude Code.
+
+## Pricing, competitors, and selling (2026-09-28)
+
+This research is for the [distribution design](plans/2026-09-30-distribution-design.md). Prices change, so recheck them before relying on any of them.
+
+**Wispr Flow**
+- **Free plan:** 2,000 words a week on desktop, 1,000 on mobile. (V) [pricing](https://wisprflow.ai/pricing)
+  - On the Mac, 2,000 is a soft cap that slows Flow down, and 5,000 is a hard cap that rejects the next dictation. (V) [docs](https://docs.wisprflow.ai/articles/3715544288-weekly-word-limit-not-resetting-troubleshooting-guide)
+  - Counts reset Sunday at 12 a.m. Pacific. (V, same doc)
+  - Counters appear only within 200 words of the cap, and "if Flow cannot confirm your plan, no limit is applied". (V) [docs](https://docs.wisprflow.ai/articles/4760791189-free-tier-weekly-word-cap-and-bonus-words-remove-desktop-trial-experiment)
+- **Pro:** $15 per user per month, or $144 a year. (V) [plans](https://docs.wisprflow.ai/articles/9559327591-flow-plans-and-what-s-included)
+- **Trial:** a 14-day Pro trial is "standard", and no card is needed. (V) The cap doc's URL suggests Wispr is testing no trial on desktop. (I)
+- **Referrals:** the friend gets a 30-day Pro trial, and the referrer gets a month of Pro once the friend dictates enough or upgrades. (V) [docs](https://docs.wisprflow.ai/articles/6496688316-how-to-find-your-referral-link)
+- **Affiliates:** 25% of revenue for the first year. (V) [partners](https://partners.dub.co/flow)
+- **Account required:** setup is "Install Flow, sign in, grant permissions". (V) [setup](https://docs.wisprflow.ai/articles/3152211871-setup-guide)
+- **Growth:**
+  - creator videos, which the CEO says hit "500m views in 60 days" (V) [X](https://x.com/tankots/status/2016205317890089273);
+  - referrals, founder posts, and inbound enterprise sales (V, secondary) [Postbeam](https://www.postbeam.ai/blog/how-wisprflow-grows).
+- **Funding:** a $280M Series B at a $2B valuation, August 2026. (V) [TechCrunch](https://techcrunch.com/2026/08/17/wispr-raises-280m-at-2b-valuation-as-it-looks-beyond-dictation/)
+- **Paying share:** about 19% of users paid between July 2024 and July 2025. (V, stale) [Wikipedia](https://en.wikipedia.org/wiki/Wispr_Flow)
+
+**Comparable Mac apps** (all V)
+
+| App | Price and model | Link |
+|---|---|---|
+| CleanShot X | $35 once with a year of updates ($19 a year to renew); Cloud Pro $10 per user per month, billed yearly; closed | [pricing](https://cleanshot.com/pricing) |
+| Shottr | pay what you want; closed | [site](https://shottr.cc) |
+| Screen Studio | $29 a month, or $9 a month billed yearly; closed | [site](https://screen.studio) |
+| Cap | AGPL; desktop licence $29 a year or $58 lifetime; Pro $12 a month | [pricing](https://cap.so/pricing) |
+| Loom | free for 25 videos of 5 minutes; Business $18 per user per month | [pricing](https://www.loom.com/pricing) |
+| Raycast | free; Pro $10 a month ($96 a year) | [pricing](https://www.raycast.com/pricing) |
+| Superwhisper | Pro $8.49 a month, $84.99 a year, or $249.99 lifetime (from a third-party source) | [site](https://superwhisper.com) |
+| MacWhisper | Pro €65 once | [Gumroad](https://goodsnooze.gumroad.com/l/macwhisper) |
+| Handy | free, MIT, funded by sponsors | [site](https://handy.computer) |
+| Rectangle / Rectangle Pro | free and MIT / $9.99 once | [Pro](https://rectangleapp.com/pro) |
+| Aseprite | $19.99 for the binary; the source is public under an EULA | [trial](https://www.aseprite.org/trial/) |
+
+**Direct competitors** (all V)
+- **AI, Look!:** a Mac recorder that pins key frames for Claude Code. Weekly free cap; Pro $20 a year. [site](https://ai-look.app)
+- **Clipy:** Mac and Chrome, with Markdown output and an MCP server. Free for 15 recordings or 2 hours, then $9 a month or $72 a year. [pricing](https://clipy.online/pricing)
+- **Deiko:** double-tap Right ⌥, point, and talk. Local, no account, free beta, with $3.99 a month floated as the price. Its Hacker News posts got 1 and 5 points. [site](https://deiko.app)
+- **Loom Video Prompts:** Chrome only, on Business+AI ($24 per user per month) and Enterprise. A recording becomes an action plan for Claude or Cursor, or Jira tickets. [blog](https://www.atlassian.com/blog/loom/introducing-loom-video-prompts)
+- **BugReel** (found 2026-09-30): an open-source, self-hosted Chrome extension. A recording becomes a bug card with key frames, exported to Jira, Linear, or GitHub. [site](https://bugreel.io/)
+- **claude-video:** an MIT Claude Code skill that turns video into frames, with 17.8k★. [GitHub](https://github.com/bradautomates/claude-video)
+- **Pointer:** MIT, build from source, macOS 26+, 0★ on 2026-09-28. [GitHub](https://github.com/abhitsian/pointer)
+- **The platforms:**
+  - Claude Code has no video input. Issue #12676 is open with 45 👍 and no reply from Anthropic. [issue](https://github.com/anthropics/claude-code/issues/12676)
+  - Claude Code's computer use can take its own screenshots and reproduce bugs. [docs](https://code.claude.com/docs/en/computer-use)
+  - Cursor's forum request for video input has 6 votes. [forum](https://forum.cursor.com/t/agent-and-chat-should-accept-video-as-input/103864)
+
+**Selling outside the App Store** (all V)
+
+| Provider | Fee | Licence keys | Link |
+|---|---|---|---|
+| Polar | 5% + 50¢ for accounts created since 2026-05-27; +1.5% on non-US cards | built in, checked online | [fees](https://polar.sh/docs/merchant-of-record/fees) |
+| Paddle | 5% + 50¢ | delivers keys you supply | [pricing](https://www.paddle.com/pricing) |
+| Lemon Squeezy | moving users to Stripe Managed Payments (3.5% on top of Stripe's fees) | built in | [2026 update](https://www.lemonsqueezy.com/blog/2026-update) |
+| Gumroad | 10% + 50¢ | built in | [pricing](https://gumroad.com/pricing) |
+| Keygen | licensing only; doesn't handle tax | signed keys that can be checked offline | [plans](https://api.keygen.sh/v1/plans) |
+
+- **Sparkle 2.10.0** (2026-09-13) needs macOS 12+ and fixes delta updates on macOS 27. [release](https://github.com/sparkle-project/Sparkle/releases/tag/2.10.0)
+- **macOS 27** shipped 2026-09-14 and runs on Apple silicon only. [MacRumors](https://www.macrumors.com/2026/09/10/macos-27-golden-gate-release-date/)
+- **New Apple developer accounts** have reported notarization blocked for days with error 7000. [forum](https://developer.apple.com/forums/thread/819982)
+- **Open source and paid together:**
+  - Rectangle is MIT with 30k★ and sells the closed Rectangle Pro. [GitHub](https://github.com/rxhanson/Rectangle)
+  - VoiceInk is GPL and sells one-time binaries at $25–49, which fund full-time work. [site](https://tryvoiceink.com)
+- **No quarantine flag from `curl`:** files that `curl` downloads in Terminal don't get one, so Gatekeeper doesn't check them. The early install relies on this. (V: on 2026-09-30, a `curl` install of the release zip left 0 quarantine entries, and the app passed `codesign --verify --strict --deep`)
+
+## Naming checks (2026-09-30)
+
+- **Method:**
+  - Registry lookups over RDAP: Verisign for .com and Google Registry for .app and .dev. A 404 means the name is unregistered.
+  - These lookups don't show premium prices: shown.dev was unregistered but premium-priced.
+  - Google's endpoint rate-limits rapid lookups. About one second between queries works.
+  - Then a web search, GitHub, and the App Store for namesakes.
+- **Taken on all of .com, .app, and .dev:** most dictionary words tried, including riffle, retake, footage, witness, tattle, seen, kino, loupe, repro, receipts, encore, showme, cuecard, shotlist, groundtruth, keypoint, zeroshot, oneshot, mosaic, grounding, annotate, and checkpoint.
+- **Flipbook:** flipbook.app, flipbook.dev, flipbook.so, getflipbook.app, and useflipbook.com are registered, several by live products called FlipBook or Flipbook. flipbookapp.com is for sale through HugeDomains.
+- **Namesakes that ruled names out:**
+  - **Flipshot:** a Samsung Galaxy Z Flip feature and a Steam game. [Android Authority](https://www.androidauthority.com/samsung-cover-screen-features-good-lock-3576572/)
+  - **Opsis:** a Mac productivity app. [opsis.app](https://opsis.app/)
+  - **Showcard:** the SHOW Mastercard and two apps.
+  - **Lookit:** Lookit AR on the Mac App Store, MIT's research platform, and a 2011 screenshot uploader. [App Store](https://apps.apple.com/us/app/lookit-ar/id1104409821)
+  - **Framecard:** a Framer template, and photo-frame greeting cards fill its search results.
+  - **BugReel:** bugreel.io.
+  - **SnapSteps:** a Chrome extension that turns browser actions into step-by-step guides. [Chrome Web Store](https://chromewebstore.google.com/detail/snapsteps-nrkgo/dpifnpdnkolgcjffopnghkocmaomjedd)
+  - **Kinora:** its get- and -app domains are registered too.
+- **Clean, with domains available:** ReproReel (.com, .app, .dev), StepFlip (.app, .dev), and Shown on longer domains (getshown.app, tryshown.com).
+- **Annotake, the choice:**
+  - annotake.app, annotake.com, annotake.dev, and anotake.app were unregistered.
+  - No GitHub project uses the name.
+  - A Figma plugin exports design annotations under it. [Figma](https://www.figma.com/community/plugin/1562003383248990114/annotake)
+  - Search engines show "annotate" dictionary pages first.

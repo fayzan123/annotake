@@ -43,7 +43,7 @@ This file lists everything deliberately left out of v1, together with the design
 
 ## MP4 / Both output
 
-**Status:** deferred on 2026-09-23. The AI use case doesn't need video, and macOS's ⌘⇧5 covers video in the meantime.
+**Status:** deferred on 2026-09-23. The AI use case doesn't need video, and macOS's ⌘⇧5 covers video in the meantime. Since 2026-09-30 it's planned as Pro's launch feature ([distribution design](plans/2026-09-30-distribution-design.md)): Loom-style, with system audio and the microphone (asked for only when MP4 is first used). It gets its own design and plan.
 
 **Use case:** attach a video to a Jira ticket for humans, alongside the frames for the agent.
 
@@ -132,7 +132,7 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 ## Signed download + Homebrew tap
 
-**Status:** planned for when Fayzan is ready to share. He chose "pay later" on 2026-09-23.
+**Status:** in progress. On 2026-09-23 Fayzan chose "pay later"; on 2026-09-30 he decided to enroll now, as an individual. Signing, notarization, a disk image, and Sparkle updates are in Stage 1 of the [distribution design](plans/2026-09-30-distribution-design.md), and the Homebrew tap is in Stage 3. Until then, other Macs install with a one-line command (design §5.1). The notes below are kept for reference.
 
 **Signing:**
 - The Apple Developer Program costs $99/yr.
@@ -145,7 +145,7 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 **Homebrew:** since 2026-09-01 the main cask repo has disabled casks that fail Gatekeeper. A personal tap is unaffected.
 
-**Updates:** there's no in-app updater, because v1 never touches the network. Updates come through Homebrew or a manual download. Revisit this if an opt-in update check is ever wanted.
+**Updates:** v1 has no in-app updater. Stage 1 of the distribution design adds Sparkle: a daily update check that sends only the app's version.
 
 **Mac App Store:** not viable. The sandbox disallows Accessibility and active event taps.
 

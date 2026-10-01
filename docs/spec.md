@@ -1,12 +1,15 @@
 # Flipbook: v1 spec
 
-**Status:** approved design, 2026-09-23; updated with M0 findings and the M2–M4 design 2026-09-24 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
+**Status:** approved design, 2026-09-23; updated with M0 findings and the M2–M4 design 2026-09-24, and with the distribution design 2026-09-30 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
+
+**Name:** Flipbook is being renamed **Annotake** ([distribution design §3](plans/2026-09-30-distribution-design.md#3-the-name-annotake)). This spec says Flipbook until Stage 1's rename lands.
 
 Companion docs:
 - [v2-backlog.md](v2-backlog.md): everything deliberately left out of v1, with the design notes gathered so far.
 - [research-notes.md](research-notes.md): the facts and sources behind these decisions.
 - [spikes/findings.md](spikes/findings.md): what the M0 spikes measured, and the decisions taken from them.
 - [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md): how M2–M4 build the app (capture, input, export, UI), and the two checkpoints.
+- [plans/2026-09-30-distribution-design.md](plans/2026-09-30-distribution-design.md): how the app reaches other developers and makes money: the stages, the free plan and Pro, accounts, and the rename to Annotake.
 
 ## 1. Summary
 
@@ -17,9 +20,9 @@ It exists because reproducing a Jira bug for a coding agent meant screenshotting
 ## 2. Principles and constraints
 
 - **Ease of use first.** The flow is: press the key, reproduce the bug, drag the card. Nothing may add a step, a confirmation, or a wait to it. Defaults work with no setup, and failures degrade instead of blocking a recording.
-- **Built for Fayzan's own workflow first.** Others should be able to download and use it easily later. Competitors do not drive decisions.
+- **Built for Fayzan's own workflow first, and now for other developers too.** Setup must be as easy as Wispr Flow or Loom: download, grant the permissions, start ([distribution design](plans/2026-09-30-distribution-design.md)). Competitors don't drive product decisions; pricing and positioning look at them.
 - **No AI in the product.** No LLMs, no ML models, no API keys, no bills. Frames are picked by pixel comparison, and "what you clicked" comes from macOS Accessibility.
-- **Never touches the network.** No telemetry, no accounts, no update checks. This keeps it acceptable on a work Mac.
+- **Nothing you record leaves your Mac.** Frames, captions, `steps.md`, window titles, button names, and keys never leave it, which keeps it acceptable on a work Mac. Today the app makes no network calls at all. The [distribution design](plans/2026-09-30-distribution-design.md) adds them in stages: a daily update check (Stage 1), then sign-in, the plan, and daily counts (Stage 2). A recording never waits on the network.
 - **Agent-agnostic.** The output is plain PNGs plus a text log, with no integration into any specific agent.
 - **Bare-bones v1.** Anything the core loop doesn't need goes to the backlog.
 - **Native Swift, macOS 15 and later** (§6). It must work on Fayzan's personal Mac (15.7) and his work Mac (26).
@@ -459,11 +462,9 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - `make zip` produces a zip for the work Mac.
   - `make selftest` runs the self-test, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
-- **Work Mac, until the app is notarized:**
-  - The app is built only on the personal MacBook, using Fayzan's own Claude membership rather than work AI.
-  - AirDrop the zip over and unzip it into `/Applications`.
-  - Once per update, run `xattr -dr com.apple.quarantine /Applications/Flipbook.app`.
-- **Later:** signed and notarized downloads plus a Homebrew tap, once Fayzan starts sharing it ([backlog](v2-backlog.md)).
+- **The app is built only on the personal MacBook,** using Fayzan's own Claude membership rather than work AI.
+- **Other Macs, until the app is notarized** (the work Mac and friends' Macs): `curl -fsSL https://raw.githubusercontent.com/fayzan123/flipbook-releases/main/install.sh | sh` installs or updates the latest release from the public, releases-only repo. Files `curl` downloads get no quarantine flag, so there's no `xattr` step, and permissions survive updates. Details: [distribution design §5.1](plans/2026-09-30-distribution-design.md#51-the-early-install-done-2026-09-30).
+- **Next:** Developer ID signing, notarization, a disk image, and Sparkle updates in Stage 1, then a Homebrew tap in Stage 3 ([distribution design](plans/2026-09-30-distribution-design.md)).
 
 ## 10. Milestones
 
@@ -484,20 +485,20 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - Session 4 builds M2 and M3, then comes Checkpoint 1 on the personal Mac.
   - Session 5 builds M4, then comes Checkpoint 2 on both Macs.
 - **M5: Dogfood.** A week of real use at work, tuning thresholds from local raw sessions.
+- **M6: Distribution.** The friends round, the beta, then the paywall and launch, in the [distribution design](plans/2026-09-30-distribution-design.md).
 
 ## 11. Not in v1
 
 - Radial ring
-- MP4/Both output
+- MP4/Both output (MP4 is planned for Pro and gets its own design; see the [distribution design](plans/2026-09-30-distribution-design.md))
 - Voice narration
 - "Save the last 30 s"
 - On-screen text changes (OCR)
 - Region capture
 - Caps Lock and mouse-button triggers
 - Windows
-- Signed download and Homebrew tap
 - Any AI
-- Any network access
+- Network access beyond what the distribution design adds (update checks, sign-in, the plan, counts)
 - Agent-specific integrations (MCP, auto-paste)
 
 Details for each are in [v2-backlog.md](v2-backlog.md).
@@ -541,3 +542,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Clicks and scrolls outside the recorded area aren't logged (2026-09-24) | The frames can't show them. |
 | First launch is one checklist; the menu gains "Fix permissions…" (2026-09-24) | Fewer clicks than a wizard, and Screen Recording expires monthly. |
 | Launch at login only from an Applications folder (2026-09-24) | A development build never leaves a stale login item. |
+| Distribution in three stages (friends round, beta, paywall and launch), moved forward by bars, not dates (2026-09-30) | Outside validation comes before productising, and Fayzan sets the pace. [Distribution design](plans/2026-09-30-distribution-design.md) |
+| Closed source and freemium: a weekly soft limit, a hard stop at 2.5×, Pro at $9/month or $72/year (2026-09-30) | Reputation first, with revenue as proof. Wispr's cap design, without the slowdown |
+| Accounts, with sign-in first; "nothing you record leaves your Mac" replaces "never touches the network" (2026-09-30) | Counting users, emails, referrals, and team plans need accounts. Nothing recorded is ever sent |
+| Rename to Annotake, internals included, in the Developer ID build (2026-09-30) | "Flipbook" search results and domains are crowded, and one name everywhere avoids confusion |

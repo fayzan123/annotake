@@ -26,7 +26,9 @@ Rules for every session:
 5. **Session 5: M4, the rest of the app. Done 2026-09-24,** run straight after Checkpoint 1 in the same session. The label fix, Settings with the Meet-style picker, the first-launch checklist and launch at login, the full menu with live settings, the retention schedule, and `spikes/` deleted. What both sessions found for later plans is under Session 5 below.
 6. **Checkpoint 2 on both Macs. Done 2026-09-25.** Everything passed; the results are in [../checkpoints.md](../checkpoints.md). Fixed during it: Restore Defaults on each settings tab, and `make replay` with capture paths (they have spaces).
 7. **Session 6: the Checkpoint 2 fixes. Done 2026-09-25.** Caption line 2 names the recorded window in window mode, a slider drag logs one line, and the `stream` log line says where the dirty area is. Your checks are in its section below.
-8. **Next: M5,** a week of real use (no plan).
+8. **M5: real use,** under way since Checkpoint 2 (no plan).
+9. **Session 7: the distribution design. Done 2026-09-30.** It covers how the app reaches other developers and makes money, and the rename from Flipbook to Annotake: [2026-09-30-distribution-design.md](2026-09-30-distribution-design.md). Friends can already install the current build with the one-line command in its §5.1.
+10. **Next: the Stage 1 plan,** written with `superpowers:writing-plans`.
 
 ## Session 1: M0 spikes (done)
 
