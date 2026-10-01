@@ -115,6 +115,9 @@ final class OnboardingViewModel: ObservableObject {
     let retiredFlipbook: Bool
     /// Called when the Done button finishes the first run.
     var onFinish: (() -> Void)?
+    /// Called when polling finds a grant that moves the first run on. By then the window has usually fallen
+    /// behind System Settings, and with no Dock icon there's no way back to it.
+    var onGrantAdvanced: (() -> Void)?
     private let defaults: UserDefaults?
     private let status: () -> Permissions.Status
     private var timer: Timer?
@@ -147,8 +150,10 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func refresh() {
+        let step = model.step
         let granted = status().byPermission
         change { $0.update(granted: granted) }
+        if model.step != step { onGrantAdvanced?() }
     }
 
     /// The step's main button.
@@ -627,6 +632,14 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         // Every launch is a relaunch for permissions that wait for one, so a first run left at Reopen moves on.
         viewModel.relaunched()
         viewModel.onFinish = { [weak self] in self?.window?.close() }
+        viewModel.onGrantAdvanced = { [weak self] in self?.bringForward() }
+    }
+
+    /// Back in front of System Settings, at the next step.
+    private func bringForward() {
+        guard let window, window.isVisible else { return }
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
     }
 
     func showIfNeeded() {
