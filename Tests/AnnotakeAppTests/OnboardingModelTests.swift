@@ -163,6 +163,18 @@ struct OnboardingModelTests {
         #expect(!fixing.showsAtLaunch)
     }
 
+    /// A fresh existing user's state has the default step, the welcome, which their steps don't include
+    /// (Checkpoint 3): it starts at their first step instead, so Get Started can't skip the permissions.
+    @Test func existingUserStartsAtThePermissions() {
+        #expect(Model(granted: noneGranted, persisted: .init(mode: .existingUser)).step == .permission(.accessibility))
+        let accessibilityGranted: [Permission: Bool] = [.accessibility: true, .inputMonitoring: false, .screenRecording: false]
+        #expect(Model(granted: accessibilityGranted, persisted: .init(mode: .existingUser)).step
+                == .permission(.inputMonitoring))
+        #expect(Model(granted: allGranted, persisted: .init(mode: .existingUser)).step == .done)
+        #expect(Model(granted: noneGranted, persisted: .init(mode: .fixPermissions, step: .practice)).step
+                == .permission(.accessibility))
+    }
+
     @Test func fixPermissionsStartsAtFirstMissing() {
         let persisted = Model.fixingPermissions(granted: [.accessibility: true, .inputMonitoring: true,
                                                           .screenRecording: false])
@@ -200,7 +212,7 @@ struct OnboardingViewModelTests {
         let granted = Granted()
         let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil,
                                             persisted: .init(step: .permission(.accessibility)),
-                                            retiredFlipbook: false, status: { granted.status })
+                                            retiredFlipbook: false, status: { granted.status }, report: { _ in })
         var forward = 0
         viewModel.onGrantAdvanced = { forward += 1 }
 
@@ -212,5 +224,19 @@ struct OnboardingViewModelTests {
         #expect(viewModel.model.step == .permission(.inputMonitoring))
         viewModel.refresh()
         #expect(forward == 1)
+    }
+
+    /// A fresh state is saved at once (Checkpoint 3): macOS can quit Annotake for a permission before any step
+    /// changes, and the relaunch, where migration has already run, mustn't forget that this is an existing user.
+    @Test func freshStateIsSavedAtOnce() {
+        let suite = "annotake-tests-\(UUID())"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        _ = OnboardingController(trigger: .rightCommand, defaults: defaults, existingUser: true, retiredFlipbook: true)
+        #expect(OnboardingViewModel.load(from: defaults)?.mode == .existingUser)
+        let relaunch = OnboardingController(trigger: .rightCommand, defaults: defaults, existingUser: false,
+                                            retiredFlipbook: false)
+        #expect(OnboardingViewModel.load(from: defaults)?.mode == .existingUser)
+        _ = relaunch
     }
 }

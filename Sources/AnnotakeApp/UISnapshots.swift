@@ -95,8 +95,8 @@ enum UISnapshots {
         onboarding("onboarding-screen-recording-requested.png",
                    .init(step: .permission(.screenRecording), requested: [.accessibility, .inputMonitoring, .screenRecording]),
                    status: two)
-        onboarding("onboarding-existing-user.png", .init(mode: .existingUser, step: .permission(.accessibility)),
-                   status: none)
+        // A fresh existing user, as the first launch makes one: it must open at the permissions (Checkpoint 3).
+        onboarding("onboarding-existing-user.png", .init(mode: .existingUser), status: none)
         onboarding("onboarding-reopen.png", .init(step: .reopen, requested: [.screenRecording]), status: two)
         onboarding("onboarding-practice.png", .init(step: .practice), status: all)
         onboarding("onboarding-drop.png", .init(step: .dropCard), status: all)

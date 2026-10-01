@@ -120,14 +120,17 @@ final class OnboardingViewModel: ObservableObject {
     var onGrantAdvanced: (() -> Void)?
     private let defaults: UserDefaults?
     private let status: () -> Permissions.Status
+    private let report: (String) -> Void
     private var timer: Timer?
 
-    /// With no defaults (UI snapshots), nothing is saved.
+    /// With no defaults (UI snapshots), nothing is saved. `report` is the log unless a test passes its own.
     init(trigger: TriggerKey, defaults: UserDefaults?, persisted: OnboardingModel.Persisted, retiredFlipbook: Bool,
-         status: @escaping () -> Permissions.Status = Permissions.status) {
+         status: @escaping () -> Permissions.Status = Permissions.status,
+         report: @escaping (String) -> Void = { log($0) }) {
         self.trigger = trigger
         self.defaults = defaults
         self.status = status
+        self.report = report
         self.retiredFlipbook = retiredFlipbook
         model = OnboardingModel(granted: status().byPermission, persisted: persisted)
     }
@@ -201,7 +204,7 @@ final class OnboardingViewModel: ObservableObject {
         guard !frames.isEmpty else { return }
         showDrop(frames: frames.count,
                  thumbnails: frames.prefix(Self.thumbnailCount).compactMap { NSImage(contentsOf: $0) })
-        log("onboarding: a card with \(frames.count) frame(s) was dropped")
+        report("onboarding: a card with \(frames.count) frame(s) was dropped")
     }
 
     func showDrop(frames: Int, thumbnails: [NSImage]) {
@@ -218,7 +221,7 @@ final class OnboardingViewModel: ObservableObject {
         do {
             try relaunch.run()
         } catch {
-            log("couldn't schedule the reopen: \(error)")
+            report("couldn't schedule the reopen: \(error)")
         }
         NSApp.terminate(nil)
     }
@@ -227,12 +230,12 @@ final class OnboardingViewModel: ObservableObject {
         var next = model
         body(&next)
         guard next != model else { return }
-        if next.step != model.step { log("onboarding: \(Self.logName(next.step))") }
+        if next.step != model.step { report("onboarding: \(Self.logName(next.step))") }
         model = next
         save()
     }
 
-    private func save() {
+    func save() {
         guard let defaults, let data = try? JSONEncoder().encode(model.persisted) else { return }
         defaults.set(data, forKey: OnboardingModel.storeKey)
     }
@@ -624,11 +627,15 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
 
     init(trigger: TriggerKey, defaults: UserDefaults, existingUser: Bool, retiredFlipbook: Bool) {
-        let persisted = OnboardingViewModel.load(from: defaults)
-            ?? OnboardingModel.Persisted(mode: existingUser ? .existingUser : .firstRun)
-        viewModel = OnboardingViewModel(trigger: trigger, defaults: defaults, persisted: persisted,
-                                        retiredFlipbook: retiredFlipbook)
+        let saved = OnboardingViewModel.load(from: defaults)
+        viewModel = OnboardingViewModel(
+            trigger: trigger, defaults: defaults,
+            persisted: saved ?? OnboardingModel.Persisted(mode: existingUser ? .existingUser : .firstRun),
+            retiredFlipbook: retiredFlipbook)
         super.init()
+        // Saved at once (Checkpoint 3): macOS can quit Annotake for a permission before any step changes, and
+        // the relaunch, where migration has already run, mustn't forget that this is an existing user.
+        if saved == nil { viewModel.save() }
         // Every launch is a relaunch for permissions that wait for one, so a first run left at Reopen moves on.
         viewModel.relaunched()
         viewModel.onFinish = { [weak self] in self?.window?.close() }
