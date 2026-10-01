@@ -6,7 +6,9 @@ import AnnotakeInput
 /// The app's entry point, called from the `Annotake` executable's main.swift. It isn't named
 /// `AnnotakeApp`, because a type named like its own module makes qualified names ambiguous.
 public enum AppEntry {
-    @MainActor public static func main() {
+    /// The normal app calls `makeUpdater` once; --selftest and --render-ui never do, so they make no
+    /// network calls.
+    @MainActor public static func main(makeUpdater: @escaping @MainActor () -> any Updater) {
         let arguments = CommandLine.arguments
         let delegate: NSApplicationDelegate
         if let index = arguments.firstIndex(of: "--selftest") {
@@ -22,7 +24,7 @@ public enum AppEntry {
             }
             delegate = RenderUIDelegate(directory: URL(fileURLWithPath: arguments[index + 1]))
         } else {
-            delegate = AppDelegate()
+            delegate = AppDelegate(makeUpdater: makeUpdater)
         }
 
         let app = NSApplication.shared
@@ -97,6 +99,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// What migration brought over from the old app, and whether the old app was retired (spec §3.8).
     private var migration: MigrationPlan?
     private var retiredFlipbook = false
+    private let makeUpdater: @MainActor () -> any Updater
+    private var updater: (any Updater)?
+
+    init(makeUpdater: @escaping @MainActor () -> any Updater) {
+        self.makeUpdater = makeUpdater
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. The log.
@@ -155,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSWorkspace.shared.open(folder)
             },
             settings: { [weak settingsWindow] in settingsWindow?.show() },
+            checkForUpdates: { [weak self] in self?.updater?.checkForUpdates() },
             recentCaptures: { [weak controller, weak cards] in
                 guard let controller, let cards else { return [] }
                 let store = CaptureStore(root: controller.settingsStore.settings.saveLocation)
@@ -181,6 +190,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         firstLaunch.showIfNeeded()
         self.firstLaunch = firstLaunch
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)
+
+        // 10. Updates: the app's first network call, a daily check (spec §6.2).
+        updater = makeUpdater()
     }
 
     /// Settings apply live where they can (design §7): the trigger and gesture timings once idle, sounds at

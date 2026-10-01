@@ -11,13 +11,13 @@ UNIVERSAL := .build/universal
 VERSION := $(shell cat VERSION)
 BUILD := $(shell git rev-list --count HEAD)
 RELEASE ?= 0
-.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon devid-csr devid-import
+.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon devid-csr devid-import sparkle-keys
 app:
 	swift build -c release --product Annotake --triple $(ARM_TRIPLE)
 	swift build -c release --product Annotake --triple $(X86_TRIPLE)
 	mkdir -p $(UNIVERSAL)
 	lipo -create -output $(UNIVERSAL)/Annotake $(ARM_BIN)/Annotake $(X86_BIN)/Annotake
-	RELEASE=$(RELEASE) VERSION=$(VERSION) BUILD=$(BUILD) \
+	RELEASE=$(RELEASE) VERSION=$(VERSION) BUILD=$(BUILD) FRAMEWORKS_DIR=$(ARM_BIN) \
 		scripts/bundle-app.sh $(UNIVERSAL)/Annotake Annotake com.fayzanmalik.annotake build
 run: app
 	open build/Annotake.app
@@ -50,6 +50,9 @@ devid-csr:
 	scripts/devid.sh csr
 devid-import:
 	scripts/devid.sh import "$(CER)"
+# Sparkle's update-signing key: the public half is committed, the private half stays in .signing and the keychain.
+sparkle-keys:
+	scripts/sparkle-keys.sh
 # Redraws the app icon; Resources/AppIcon.icns is committed.
 icon:
 	rm -rf build/AppIcon.iconset && mkdir -p build Resources

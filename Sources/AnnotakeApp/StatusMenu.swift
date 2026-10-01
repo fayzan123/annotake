@@ -3,12 +3,14 @@ import AppKit
 /// The menu's items, in order (spec §3.5). "Fix permissions…" shows only while one is missing.
 enum MenuModel {
     enum Item: Equatable {
-        case fixPermissions, startRecording, stopRecording, recent([String]), openFolder, settings, quit
+        case fixPermissions, startRecording, stopRecording, recent([String]), openFolder, settings, checkForUpdates,
+             quit
     }
 
     static func items(missingPermission: Bool, recording: Bool, recentTitles: [String]) -> [Item] {
         (missingPermission ? [.fixPermissions] : [])
-            + [recording ? .stopRecording : .startRecording, .recent(recentTitles), .openFolder, .settings, .quit]
+            + [recording ? .stopRecording : .startRecording, .recent(recentTitles), .openFolder, .settings,
+               .checkForUpdates, .quit]
     }
 }
 
@@ -24,6 +26,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         var isRecording: () -> Bool
         var openFolder: () -> Void
         var settings: () -> Void
+        var checkForUpdates: () -> Void
         /// Recent Captures, newest first, and what choosing one does.
         var recentCaptures: () -> [(title: String, open: () -> Void)]
     }
@@ -86,6 +89,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
                 menu.addItem(item("Open Captures Folder", actions.openFolder))
             case .settings:
                 menu.addItem(item("Settings…", actions.settings))
+            case .checkForUpdates:
+                menu.addItem(item("Check for Updates…", actions.checkForUpdates))
             case .quit:
                 menu.addItem(.separator())
                 menu.addItem(NSMenuItem(title: "Quit Annotake", action: #selector(NSApplication.terminate(_:)),
