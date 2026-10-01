@@ -131,3 +131,13 @@ site-brand-check: build/make-site-brand
 .PHONY: site-og
 site-og: site-deps
 	cd $(SITE_TESTS) && node tools/make-og.mjs
+# Checkpoint 4's checks against a deployment. make site-smoke URL=https://annotake.app reads the pages, the redirects,
+# the headers, and the function's 405. make site-burst URL=https://annotake.app sends 50 honeypot posts to /api/link,
+# which the firewall should answer with 429 after 10; the function sends no email for them.
+.PHONY: site-smoke site-burst
+site-smoke: site-deps
+	@test -n "$(URL)" || (echo "usage: make site-smoke URL=https://annotake.app" && exit 2)
+	cd $(SITE_TESTS) && node tools/smoke.mjs '$(URL)'
+site-burst: site-deps
+	@test -n "$(URL)" || (echo "usage: make site-burst URL=https://annotake.app" && exit 2)
+	cd $(SITE_TESTS) && node tools/burst.mjs '$(URL)'
