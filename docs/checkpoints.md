@@ -56,7 +56,7 @@ Items follow the plan's Task 27 list. **Everything passed.** Fixed during the ch
 
 ## Checkpoint 3 (2026-10-01, in progress)
 
-Items follow the Stage 1 plan's Task 15 list. Steps 0–7 so far; the next session records the rest. Fixed during it: Developer ID signing, the self-test on a 1× monitor, a `make release` that picks up after a slow notarization, and three first-run bugs.
+Items follow the Stage 1 plan's Task 15 list. Steps 0–10 so far; the next session records the rest. Fixed during it: Developer ID signing, the self-test on a 1× monitor, a `make release` that picks up after a slow notarization, and three first-run bugs.
 
 0. **Before starting:** the Apple Developer membership is active (team `GX473Q97WQ`). The domain and `feedback@annotake.app`: not reported yet.
 1. **The Developer ID certificate: pass, with two fixes.** `make devid-import` imported `Developer ID Application: Fayzan Malik (GX473Q97WQ)`.
@@ -72,3 +72,10 @@ Items follow the Stage 1 plan's Task 15 list. Steps 0–7 so far; the next sessi
    - **macOS asked for Input Monitoring and Screen Recording as soon as Annotake launched,** before the first run reached them: the launch created the key's event tap and listed the screens. Each grant from those prompts made macOS quit and reopen Annotake, so the window kept closing. Fixed: neither happens before its permission is granted, and a grant noticed while the window is behind System Settings brings it back in front.
    - **The relaunch forgot that this Mac is an existing user** and ran the new-user flow (welcome, practice run, drop box): nothing had saved the fresh state yet. And that fresh state started at the welcome, which the existing-user flow doesn't have, so Get Started would have skipped every permission. Fixed: a step the mode doesn't have means its first step, and the fresh state is saved at once.
    - Not reported yet: the first-open dialog, and the move offer (7.3).
+8. **Updates: pass.** The first check found nothing: the logo session had installed a local build from the working tree, numbered 99 like the published 0.2.0 (99). Once 0.2.0 (100) was published, Check for Updates installed it: the notarized, stapled 100 replaced the local 99 at 13:59:26, Annotake relaunched at 13:59:29, and all three permissions stayed granted.
+9. **Send Feedback: pass.**
+10. **The first run as a new user: in progress.** At 14:03 Annotake was quit, its permissions reset (`tccutil reset All com.fayzanmalik.annotake`), and `onboarding.v1` deleted, keeping the settings; then it was reopened. The log shows `listen tap not created: no Input Monitoring yet` with all three permissions off, so nothing asked before its step.
+    - **Fayzan: the practice run made no sense.** Its Open button and Remember me box were in the first run's own window, which Annotake keeps out of every recording, so they never appeared in the frames. Now: double-tap, click through something in another app, double-tap again, and the window comes back with the drop box once the recording is saved (7af8c96, shipped in 0.2.0 (102)).
+    - Not reported yet: the permission steps, Quit & Reopen, and the verdict on the icon and the first run.
+
+**After step 10, the Flipbook upgrade path was removed** (7c994d9, in 0.2.0 (102)). Only Fayzan ever installed Flipbook, and the path matched the name: the installer deleted any `Flipbook.app` (on a case-insensitive disk, DigiCel's FlipBook.app too), and migration moved any `~/Pictures/Flipbook`. So step 7's migration and existing-user fixes describe code that no longer exists, and for step 11 Fayzan drags Flipbook to the Trash on the work Mac before running the install command, which no longer removes it or resets its permissions.
