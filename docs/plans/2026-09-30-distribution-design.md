@@ -1,6 +1,6 @@
 # Annotake distribution design: from a personal tool to a product
 
-**Status:** agreed with Fayzan in conversation, 2026-09-28 to 2026-09-30; written for his review · **Plan:** the Stage 1 plan comes next (§11) · **Spec:** [../spec.md](../spec.md), updated with the changes in §12
+**Status:** approved 2026-09-30 · **Plan:** the Stage 1 plan comes next (§11) · **Spec:** [../spec.md](../spec.md), updated with the changes in §12
 
 Worked out in Session 7, with web research from 2026-09-28 and name checks from 2026-09-30 (both in [../research-notes.md](../research-notes.md)). The app is being renamed from Flipbook to **Annotake** (§3). The code and older docs say Flipbook until Stage 1's rename lands; this doc says Annotake.
 
@@ -152,7 +152,7 @@ One long unattended session, then one checkpoint. It lands while friends use the
    - a practice run in the same window: double-tap Right ⌘, click a few buttons, double-tap again, and drag the card into a drop box, followed by "next time, drag it into Claude Code, Cursor, or ChatGPT";
    - an offer to move Annotake to Applications if it was opened from somewhere else;
    - no sign-in yet, but the flow leaves a slot for it before the permissions.
-9. **Send Feedback in the menu:** an email to Fayzan with the version, the macOS version, the permission states, the recent log, and the latest crash report if there is one. The log never holds button names, window titles, or keys.
+9. **Send Feedback in the menu:** an email to `feedback@annotake.app` with the version, the macOS version, the permission states, the recent log, and the latest crash report if there is one. The log never holds button names, window titles, or keys. Vercel doesn't host email, so the address forwards to Fayzan's inbox through a free forwarding service (DNS records added in Vercel). The address is one constant, in case he picks another.
 10. **`make release`:**
     - builds, signs, notarizes, and staples;
     - makes the disk image and a clean zip;
@@ -161,7 +161,7 @@ One long unattended session, then one checkpoint. It lands while friends use the
     `make zip` switches to the clean zip as well.
 
 **Fayzan's part at the checkpoint:**
-- **Enroll** in the Apple Developer Program as an individual, as early as possible. New accounts have had notarization stuck for days.
+- **Enroll** in the Apple Developer Program as an individual. Done 2026-09-30 through the website (the Apple Developer app needs macOS 26); activation was pending at the time of writing. New accounts have had notarization stuck for days.
 - **Create the Developer ID Application certificate and the notarization credentials.** Both need his Apple ID; the session prepares the certificate signing request.
 - **Install from the disk image** the way a stranger would, and grant the permissions again for the new signature and bundle ID.
 - **Judge** the icon and the first run.
@@ -177,7 +177,7 @@ After that, a 15-minute chat with each: what they used it for, what confused the
 
 - **Who:** 20–30 developers who use AI coding agents on a Mac, at least half of them strangers. Strangers are the real test, because they don't owe Fayzan anything.
 - **Where they come from:**
-  - a landing page at annotake.app with the 20-second video, three lines (one key, any app, nothing you record leaves your Mac), and a "Join the beta" email box;
+  - a landing page at annotake.app with the 20-second video, three lines (one key, any app, nothing you record leaves your Mac), and a "Join the beta" email box. It's hosted on Vercel, and the domain is bought through Vercel, so DNS and HTTPS set themselves up;
   - one helpful post or comment where people already ask for this: Claude Code's video-input request, Cursor's forum thread, r/ClaudeAI, r/cursor, and AI-coding Discords;
   - two waves of invites a week apart, so support keeps up;
   - posting on X, a habit that starts now: the demo first, then what the beta teaches.
@@ -273,7 +273,7 @@ After that, a 15-minute chat with each: what they used it for, what confused the
 - **MP4:** its own design and plan.
 - **When their stage comes:** team plans, how school emails are checked, and the creator program.
 - **Fayzan's checks:** the employment contract and IT rules, and the USPTO search for "Annotake".
-- **The address Send Feedback writes to.** It ships inside the app, so Fayzan picks it before the Stage 1 build, for example a new address at annotake.app.
+- **The Send Feedback address:** `feedback@annotake.app`, forwarding to Fayzan's inbox. He can still pick another before the Stage 1 build ships.
 
 ## 11. Sessions
 
