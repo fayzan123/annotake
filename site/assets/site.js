@@ -1,8 +1,10 @@
 // The page's module entry. boot.js has already set the theme; this wires the parts that respond to the visitor.
+import { initGate } from './gate.js';
 import { initLinkForm } from './linkform.js';
 
 const boot = window.annotakeBoot;
 const root = document.documentElement;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Each theme toggle switches to the other theme, and its label says which one it will switch to. */
 function wireThemeToggles() {
@@ -41,3 +43,5 @@ function wireDownloads() {
 wireThemeToggles();
 wireDownloads();
 for (const form of document.querySelectorAll('form.linkform')) initLinkForm(form);
+const gate = document.querySelector('.gate-wrap');
+if (gate) initGate(gate, { reducedMotion });
