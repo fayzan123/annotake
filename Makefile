@@ -1,25 +1,25 @@
 .DEFAULT_GOAL := app
-KC := $(CURDIR)/.signing/flipbook-signing.keychain-db
+KC := $(CURDIR)/.signing/annotake-signing.keychain-db
 BIN = $(shell swift build -c release --show-bin-path)
 .PHONY: app run install zip selftest ui-snapshots cert clean
 app:
-	swift build -c release --product Flipbook
-	scripts/bundle-app.sh $(BIN)/Flipbook Flipbook com.fayzanmalik.flipbook build
+	swift build -c release --product Annotake
+	scripts/bundle-app.sh $(BIN)/Annotake Annotake com.fayzanmalik.annotake build
 run: app
-	open build/Flipbook.app
+	open build/Annotake.app
 install: app
-	rm -rf /Applications/Flipbook.app ~/Applications/Flipbook.app && ditto build/Flipbook.app /Applications/Flipbook.app
+	rm -rf /Applications/Annotake.app ~/Applications/Annotake.app && ditto build/Annotake.app /Applications/Annotake.app
 zip: app
-	cd build && rm -f Flipbook.zip && ditto -c -k --keepParent Flipbook.app Flipbook.zip
+	cd build && rm -f Annotake.zip && ditto -c -k --keepParent Annotake.app Annotake.zip
 selftest: app
 	rm -rf build/selftest && mkdir -p build/selftest
 	caffeinate -u -t 2 || true
-	open -W -n build/Flipbook.app --args --selftest "$(CURDIR)/build/selftest"
+	open -W -n build/Annotake.app --args --selftest "$(CURDIR)/build/selftest"
 	cat build/selftest/selftest.txt
 	grep -q '^PASSED' build/selftest/selftest.txt
 ui-snapshots: app
 	rm -rf build/ui && mkdir -p build/ui
-	open -W -n build/Flipbook.app --args --render-ui "$(CURDIR)/build/ui"
+	open -W -n build/Annotake.app --args --render-ui "$(CURDIR)/build/ui"
 	ls build/ui
 cert:
 	scripts/make-cert.sh
@@ -35,4 +35,4 @@ test:
 	swift test $(TEST_FLAGS) $(if $(FILTER),--filter '$(FILTER)')
 .PHONY: replay
 replay:
-	swift run flipbook-replay "$(SESSION)"
+	swift run annotake-replay "$(SESSION)"

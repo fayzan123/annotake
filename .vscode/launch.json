@@ -4,41 +4,41 @@
       "type": "swift",
       "request": "launch",
       "args": [],
-      "cwd": "${workspaceFolder:flipbook}",
-      "name": "Debug Flipbook",
-      "target": "Flipbook",
+      "cwd": "${workspaceFolder}",
+      "name": "Debug Annotake",
+      "target": "Annotake",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug Flipbook"
+      "preLaunchTask": "swift: Build Debug Annotake"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
-      "cwd": "${workspaceFolder:flipbook}",
-      "name": "Release Flipbook",
-      "target": "Flipbook",
+      "cwd": "${workspaceFolder}",
+      "name": "Release Annotake",
+      "target": "Annotake",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release Flipbook"
+      "preLaunchTask": "swift: Build Release Annotake"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
-      "cwd": "${workspaceFolder:flipbook}",
-      "name": "Debug flipbook-replay",
-      "target": "flipbook-replay",
+      "cwd": "${workspaceFolder}",
+      "name": "Debug annotake-replay",
+      "target": "annotake-replay",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug flipbook-replay"
+      "preLaunchTask": "swift: Build Debug annotake-replay"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
-      "cwd": "${workspaceFolder:flipbook}",
-      "name": "Release flipbook-replay",
-      "target": "flipbook-replay",
+      "cwd": "${workspaceFolder}",
+      "name": "Release annotake-replay",
+      "target": "annotake-replay",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release flipbook-replay"
+      "preLaunchTask": "swift: Build Release annotake-replay"
     }
   ]
 }
