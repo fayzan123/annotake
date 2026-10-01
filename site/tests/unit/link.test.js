@@ -81,8 +81,8 @@ test('a good JSON request sends one email through Resend, keyed for the day', as
   // Resend rejects requests without a User-Agent with a 403.
   assert.equal(headers.get('user-agent'), 'annotake-link/1.0');
   assert.deepEqual(body, {
-    from: 'Annotake <hello@annotake.app>', to: [ADDRESS], reply_to: 'hello@annotake.app',
-    subject: 'Annotake for your Mac', text: EMAIL_TEXT, html: EMAIL_HTML,
+    from: 'Annotake <noreply@annotake.app>', to: [ADDRESS], subject: 'Annotake for your Mac', text: EMAIL_TEXT,
+    html: EMAIL_HTML,
   });
   assert.deepEqual(logs, ['link: sent']);
 });

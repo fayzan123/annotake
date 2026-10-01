@@ -99,9 +99,8 @@ test('the legal row, exactly', async ({ page }) => {
   const legal = page.locator('footer .legal');
   await expect(legal.locator('> span')).toHaveText('© 2026 Fayzan Malik · Made in Ontario, Canada');
   const links = legal.locator('nav a');
-  await expect(links).toHaveText(['Privacy', 'Terms', 'hello@annotake.app']);
-  expect(await links.evaluateAll(all => all.map(a => a.getAttribute('href'))))
-    .toEqual(['/privacy', '/terms', 'mailto:hello@annotake.app']);
+  await expect(links).toHaveText(['Privacy', 'Terms']);
+  expect(await links.evaluateAll(all => all.map(a => a.getAttribute('href')))).toEqual(['/privacy', '/terms']);
 });
 
 test('the footer plays with no console errors', async ({ page }) => {

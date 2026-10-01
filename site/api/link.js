@@ -127,10 +127,11 @@ export function createHandler({ fetch, env, log, sleep, today, timeoutMs = ATTEM
           // Resend rejects requests without a User-Agent.
           'User-Agent': 'annotake-link/1.0',
         },
-        // The same every time for an address, so a repeated key never conflicts with itself.
+        // The same every time for an address, so a repeated key never conflicts with itself. annotake.app receives
+        // no mail, so the email comes from a no-reply address and asks for no reply.
         body: JSON.stringify({
-          from: 'Annotake <hello@annotake.app>', to: [email], reply_to: 'hello@annotake.app',
-          subject: 'Annotake for your Mac', text: EMAIL_TEXT, html: EMAIL_HTML,
+          from: 'Annotake <noreply@annotake.app>', to: [email], subject: 'Annotake for your Mac', text: EMAIL_TEXT,
+          html: EMAIL_HTML,
         }),
         signal: AbortSignal.timeout(timeoutMs),
       });
