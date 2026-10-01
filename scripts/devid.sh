@@ -62,12 +62,17 @@ import_certificate() {
 
   security unlock-keychain -p "$PASS" "$kc"
   security import "$P12" -k "$kc" -P "$PASS" -T /usr/bin/codesign
-  if ! out=$(security import "$DIR/DeveloperIDG2CA.cer" -k "$kc" 2>&1); then
-    case "$out" in
-      *"already exists"*) ;;
-      *) echo "$out" >&2; exit 1 ;;
-    esac
-  fi
+  # The intermediate goes in the login keychain too, where Xcode would put it: while signing, codesign
+  # checks the chain again without the other keychains on the search list, and with the intermediate only
+  # in the signing keychain it fails with errSecInternalComponent ("leaf MissingIntermediate").
+  for target in "$kc" "$HOME/Library/Keychains/login.keychain-db"; do
+    if ! out=$(security import "$DIR/DeveloperIDG2CA.cer" -k "$target" 2>&1); then
+      case "$out" in
+        *"already exists"*) ;;
+        *) echo "$out" >&2; exit 1 ;;
+      esac
+    fi
+  done
   # As make-cert.sh does, so signing never prompts.
   security set-key-partition-list -S apple-tool:,apple: -s -k "$PASS" "$kc" >/dev/null
 

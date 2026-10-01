@@ -31,6 +31,21 @@ fi
 DEVELOPER_ID=$(security find-identity -v -p codesigning "$KC" \
   | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)
 IDENTITY=${SIGN_IDENTITY:-${DEVELOPER_ID:-$LOCAL_IDENTITY}}
+# A Developer ID needs Apple's intermediate in the login keychain, where Xcode would put it: while signing,
+# codesign checks the chain again without the other keychains on the search list, and fails with
+# errSecInternalComponent otherwise. make devid-import puts it there; this puts it back if it's gone.
+INTERMEDIATE="$ROOT/.signing/DeveloperIDG2CA.cer"
+LOGIN_KC="$HOME/Library/Keychains/login.keychain-db"
+case "$IDENTITY" in
+  "Developer ID Application: "*)
+    if [ -f "$INTERMEDIATE" ]; then
+      SHA1=$(/usr/bin/openssl x509 -inform DER -in "$INTERMEDIATE" -noout -fingerprint -sha1 | sed 's/.*=//; s/://g')
+      if ! security find-certificate -a -Z "$LOGIN_KC" 2>/dev/null | grep -q "SHA-1 hash: $SHA1"; then
+        echo "adding Apple's Developer ID intermediate to the login keychain"
+        security import "$INTERMEDIATE" -k "$LOGIN_KC" >/dev/null
+      fi
+    fi ;;
+esac
 if [ "${RELEASE:-0}" = 1 ]; then
   case "$IDENTITY" in
     "Developer ID Application: "*) ;;
