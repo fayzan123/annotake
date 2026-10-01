@@ -108,3 +108,22 @@ site-unit: site-deps
 	cd $(SITE_TESTS) && node --test --test-reporter=spec 'unit/*.test.js'
 site-test: site-unit
 	cd $(SITE_TESTS) && npx playwright test $(if $(FILTER),--grep '$(FILTER)')
+# The site's brand files come from the app's BrandMark.swift and Wordmark.swift (scripts/make-site-brand.swift), and the
+# 32 px favicon from the committed app icon. make site-brand-check fails if the committed text files are out of date.
+SITE_BRAND_SOURCES := scripts/make-site-brand.swift Sources/AnnotakeApp/BrandMark.swift Sources/AnnotakeApp/Wordmark.swift
+.PHONY: site-brand site-brand-check
+build/make-site-brand: $(SITE_BRAND_SOURCES)
+	mkdir -p build
+	swiftc -parse-as-library -o build/make-site-brand $(SITE_BRAND_SOURCES)
+site-brand: build/make-site-brand
+	build/make-site-brand site/assets
+	rm -rf build/site-icons.iconset
+	iconutil -c iconset Resources/AppIcon.icns -o build/site-icons.iconset
+	cp build/site-icons.iconset/icon_32x32.png site/assets/img/favicon-32.png
+site-brand-check: build/make-site-brand
+	rm -rf build/site-brand-check
+	build/make-site-brand build/site-brand-check
+	diff -u site/assets/brand.js build/site-brand-check/brand.js
+	diff -u site/assets/img/brand.svg build/site-brand-check/img/brand.svg
+	diff -u site/assets/img/favicon.svg build/site-brand-check/img/favicon.svg
+	@echo "The brand files are up to date."
