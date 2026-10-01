@@ -1,6 +1,6 @@
 # Annotake landing page design: annotake.app
 
-**Status:** approved 2026-10-01, in Session 9 · **Plan:** next, with `superpowers:writing-plans` · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2), §8 (privacy), §9 (risks)
+**Status:** approved 2026-10-01, in Session 9; built in Session 10, 2026-10-01 (§12 has what changed); Checkpoint 4 next · **Plan:** [2026-10-01-landing-page-build.md](2026-10-01-landing-page-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2), §8 (privacy), §9 (risks)
 
 Worked out with the brainstorming companion. The mockups (`visual-style`, `graphic`, `hero-steps`, `page-v1`, `footer`) are kept in the git-ignored `.superpowers/brainstorm/32148-1790882887/content/`; this doc is the record. The page is pulled ahead of the rest of Stage 2, as a side project while the friends round runs. Sign-in, the daily counts, and the founding-member checkout keep their own design session.
 
@@ -115,7 +115,7 @@ Worked out with the brainstorming companion. The mockups (`visual-style`, `graph
 
 ```
 # Annotake capture — 2026-10-01 at 09.41.12
-Screen: Built-in Retina Display · 0:04 · 3 frames
+Screen: Built-in Retina Display · 0:04 · 3 frames (from 3 candidates)
 
 1. 0:01 · Acme — Settings · Clicked tab "Appearance"
 2. 0:02 · Acme — Settings · Clicked switch "Dark mode"
@@ -274,26 +274,29 @@ Plain language. It opens with a "Last updated" date, and old versions stay in gi
 ```
 site/
   index.html, privacy.html, terms.html, 404.html, robots.txt, sitemap.xml
-  vercel.json
+  vercel.json, .vercelignore, package.json   ({"private": true, "type": "module"}: no dependencies)
   api/link.js                 the email function (Node, no packages)
+  licenses/sparkle.txt, licenses/jost-ofl.txt
   assets/
     site.css
-    theme.js                  sets the theme before the first paint (in <head>)
-    site.js                   the toggle, the Mac check, the link form
+    boot.js                   sets the theme and the Mac check before the first paint (in <head>)
+    site.js                   the toggle, the download hint, and starting each part below
+    email.js, linkform.js     the email check (shared with the function) and the link form
     gate.js, steps.js, logo.js  the three animations
+    player.js                 runs each animation only while it's on screen
     brand.js                  generated: the mark's and wordmark's paths and numbers
     acme.js                   the drawn Acme window, shared by the animations
-    fonts/jost-{400,500,600}.v1.woff2, fonts/OFL.txt
-    img/og.v1.png, favicon.svg, favicon-32.png, apple-touch-icon.png
-  tests/                      Playwright page tests and node:test function tests
-  package.json                dev dependencies only (@playwright/test, @axe-core/playwright)
-scripts/make-site-brand.swift  writes site/assets/brand.js and favicon.svg from BrandMark.swift and Wordmark.swift
+    fonts/jost-latin.v1.woff2 one variable Latin file, every weight
+    img/brand.svg, favicon.svg, favicon-32.png, apple-touch-icon.png, og.v1.png
+  tests/                      the local server, Playwright page tests, node:test unit tests, the preview image's
+                              source, and the checkpoint tools; dev-only, never deployed
+scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the touch icon from BrandMark.swift and Wordmark.swift
 ```
 
 - **The brand comes from one source.** `BrandMark.swift` and `Wordmark.swift` stay the only source of the logo. `scripts/make-site-brand.swift` compiles them, the same way `make-icon.swift` does, and writes SVG path data and the leg numbers into `brand.js`.
   - A test fails if the committed file is out of date.
   - `make site-brand` regenerates it.
-- **Make targets:** `make site-dev` serves the site locally, with a stub for `/api/link`, and `make site-test` runs every site test.
+- **Make targets:** `make site-dev` serves the site locally, with `/api/link` in dry-run mode, and `make site-test` runs every site test (`make site-unit` just the unit tests). `make site-brand` and `make site-og` regenerate the brand files and the preview image, and `make site-smoke` and `make site-burst` check a deployment (Checkpoint 4).
 - **CSP rules for the code:** no inline scripts, and no `style="…"` attributes in markup, because both are blocked by the CSP. Code sets positions through `element.style` instead.
 
 ### 5.2 Routes (`vercel.json`)
@@ -314,12 +317,16 @@ scripts/make-site-brand.swift  writes site/assets/brand.js and favicon.svg from 
   - Fields: `email`, the hidden `website` field (a honeypot), and `t`, the milliseconds since the page loaded.
 - **Checks:**
   - The email is trimmed and at most 254 characters, with no line breaks, and matches a plain address pattern.
-  - A filled honeypot, or a `t` under 1,500 ms, gets a silent success with no send, so bots learn nothing. The no-JavaScript form sends no `t`, so it skips that check.
+  - A filled honeypot, or a `t` under 1,000 ms, gets a silent success with no send, so bots learn nothing. The no-JavaScript form sends no `t`, so it skips that check.
 - **Send,** through Resend's HTTP API (`POST https://api.resend.com/emails`) with `fetch`:
   - the key comes from the `RESEND_API_KEY` environment variable;
   - `Idempotency-Key: sha256(lowercased email + UTC date)`, so an address gets at most one email a day, and a retry can never send twice;
-  - a 5 s timeout;
-  - one retry, 300 ms later, after a network error or a 5xx; none after a 4xx.
+  - a `User-Agent` header, which Resend requires;
+  - a 4 s timeout per attempt, so two attempts and the pause between them fit inside the function's 10 s limit;
+  - one retry, 300 ms later, after a network error, a timeout, or a 5xx;
+  - after Resend's plain rate limit (a 429), one retry after its `retry-after`, at most 1 s; a daily or monthly quota (also a 429) answers "busy" at once;
+  - a 409 about the idempotency key means the email already went today, or is going, so it answers success;
+  - no retry after any other 4xx.
 - **Replies:**
 
 | Status | Body | When |
@@ -357,8 +364,9 @@ scripts/make-site-brand.swift  writes site/assets/brand.js and favicon.svg from 
 - **The Content Security Policy:**
   - `default-src 'self'`, `script-src 'self'`, `style-src 'self'`, `font-src 'self'`, `connect-src 'self'`;
   - `img-src 'self' data:`;
-  - `frame-ancestors 'none'`, `base-uri 'none'`, `form-action 'self'`, `object-src 'none'`;
-  - `upgrade-insecure-requests`.
+  - `frame-ancestors 'none'`, `base-uri 'none'`, `form-action 'self'`, `object-src 'none'`.
+
+  No `upgrade-insecure-requests`: every `.app` domain is HTTPS-only already, and it would break the local test server.
 - **The other headers:**
   - `Referrer-Policy: strict-origin-when-cross-origin`
   - `X-Content-Type-Options: nosniff`
@@ -392,7 +400,7 @@ scripts/make-site-brand.swift  writes site/assets/brand.js and favicon.svg from 
 |---|---|---|
 | Pages | Static files cached across Vercel's network; no server to overload. At 200 KB, Hobby's 100 GB covers about 500,000 visits a month | Instant rollback to the last good deploy |
 | Download | An edge redirect to GitHub's CDN, at any volume, free | Change one redirect to move hosting |
-| Email me the link | A separate function; Resend free sends 100 a day, Pro 50,000 a month with no daily cap | The form shows the link with Copy and Share. The page never depends on it |
+| Email me the link | A separate function; Resend free sends 100 a day, Pro 50,000 a month with no daily cap. Resend's API takes 10 requests a second, which it raises on request | The form shows the link with Copy and Share. The page never depends on it |
 | Bots on the function | A honeypot, a too-fast check, one email per address per day, and a WAF rule of 10 requests per 10 minutes per IP (Hobby allows one rule). The limit is loose because phones on one carrier often share an IP, and the fallback covers anyone it catches | Next step: BotID Basic, free on all plans, after confirming it sets no cookies |
 | Analytics | Hobby counts 50,000 events a month | Counting pauses; the site is unaffected |
 | `hello@` and `feedback@` | ImprovMX free forwards 500 a day | Upgrade, or move to a helpdesk |
@@ -485,3 +493,32 @@ Made alongside this doc:
 - Pricing, the FAQ, the changelog, and Homebrew, which belong to Stage 3.
 - Recording the video.
 - A blog, a newsletter, or other languages.
+
+## 12. Changes from planning and building
+
+**Decided while planning** (Session 9, in the [plan](2026-10-01-landing-page-build.md)); §3.5, §5.1, §5.3, §5.6, and §6 above are updated to match:
+1. Each Resend attempt times out after 4 s, not 5, so two attempts and the pause between them fit inside the function's 10 s limit. The page shows the fallback if no answer comes within 12 s.
+2. Resend's 429 has three causes: a plain rate limit (10 requests a second by default) gets one retry after its `retry-after`, at most 1 s; a daily or monthly quota answers "busy" at once. A 409 about the idempotency key means the email already went today, or is going, so it answers success.
+3. The too-fast check is 1 s, not 1.5 s: opening the form, accepting autofill, and tapping Send can take a person under 1.5 s.
+4. Jost is one variable Latin `woff2` (26.6 KB, every weight), not three files.
+5. Third-party notices are plain files, linked from the Terms: `/licenses/sparkle.txt` (Sparkle's full LICENSE, with the notices for bsdiff and the other code it bundles) and `/licenses/jost-ofl.txt`.
+6. The firewall's rate-limit rule stays a dashboard step at Checkpoint 4, because `vercel.json` takes only deny rules. Skipping builds when `site/` is unchanged is `ignoreCommand` in `vercel.json`.
+7. The CSP drops `upgrade-insecure-requests`.
+8. `BrandMark` names `legThickness` and `braceThickness`, so the generator can read them. Nothing it draws changes.
+9. The theme and the Mac check run in one small classic script, `boot.js`, in `<head>`, so neither the theme nor the button visibly switches during load. The Mac check reads the user agent instead of the deprecated `navigator.platform`: a Mac user agent without iPhone, iPad, or iPod in it, plus `maxTouchPoints < 2`.
+10. One email check, `assets/email.js`, is shared by the page and the function.
+11. The header and the footer without JavaScript draw the logo from an SVG sprite, `/assets/img/brand.svg`, through `<use>`. The footer animation builds its own live SVG from `brand.js`.
+12. The PNG icons come from the committed app icon. (Building changed the touch icon; see below.)
+13. The Quick Look panel's second line ends "(from 3 candidates)", as `StepsDocument` writes it.
+14. The burst test runs against production, where the firewall rule applies, and fills the honeypot, so no email is sent.
+
+**Decided while building** (Session 10; the [session notes](README.md#session-10-the-landing-page-build) have the rest):
+- **The Apple touch icon is drawn full-bleed** from `BrandMark`: the app icon's charcoal body filling the square, with the mark at 62% of its height. iOS fills a touch icon's transparent pixels with black and rounds the corners itself, so the app icon's transparent margin would show as a black frame. `favicon-32.png` still comes from the app icon.
+- **Requests to Resend carry a `User-Agent`** (`annotake-link/1.0`): Resend rejects requests without one with a 403.
+- **"Annotake is a Mac app. …" sits under the "Email me the link" button,** outside the `<details>`, as in the phone mockup, and hides while the form is open. Opening the form focuses the field at once, so a phone shows its keyboard.
+- **Error text uses a darker red,** `#D70015` in light and `#FF6961` in dark: the click-marker red is only 3.55:1 on white.
+- **The animations play only while on screen** through one small module, `player.js`, which also pauses their CSS animations off screen.
+- **On a phone, the Finder window drops its sidebar and Kind column,** and Quick Look sits under it.
+- **The home page's preview image puts the gate right of center,** so all three captioned frames are in the picture, and the page names it in `og:image:alt`.
+- **The privacy policy says the US services handle data under US law,** as Canada's privacy commissioner expects for cross-border transfers, and that earlier versions are sent on request.
+- **The first load is 137 KB before compression,** under the 200 KB budget. Raw, the CSS (35 KB) and the JavaScript (44 KB) are over §5.8's per-type figures (25 and 40 KB), but those are transfers, and Vercel compresses them to about 9 KB and 15 KB.
