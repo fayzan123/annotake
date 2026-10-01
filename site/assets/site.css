@@ -384,6 +384,232 @@ body::before {
   cursor: pointer;
 }
 
+/* ---------- Acme Settings: the made-up app every picture records. 196 × 104 units; 1 em is one unit. ---------- */
+
+.acme { position: relative; width: 196em; height: 104em; overflow: hidden; background: #F5F5F7; }
+.acme .titlebar { display: flex; align-items: center; gap: 4em; height: 15em; padding-left: 7em; background: #E6E6EB; }
+.acme .titlebar i { width: 6em; height: 6em; border-radius: 50%; }
+.acme .titlebar i:nth-child(1) { background: #FF5F57; }
+.acme .titlebar i:nth-child(2) { background: #FEBC2E; }
+.acme .titlebar i:nth-child(3) { background: #28C840; }
+.acme .side { position: absolute; left: 0; top: 15em; bottom: 0; width: 54em; padding: 9em 7em; background: #ECECF1; }
+.acme .side b {
+  display: block;
+  height: 8em;
+  margin-bottom: 7em;
+  border-radius: 3em;
+  background: #D5D5DB;
+  transition: background-color .2s;
+}
+.acme .side b:nth-child(1) { width: 34em; }
+.acme .side b:nth-child(2) { width: 40em; }
+.acme .side b:nth-child(3) { width: 28em; }
+.acme .side b:nth-child(4) { width: 36em; }
+.acme .side b.on { background: #0A84FF; }
+.acme .main { position: absolute; left: 62em; top: 24em; right: 10em; bottom: 9em; }
+.acme .heading { width: 74em; height: 8em; margin-bottom: 12em; border-radius: 3em; background: #C4C4CA; }
+.acme .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9em; }
+.acme .label { width: 56em; height: 6em; border-radius: 3em; background: #D8D8DD; }
+.acme .row + .row .label { width: 46em; }
+.acme .switch {
+  position: relative;
+  width: 22em;
+  height: 13em;
+  border-radius: 7em;
+  background: #D1D1D6;
+  transition: background-color .2s;
+}
+.acme .switch::after {
+  content: '';
+  position: absolute;
+  top: 1.5em;
+  left: 1.5em;
+  width: 10em;
+  height: 10em;
+  border-radius: 50%;
+  background: #FFFFFF;
+  transition: transform .2s;
+}
+.acme .switch.on { background: #34C759; }
+.acme .switch.on::after { transform: translateX(9em); }
+.acme .save { position: absolute; right: 0; bottom: 0; width: 44em; height: 15em; border-radius: 4em; background: #0A84FF; }
+.acme .toast {
+  position: absolute;
+  left: 50%;
+  top: 2.5em;
+  padding: .35em .85em;
+  border: .12em solid #FFC9C4;
+  border-radius: .5em;
+  background: #FFFFFF;
+  color: #D70015;
+  font: 600 8em/1.25 system-ui, -apple-system, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 .25em .7em rgba(0, 0, 0, .12);
+  opacity: 0;
+  transform: translate(-50%, -.6em);
+  transition: opacity .25s, transform .25s;
+}
+.acme .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* The click ring, the press ripple, and the pointer, placed by script in their container's units. */
+.ring {
+  position: absolute;
+  width: 15em;
+  height: 15em;
+  border: 2.3em solid var(--red);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1em rgba(255, 255, 255, .95);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), opacity .2s;
+}
+.ring.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.press {
+  position: absolute;
+  width: 16em;
+  height: 16em;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .18);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+}
+.press.go { animation: press .4s ease-out; }
+@keyframes press {
+  0% { opacity: .9; transform: translate(-50%, -50%) scale(.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+.cursor {
+  position: absolute;
+  z-index: 3;
+  width: 9em;
+  height: 13.5em;
+  margin: -.6em 0 0 -.6em;
+  transition: left .7s cubic-bezier(.45, 0, .25, 1), top .7s cubic-bezier(.45, 0, .25, 1);
+}
+/* Set by script around a change that should happen at once. */
+.instant,
+.instant * { transition: none !important; }
+
+/* The recording pill, as in the app. */
+.pill {
+  position: absolute;
+  left: 50%;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, .88);
+  color: #FFFFFF;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 .4em 1.2em rgba(0, 0, 0, .25);
+  transform: translateX(-50%);
+  transition: opacity .3s, transform .3s;
+}
+.dot {
+  display: inline-block;
+  width: .72em;
+  height: .72em;
+  margin-right: .5em;
+  border-radius: 50%;
+  background: var(--red);
+  vertical-align: -.02em;
+}
+.pill .dot { animation: blink 1.6s infinite; }
+@keyframes blink {
+  0%, 60% { opacity: 1; }
+  80% { opacity: .35; }
+  100% { opacity: 1; }
+}
+/* Off screen, CSS animations hold too. */
+[data-visible="false"] .dot { animation-play-state: paused; }
+
+/* ---------- Through the gate: frames are 196 units wide, and 1 em is one unit ---------- */
+
+.gate-wrap { position: relative; overflow: hidden; margin-top: 56px; }
+.strip {
+  --fw: clamp(180px, 19.5vw, 280px);
+  --k: 0;
+  position: relative;
+  height: 172em;
+  font-size: calc(var(--fw) / 196);
+  background: var(--film);
+  transition: background-color .3s;
+}
+.strip .holes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10em;
+  background: var(--hole);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='10'><rect x='7' y='0' width='12' height='10' rx='2.5'/></svg>") 0 0 / 18.2em 10em repeat-x;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='10'><rect x='7' y='0' width='12' height='10' rx='2.5'/></svg>") 0 0 / 18.2em 10em repeat-x;
+}
+.strip .holes.top { top: 5em; }
+.strip .holes.bottom { bottom: 5em; }
+.track {
+  position: absolute;
+  top: 20em;
+  left: calc(50% - 98em - 3 * 218em);
+  display: flex;
+  gap: 22em;
+  transform: translateX(calc(var(--k) * -218em));
+  transition: transform .65s cubic-bezier(.6, 0, .2, 1), opacity .35s;
+}
+.track.fade { opacity: 0; }
+.slot { position: relative; flex: none; width: 196em; }
+.frame { width: 196em; overflow: hidden; border-radius: 3em; background: #1C1C1E; }
+.unexposed {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: 3em;
+  background: var(--blank);
+  box-shadow: inset 0 0 0 .8em rgba(255, 255, 255, .035);
+  transition: opacity .5s;
+}
+.unexposed.open { opacity: 0; }
+.cap {
+  height: 28em;
+  padding: 5em 8em;
+  border-top: .8em solid rgba(255, 255, 255, .05);
+  background: #1C1C1E;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.cap b,
+.cap span {
+  display: block;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(2em);
+  transition: opacity .35s, transform .35s;
+}
+.cap b { color: #FFFFFF; font-size: 8.8em; font-weight: 700; }
+.cap span { margin-top: .15em; color: #98989D; font-size: 7.6em; transition-delay: .08s; }
+.cap.show b,
+.cap.show span { opacity: 1; transform: none; }
+.gate { position: absolute; top: 20em; left: calc(50% - 98em); width: 196em; height: 132em; pointer-events: none; }
+.gate .corner { position: absolute; width: 18em; height: 18em; border: 0 solid #FFFFFF; }
+.gate .tl { left: -9em; top: -9em; border-left-width: 2.6em; border-top-width: 2.6em; border-top-left-radius: 3em; }
+.gate .tr { right: -9em; top: -9em; border-right-width: 2.6em; border-top-width: 2.6em; border-top-right-radius: 3em; }
+.gate .bl { left: -9em; bottom: -9em; border-left-width: 2.6em; border-bottom-width: 2.6em; border-bottom-left-radius: 3em; }
+.gate .br { right: -9em; bottom: -9em; border-right-width: 2.6em; border-bottom-width: 2.6em; border-bottom-right-radius: 3em; }
+.gate .flash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 196em;
+  height: 104em;
+  border-radius: 3em 3em 0 0;
+  background: #FFFFFF;
+  opacity: 0;
+}
+.gate .flash.go { animation: flash .22s ease-out; }
+@keyframes flash {
+  0% { opacity: 0; }
+  25% { opacity: .4; }
+  100% { opacity: 0; }
+}
+.gate .pill { top: 11.1em; height: 2.1em; padding: 0 .95em; font-size: 7.4em; line-height: 2.1em; }
+
 /* ---------- Footer ---------- */
 
 .site-footer { max-width: 1280px; margin: 0 auto; padding: 0 40px 36px; }
@@ -428,4 +654,11 @@ body::before {
 /* The hero's button is right below, so a narrow header keeps just the logo and the toggle. */
 @media (max-width: 480px) {
   .site-header .btn { display: none; }
+}
+
+/* ---------- Reduce Motion: every animation shows its final state ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .strip,
+  .strip * { transition: none !important; animation: none !important; }
 }
