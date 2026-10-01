@@ -70,6 +70,9 @@ enum SelfTest {
     static let minimumFrames = 6
     static let firstFrameLimit: TimeInterval = 1
     static let signatureMillisecondsLimit = 8.0
+    /// Under Rosetta (`make selftest-intel`) signature timings measure translation, not a Mac, so the limit
+    /// is this many times looser there.
+    static let translatedSignatureAllowance = 2.0
     static let stopToReadyMillisecondsLimit = 1500.0
     /// The window is shown, then left to settle before the recording starts.
     static let settleBeforeStart: TimeInterval = 0.6
@@ -125,6 +128,29 @@ enum SelfTest {
         "Annotake — Annotake Self-Test — Saved",
         "Annotake — Annotake Self-Test — Saved",
     ]
+
+    static func signatureLimit(translated: Bool) -> Double {
+        signatureMillisecondsLimit * (translated ? translatedSignatureAllowance : 1)
+    }
+
+    static func architectureName(arm64: Bool, translated: Bool) -> String {
+        arm64 ? "arm64" : translated ? "x86_64 (Rosetta)" : "x86_64"
+    }
+
+    /// True when this process is an x86_64 binary running under Rosetta.
+    static var isTranslated: Bool {
+        var translated: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        return sysctlbyname("sysctl.proc_translated", &translated, &size, nil, 0) == 0 && translated == 1
+    }
+
+    static var architecture: String {
+        #if arch(arm64)
+        architectureName(arm64: true, translated: false)
+        #else
+        architectureName(arm64: false, translated: isTranslated)
+        #endif
+    }
 
     /// The kind with its points moved through `transform`.
     static func mapped(_ kind: InputEventKind, _ transform: (CGPoint) -> PixelPoint) -> InputEventKind {
@@ -267,7 +293,7 @@ enum SelfTest {
         if let latency = stats.firstFrameLatency, latency > firstFrameLimit {
             report.failures.append(String(format: "the first frame took %.2f s", latency))
         }
-        if stats.signatureMillisecondsAverage >= signatureMillisecondsLimit {
+        if stats.signatureMillisecondsAverage >= signatureLimit(translated: isTranslated) {
             report.failures.append(String(format: "signatures took %.1f ms on average", stats.signatureMillisecondsAverage))
         }
         if report.captions != expectedCaptions {
@@ -368,6 +394,7 @@ private final class FinishSignal: Sendable {
 private struct SelfTestReport: Encodable {
     var passed = false
     var failures: [String] = []
+    var architecture = SelfTest.architecture
     var stats = PipelineStats()
     var outputSize = ""
     var captions: [String] = []
@@ -388,6 +415,7 @@ private struct SelfTestReport: Encodable {
         }
         var lines = [passed ? "PASSED" : "FAILED: " + (failures.first ?? "unknown")]
         lines += failures.dropFirst().map { "FAILED: " + $0 }
+        lines.append("architecture: \(architecture)")
         lines.append("frames: \(stats.completeFrames) complete, \(stats.idleFrames) idle; output \(outputSize)")
         if let latency = stats.firstFrameLatency {
             lines.append(String(format: "first frame after %.0f ms", latency * 1000))

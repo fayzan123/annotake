@@ -451,7 +451,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - the session state machine, the pill text, and card stacking.
 
   Event taps, the stream, AX calls, and the UI are covered by the self-test and the checkpoints.
-- **Self-test:** `make selftest` opens a test window of Annotake's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports frames, timings, and picked captions in `selftest.json`. `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
+- **Self-test:** `make selftest` opens a test window of Annotake's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports the architecture, frames, timings, and picked captions in `selftest.json`. `make selftest-intel` runs the Intel half through Rosetta, where the signature-time limit is twice as loose, because it measures translation rather than a Mac. `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
 - **Log:** `~/Library/Logs/Annotake.log` records gestures, state changes, timings, and errors. It never records labels, window titles, or keys.
 - **Fixture privacy:** sessions recorded on the work Mac never go in the repo, because window titles and labels can be internal. Work sessions stay local, or have all text stripped before use.
 - **Manual checklist (Fayzan).** It's run at the two checkpoints in [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md) §10:
@@ -471,11 +471,11 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 - **Tests:** `make test` runs Swift Testing with the Command Line Tools' framework path added, because plain `swift test` can't find `Testing` without Xcode, and XCTest isn't in the CLT at all (M0).
 - **Make targets:**
   - `make cert` runs once. It creates a free self-signed signing identity, "Annotake Local Signing", so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
-  - `make` builds and assembles `Annotake.app`.
+  - `make` builds and assembles `Annotake.app`: one app for Apple silicon and Intel, from two release builds (`--triple arm64-apple-macosx15.0` and `x86_64-apple-macosx15.0`) merged with `lipo`. Two `--arch` flags would need Xcode's XCBuild.
   - `make run` builds it and opens it.
   - `make install` copies it into `/Applications`, removing any older copy in `~/Applications`.
   - `make zip` produces a zip for the work Mac.
-  - `make selftest` runs the self-test, and `make ui-snapshots` renders the UI to PNGs (§8).
+  - `make selftest` runs the self-test, `make selftest-intel` runs it as Intel through Rosetta, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
 - **Versions:** `VERSION` holds the marketing version (`0.2.0`), and the build number is the commit count (`git rev-list --count HEAD`). The bundler writes them into `CFBundleShortVersionString` and `CFBundleVersion`, and each launch logs them, e.g. `launched Annotake 0.2.0 (78)`.
 - **The app is built only on the personal MacBook,** using Fayzan's own Claude membership rather than work AI.

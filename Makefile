@@ -1,15 +1,24 @@
 .DEFAULT_GOAL := app
 KC := $(CURDIR)/.signing/annotake-signing.keychain-db
-BIN = $(shell swift build -c release --show-bin-path)
+# One app for both architectures: two release builds merged with lipo. Two --arch flags would need
+# Xcode's XCBuild, which the Command Line Tools don't have.
+ARM_TRIPLE := arm64-apple-macosx15.0
+X86_TRIPLE := x86_64-apple-macosx15.0
+ARM_BIN = $(shell swift build -c release --triple $(ARM_TRIPLE) --show-bin-path)
+X86_BIN = $(shell swift build -c release --triple $(X86_TRIPLE) --show-bin-path)
+UNIVERSAL := .build/universal
 # The marketing version, and the build number: the commit count.
 VERSION := $(shell cat VERSION)
 BUILD := $(shell git rev-list --count HEAD)
 RELEASE ?= 0
-.PHONY: app run install zip selftest ui-snapshots cert clean
+.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean
 app:
-	swift build -c release --product Annotake
+	swift build -c release --product Annotake --triple $(ARM_TRIPLE)
+	swift build -c release --product Annotake --triple $(X86_TRIPLE)
+	mkdir -p $(UNIVERSAL)
+	lipo -create -output $(UNIVERSAL)/Annotake $(ARM_BIN)/Annotake $(X86_BIN)/Annotake
 	RELEASE=$(RELEASE) VERSION=$(VERSION) BUILD=$(BUILD) \
-		scripts/bundle-app.sh $(BIN)/Annotake Annotake com.fayzanmalik.annotake build
+		scripts/bundle-app.sh $(UNIVERSAL)/Annotake Annotake com.fayzanmalik.annotake build
 run: app
 	open build/Annotake.app
 install: app
@@ -22,6 +31,14 @@ selftest: app
 	open -W -n build/Annotake.app --args --selftest "$(CURDIR)/build/selftest"
 	cat build/selftest/selftest.txt
 	grep -q '^PASSED' build/selftest/selftest.txt
+# The Intel half, through Rosetta.
+selftest-intel: app
+	rm -rf build/selftest-intel && mkdir -p build/selftest-intel
+	caffeinate -u -t 2 || true
+	open --arch x86_64 -W -n build/Annotake.app --args --selftest "$(CURDIR)/build/selftest-intel"
+	cat build/selftest-intel/selftest.txt
+	grep -q '^PASSED' build/selftest-intel/selftest.txt
+	grep -q '^architecture: x86_64 (Rosetta)' build/selftest-intel/selftest.txt
 ui-snapshots: app
 	rm -rf build/ui && mkdir -p build/ui
 	open -W -n build/Annotake.app --args --render-ui "$(CURDIR)/build/ui"
