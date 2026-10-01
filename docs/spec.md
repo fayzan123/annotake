@@ -477,6 +477,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - `make zip` produces a zip for the work Mac.
   - `make selftest` runs the self-test, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
+- **Versions:** `VERSION` holds the marketing version (`0.2.0`), and the build number is the commit count (`git rev-list --count HEAD`). The bundler writes them into `CFBundleShortVersionString` and `CFBundleVersion`, and each launch logs them, e.g. `launched Annotake 0.2.0 (78)`.
 - **The app is built only on the personal MacBook,** using Fayzan's own Claude membership rather than work AI.
 - **Other Macs, until the app is notarized** (the work Mac and friends' Macs): `curl -fsSL https://raw.githubusercontent.com/fayzan123/flipbook-releases/main/install.sh | sh` installs or updates the latest release from the public, releases-only repo. Files `curl` downloads get no quarantine flag, so there's no `xattr` step, and permissions survive updates. Details: [distribution design §5.1](plans/2026-09-30-distribution-design.md#51-the-early-install-done-2026-09-30).
 - **Next:** Developer ID signing, notarization, a disk image, and Sparkle updates in Stage 1, then a Homebrew tap in Stage 3 ([distribution design](plans/2026-09-30-distribution-design.md)).

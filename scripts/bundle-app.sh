@@ -1,8 +1,10 @@
 #!/bin/bash
-# Usage: bundle-app.sh <executable> <AppName> <bundle-id> <out-dir>
+# Usage: VERSION=<x.y.z> BUILD=<n> bundle-app.sh <executable> <AppName> <bundle-id> <out-dir>
+# VERSION and BUILD become CFBundleShortVersionString and CFBundleVersion; the Makefile passes them.
 set -euo pipefail
-if [ $# -ne 4 ]; then
-  echo "usage: $0 <executable> <AppName> <bundle-id> <out-dir>" >&2; exit 1
+USAGE="usage: VERSION=<x.y.z> BUILD=<n> $0 <executable> <AppName> <bundle-id> <out-dir>"
+if [ $# -ne 4 ] || [ -z "${VERSION:-}" ] || [ -z "${BUILD:-}" ]; then
+  echo "$USAGE" >&2; exit 1
 fi
 EXE=$1; NAME=$2; ID=$3; OUT=$4
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -20,8 +22,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 	<key>CFBundleName</key><string>$NAME</string>
 	<key>CFBundleExecutable</key><string>$NAME</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>0.0.1</string>
-	<key>CFBundleVersion</key><string>1</string>
+	<key>CFBundleShortVersionString</key><string>$VERSION</string>
+	<key>CFBundleVersion</key><string>$BUILD</string>
 	<key>LSMinimumSystemVersion</key><string>15.0</string>
 	<key>LSUIElement</key><true/>
 	<key>NSHighResolutionCapable</key><true/>
