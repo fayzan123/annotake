@@ -6,10 +6,8 @@ import Testing
 struct OnboardingCopyTests {
     @Test func reassuranceOnEveryPermission() {
         for permission in OnboardingModel.Permission.allCases {
-            for mode in [OnboardingModel.Mode.firstRun, .existingUser, .fixPermissions] {
-                let body = OnboardingCopy.body(.permission(permission), trigger: .rightCommand, mode: mode)
-                #expect(body.contains(OnboardingCopy.reassurance))
-            }
+            let body = OnboardingCopy.body(.permission(permission), trigger: .rightCommand)
+            #expect(body.contains(OnboardingCopy.reassurance))
         }
         #expect(OnboardingCopy.reassurance
                 == "Annotake sees your screen only while you record. Nothing you record leaves your Mac.")
@@ -19,26 +17,17 @@ struct OnboardingCopyTests {
         #expect(OnboardingCopy.keyName(.rightCommand) == "Right ⌘")
         #expect(OnboardingCopy.keyName(.rightOption) == "Right ⌥")
         #expect(OnboardingCopy.keyName(.fn) == "fn")
-        let practice = OnboardingCopy.body(.practice, trigger: .rightOption, mode: .firstRun)
+        let practice = OnboardingCopy.body(.practice, trigger: .rightOption)
         #expect(practice.contains("Double-tap Right ⌥"))
         #expect(!practice.contains("⌘"))
-        let done = OnboardingCopy.body(.done, trigger: .fn, mode: .firstRun)
+        let done = OnboardingCopy.body(.done, trigger: .fn)
         #expect(done.contains("Hold fn") && done.contains("fn + Esc"))
-    }
-
-    @Test func existingUserLineOnlyForExistingUsers() {
-        let existing = OnboardingCopy.body(.permission(.accessibility), trigger: .rightCommand, mode: .existingUser)
-        #expect(existing.hasPrefix(LegacyFlipbook.askAgainNote))
-        for mode in [OnboardingModel.Mode.firstRun, .fixPermissions] {
-            let body = OnboardingCopy.body(.permission(.accessibility), trigger: .rightCommand, mode: mode)
-            #expect(!body.contains(LegacyFlipbook.askAgainNote))
-        }
     }
 
     /// Annotake keeps its own windows out of recordings, so the practice run happens in another app (Checkpoint 3:
     /// the old Open button and Remember me box were in the first run's own window, and never in the frames).
     @Test func practiceRecordsAnotherApp() {
-        let practice = OnboardingCopy.body(.practice, trigger: .rightCommand, mode: .firstRun)
+        let practice = OnboardingCopy.body(.practice, trigger: .rightCommand)
         #expect(practice.contains("another app"))
         #expect(!practice.contains("Remember me"))
         #expect(practice.contains("Double-tap Right ⌘ again"))

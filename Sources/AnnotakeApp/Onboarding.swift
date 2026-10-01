@@ -37,7 +37,7 @@ enum OnboardingCopy {
     }
 
     /// The step's text, one paragraph per element.
-    static func paragraphs(_ step: OnboardingModel.Step, trigger: TriggerKey, mode: OnboardingModel.Mode) -> [String] {
+    static func paragraphs(_ step: OnboardingModel.Step, trigger: TriggerKey) -> [String] {
         let key = keyName(trigger)
         switch step {
         case .welcome:
@@ -54,7 +54,7 @@ enum OnboardingCopy {
             case .screenRecording:
                 "So Annotake can capture your screen while you record."
             }
-            return (mode == .existingUser ? [LegacyFlipbook.askAgainNote] : []) + [reason, reassurance]
+            return [reason, reassurance]
         case .reopen:
             return ["macOS turns on Screen Recording and Input Monitoring after Annotake reopens. It comes back to "
                     + "this window."]
@@ -71,8 +71,8 @@ enum OnboardingCopy {
         }
     }
 
-    static func body(_ step: OnboardingModel.Step, trigger: TriggerKey, mode: OnboardingModel.Mode) -> String {
-        paragraphs(step, trigger: trigger, mode: mode).joined(separator: "\n\n")
+    static func body(_ step: OnboardingModel.Step, trigger: TriggerKey) -> String {
+        paragraphs(step, trigger: trigger).joined(separator: "\n\n")
     }
 
     /// The three demo tiles on the welcome step.
@@ -112,7 +112,6 @@ final class OnboardingViewModel: ObservableObject {
     @Published private(set) var droppedFrames = 0
     @Published private(set) var thumbnails: [NSImage] = []
     let trigger: TriggerKey
-    let retiredFlipbook: Bool
     /// Called when the Done button finishes the first run.
     var onFinish: (() -> Void)?
     /// Called when something outside the window moves the first run on: a grant found by polling, or the practice
@@ -125,14 +124,13 @@ final class OnboardingViewModel: ObservableObject {
     private var timer: Timer?
 
     /// With no defaults (UI snapshots), nothing is saved. `report` is the log unless a test passes its own.
-    init(trigger: TriggerKey, defaults: UserDefaults?, persisted: OnboardingModel.Persisted, retiredFlipbook: Bool,
+    init(trigger: TriggerKey, defaults: UserDefaults?, persisted: OnboardingModel.Persisted,
          status: @escaping () -> Permissions.Status = Permissions.status,
          report: @escaping (String) -> Void = { log($0) }) {
         self.trigger = trigger
         self.defaults = defaults
         self.status = status
         self.report = report
-        self.retiredFlipbook = retiredFlipbook
         model = OnboardingModel(granted: status().byPermission, persisted: persisted)
     }
 
@@ -291,13 +289,13 @@ struct OnboardingView: View {
     private var model: OnboardingModel { viewModel.model }
 
     private var paragraphs: [String] {
-        OnboardingCopy.paragraphs(model.step, trigger: viewModel.trigger, mode: model.persisted.mode)
+        OnboardingCopy.paragraphs(model.step, trigger: viewModel.trigger)
     }
 
     @ViewBuilder private var content: some View {
         switch model.step {
         case .welcome:
-            WelcomeStep(trigger: viewModel.trigger, paragraphs: paragraphs, retiredFlipbook: viewModel.retiredFlipbook)
+            WelcomeStep(trigger: viewModel.trigger, paragraphs: paragraphs)
         case .permission(let permission):
             PermissionStep(permission: permission, paragraphs: paragraphs, granted: model.granted)
         case .reopen:
@@ -371,7 +369,6 @@ private struct WelcomeStep: View {
     static let symbols = ["keyboard", "cursorarrow.click.2", "photo.stack"]
     let trigger: TriggerKey
     let paragraphs: [String]
-    let retiredFlipbook: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -390,10 +387,6 @@ private struct WelcomeStep: View {
                     }
                 }
                 .animation(.easeInOut(duration: 0.3), value: active)
-            }
-            if retiredFlipbook {
-                Label(LegacyFlipbook.replacedNote, systemImage: "trash")
-                    .font(.callout).foregroundStyle(.secondary)
             }
         }
     }
@@ -431,12 +424,6 @@ private struct PermissionStep: View {
             StepTitle(text: OnboardingCopy.title(.permission(permission)))
             ForEach(paragraphs, id: \.self) { paragraph in
                 switch paragraph {
-                case LegacyFlipbook.askAgainNote:
-                    Label(paragraph, systemImage: "info.circle")
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.12)))
                 case OnboardingCopy.reassurance:
                     Label(paragraph, systemImage: "lock.shield")
                         .foregroundStyle(.secondary)
@@ -605,16 +592,10 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     private let viewModel: OnboardingViewModel
     private var window: NSWindow?
 
-    init(trigger: TriggerKey, defaults: UserDefaults, existingUser: Bool, retiredFlipbook: Bool) {
-        let saved = OnboardingViewModel.load(from: defaults)
-        viewModel = OnboardingViewModel(
-            trigger: trigger, defaults: defaults,
-            persisted: saved ?? OnboardingModel.Persisted(mode: existingUser ? .existingUser : .firstRun),
-            retiredFlipbook: retiredFlipbook)
+    init(trigger: TriggerKey, defaults: UserDefaults) {
+        viewModel = OnboardingViewModel(trigger: trigger, defaults: defaults,
+                                        persisted: OnboardingViewModel.load(from: defaults) ?? OnboardingModel.Persisted())
         super.init()
-        // Saved at once (Checkpoint 3): macOS can quit Annotake for a permission before any step changes, and
-        // the relaunch, where migration has already run, mustn't forget that this is an existing user.
-        if saved == nil { viewModel.save() }
         // Every launch is a relaunch for permissions that wait for one, so a first run left at Reopen moves on.
         viewModel.relaunched()
         viewModel.onFinish = { [weak self] in self?.window?.close() }
