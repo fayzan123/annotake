@@ -171,6 +171,11 @@ Confirmed by M0:
 - **Screen Recording** is requested by the first `SCShareableContent` call, which fails with error −3801 until it is granted. The first run requests it with `CGRequestScreenCaptureAccess()`.
 - Input Monitoring and Screen Recording take effect only after a relaunch. Accessibility applies without one.
 
+**Move to Applications.** Opened from anywhere else (the disk image, Downloads, or a build folder), Annotake first asks "Move Annotake to Applications?" ("Annotake needs to be in Applications to start when you log in."), before migration and the first run.
+- Move to Applications copies it to `/Applications`, or to `~/Applications` when `/Applications` isn't writable, replacing any copy there; opens the copy; and quits. A copy opened from a quarantined download runs translocated (from a path under `/AppTranslocation/`), so the move starts from the original, found with Security.framework's `SecTranslocateCreateOriginalPathForURL`. The original goes to the Trash unless it's on a read-only volume such as the disk image. The copy's quarantine flag is removed, since Gatekeeper has just checked it.
+- Not Now is remembered (`moveToApplications.declined`), and Annotake runs where it is.
+- A failure is logged and shown ("Couldn't move Annotake: …"), and Annotake keeps running.
+
 First launch also registers Annotake to launch at login (`SMAppService`), because the key has to work right after a restart.
 - It registers only when Annotake runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Annotake there.
 - It can be turned off in Settings → General.
