@@ -88,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cards: CardController?
     private var filmstrip: FilmstripController?
     private var settingsWindow: SettingsWindowController?
-    private var firstLaunch: FirstLaunchController?
+    private var onboarding: OnboardingController?
     private var settingsStore: SettingsStore?
     private var retentionTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
@@ -154,7 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model: settingsModel, picker: RecordPickerModel(loader: { try await contentCache.current() }))
         self.settingsWindow = settingsWindow
         let statusMenu = StatusMenu(actions: .init(
-            fixPermissions: { [weak self] in self?.firstLaunch?.show() },
+            fixPermissions: { [weak self] in self?.onboarding?.show(fixingPermissions: true) },
             startStop: { [weak controller] in controller?.toggleFromMenu() },
             isRecording: { [weak controller] in controller?.isRecording ?? false },
             openFolder: { [weak controller] in
@@ -184,12 +184,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.start()
         self.monitor = monitor
 
-        // 9. First launch: the permission checklist until the first recording, and the login item.
+        // 9. The first run, until it's done (an existing user starts at the permissions), and the login item.
         Permissions.logStatus()
-        let firstLaunch = FirstLaunchController(trigger: settings.triggerKey, defaults: .standard)
-        controller.onRecordingSaved = { [weak firstLaunch] in firstLaunch?.recordingSaved() }
-        firstLaunch.showIfNeeded()
-        self.firstLaunch = firstLaunch
+        let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard,
+                                              existingUser: migration?.existingUser ?? false,
+                                              retiredFlipbook: retiredFlipbook)
+        controller.onRecordingSaved = { [weak onboarding] in onboarding?.recordingSaved() }
+        onboarding.showIfNeeded()
+        self.onboarding = onboarding
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)
 
         // 10. Updates: the app's first network call, a daily check (spec §6.2).

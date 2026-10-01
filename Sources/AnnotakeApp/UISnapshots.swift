@@ -28,12 +28,18 @@ enum UISnapshots {
 
         write(filmstrip(), to: directory, as: "filmstrip.png")
 
-        renderSettings(to: directory)
+        var problems: [String] = []
+        renderSettings(to: directory, problems: &problems)
+        // `make ui-snapshots` fails when this file isn't empty.
+        try? Data(problems.map { $0 + "\n" }.joined().utf8).write(to: directory.appending(path: Self.problemsFile))
     }
+
+    /// What the snapshots found wrong, one line each; the app's stdout goes nowhere under `open`.
+    static let problemsFile = "problems.txt"
 
     /// One snapshot per Settings tab, from a throwaway store with the defaults.
     @MainActor
-    private static func renderSettings(to directory: URL) {
+    private static func renderSettings(to directory: URL, problems: inout [String]) {
         let suite = "com.fayzanmalik.annotake.ui-snapshots"
         let defaults = UserDefaults(suiteName: suite)!
         defaults.removePersistentDomain(forName: suite)
@@ -56,15 +62,48 @@ enum UISnapshots {
         model.update { $0.triggerKey = .fn }
         writeSwiftUI(GeneralTab(model: model, loginItem: { .available }), to: directory, as: "settings-general-fn.png")
 
-        let nothingGranted = Permissions.Status(screenRecording: false, inputMonitoring: false, accessibility: false)
-        writeSwiftUI(ChecklistView(viewModel: ChecklistViewModel(trigger: .rightCommand, defaults: nil,
-                                                                 status: { nothingGranted })),
-                     to: directory, as: "checklist-fresh.png")
-        let accessibilityGranted = Permissions.Status(screenRecording: false, inputMonitoring: false, accessibility: true)
-        writeSwiftUI(ChecklistView(viewModel: ChecklistViewModel(
-                        trigger: .rightCommand, defaults: nil, status: { accessibilityGranted },
-                        persisted: .init(requested: [.screenRecording, .accessibility]))),
-                     to: directory, as: "checklist-requested.png")
+        renderOnboarding(to: directory, problems: &problems)
+    }
+
+    /// One snapshot per first-run step, from view models that save nothing and see fixed permissions.
+    @MainActor
+    private static func renderOnboarding(to directory: URL, problems: inout [String]) {
+        let none = Permissions.Status(screenRecording: false, inputMonitoring: false, accessibility: false)
+        let two = Permissions.Status(screenRecording: false, inputMonitoring: true, accessibility: true)
+        let all = Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: true)
+        var heights: [String] = []
+        func onboarding(_ name: String, _ persisted: OnboardingModel.Persisted, status: Permissions.Status,
+                        retiredFlipbook: Bool = false, change: (OnboardingViewModel) -> Void = { _ in }) {
+            let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil, persisted: persisted,
+                                                retiredFlipbook: retiredFlipbook, status: { status })
+            change(viewModel)
+            writeSwiftUI(OnboardingView(viewModel: viewModel), to: directory, as: name)
+            // The window has a fixed height: the content at its own height must fit in it.
+            let natural = NSHostingView(rootView: OnboardingView(viewModel: viewModel, fitsContent: true)).fittingSize
+            heights.append("\(name): \(Int(natural.height.rounded(.up))) of \(Int(OnboardingView.height)) pt")
+            if natural.height > OnboardingView.height {
+                problems.append("\(name) is clipped: its content needs \(Int(natural.height.rounded(.up))) pt, "
+                                + "and the window is \(Int(OnboardingView.height))")
+            }
+        }
+        defer {
+            try? Data((heights.joined(separator: "\n") + "\n").utf8)
+                .write(to: directory.appending(path: "onboarding-heights.txt"))
+        }
+        onboarding("onboarding-welcome.png", .init(), status: none, retiredFlipbook: true)
+        onboarding("onboarding-accessibility.png", .init(step: .permission(.accessibility)), status: none)
+        onboarding("onboarding-screen-recording-requested.png",
+                   .init(step: .permission(.screenRecording), requested: [.accessibility, .inputMonitoring, .screenRecording]),
+                   status: two)
+        onboarding("onboarding-existing-user.png", .init(mode: .existingUser, step: .permission(.accessibility)),
+                   status: none)
+        onboarding("onboarding-reopen.png", .init(step: .reopen, requested: [.screenRecording]), status: two)
+        onboarding("onboarding-practice.png", .init(step: .practice), status: all)
+        onboarding("onboarding-drop.png", .init(step: .dropCard), status: all)
+        onboarding("onboarding-drop-done.png", .init(step: .dropCard), status: all) {
+            $0.showDrop(frames: 6, thumbnails: sampleThumbnails(count: 3))
+        }
+        onboarding("onboarding-done.png", .init(step: .done), status: all)
     }
 
     /// Screens and windows with placeholder thumbnails; it never queries the real screen.
