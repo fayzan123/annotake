@@ -34,7 +34,7 @@ Worked out with the brainstorming companion. The mockups (`visual-style`, `graph
 | The footer logo animates: the tripod opens into the A | Fayzan's idea. Wispr's footer logo moves too; this one is ours |
 | Phones and other computers get "Email me the link", with no news tick box | A requested email is exempt from CASL's consent rules. A news list would need a mailing address on the form and in every email. News consent can come through Stage 2's sign-in |
 | Plain HTML, CSS, and JavaScript in `site/`, with one Vercel function | The mockups become the code. No framework, no build step, no runtime packages. Sessions keep this repo's memory and docs. Revisit (Astro, say) when Stage 3 adds pricing, a changelog, and an FAQ |
-| Resend sends the link email; ImprovMX forwards `hello@` and `feedback@` | Their free plans fit the beta, and both upgrade without code changes |
+| Resend sends the link email; annotake.app receives no mail | Its free plan fits the beta and upgrades without code changes. No address at annotake.app is published, so nothing needs forwarding (§12) |
 | Vercel Web Analytics | Cookieless, so there's no banner. Referrers show which post brought people |
 | No cookies, self-hosted fonts, no third-party scripts | No cookie banner is needed, and a strict content security policy (CSP) is possible |
 | A privacy policy and Terms on the site, with Terms linked under every download button | Fayzan wants every legal base covered. PIPEDA expects an open policy, and Terms limit liability for free beta software |
@@ -142,7 +142,7 @@ Screen: Built-in Retina Display · 0:04 · 3 frames (from 3 candidates)
   - Each leg pivots where the two legs' center lines meet, at (60.5, −101.6), which is hidden inside the camera body.
   - The center line runs 113.0 units from foot to pivot, and the feet stay on the baseline.
   - The open pose matches the brand SVG exactly.
-- **Under the logo:** "© 2026 Fayzan Malik · Made in Ontario, Canada", with links to Privacy, Terms, and `hello@annotake.app`.
+- **Under the logo:** "© 2026 Fayzan Malik · Made in Ontario, Canada", with links to Privacy and Terms.
 
 ### 3.8 Phones and other computers
 
@@ -205,7 +205,7 @@ Not legal advice. This covers the usual ground for free beta software. Before St
 
 Plain language. It opens with a "Last updated" date, and old versions stay in git.
 
-1. **Who:** Annotake is made by Fayzan Malik, an individual in Ontario, Canada, who is the person responsible for privacy. The contact is `hello@annotake.app`.
+1. **Who:** Annotake is made by Fayzan Malik, an individual in Ontario, Canada, who is the person responsible for privacy. The policy gives no email address (§12).
 2. **The short version:** nothing you record leaves your Mac. The site uses no cookies. We get your email only if you ask for the link, and only to send it.
 3. **The app:**
    - **What stays on your Mac:** frames, captions, `steps.md`, window titles, button names, keys, and file paths. They're saved in `~/Pictures/Annotake` and cleared after 30 days by default.
@@ -218,9 +218,9 @@ Plain language. It opens with a "Last updated" date, and old versions stay in gi
    - **Analytics:** Vercel Web Analytics counts visits and referrers without cookies, and doesn't identify you.
    - **Downloads** come from GitHub (`fayzan123/annotake-releases`), under GitHub's privacy statement.
 5. **The link email:** your address is used to send that one email through Resend. We keep no list. Resend keeps its sending logs for 30 days.
-6. **Who else sees data:** only the services above: Vercel, Resend, GitHub, and ImprovMX, which forwards email sent to `hello@` and `feedback@`. They're in the US. Nothing is sold.
+6. **Who else sees data:** only the services above: Vercel, Resend, and GitHub. They're in the US. Nothing is sold.
 7. **Your rights:**
-   - To see, correct, or delete your data: email us.
+   - To see, correct, or delete your data. With no accounts and no list, there's none held on our side.
    - Complaints go to the Office of the Privacy Commissioner of Canada.
    - EU and UK visitors also have GDPR rights. The legal basis is your request for the link, and legitimate interest for site security.
 8. **Children:** the site isn't for children under 13, or under 16 in the EU.
@@ -238,12 +238,12 @@ Plain language. It opens with a "Last updated" date, and old versions stay in gi
 8. **Open source:** Sparkle's MIT license notice, and the SIL Open Font License for Jost.
 9. **Ending:** you can stop at any time by deleting the app. The beta can end.
 10. **The law:** Ontario's, and Canada's federal laws.
-11. **Changes and contact.**
+11. **Changes.**
 
 ### 4.4 CASL
 
 - **The link email doesn't need a consent box.** CASL's regulations exempt a message "sent in response to a request, inquiry or complaint or is otherwise solicited by the person to whom the message is sent" ([SOR/2013-221, s. 3(b)](https://laws-lois.justice.gc.ca/eng/regulations/SOR-2013-221/FullText.html)).
-  - It still names the sender and gives a contact, and it says it's the only email.
+  - It still names the sender, and it says it's the only email.
   - That exemption doesn't cover later messages, so no list is kept.
 - **A news list, if one comes in Stage 2 or later, needs all of this:**
   - an unticked box;
@@ -343,15 +343,12 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
 
 ### 5.4 The email
 
-- **From:** `Annotake <hello@annotake.app>`, with replies to `hello@annotake.app`, which forwards to Fayzan's Gmail.
+- **From:** `Annotake <noreply@annotake.app>`, with no reply address: annotake.app receives no mail.
 - **Subject:** "Annotake for your Mac".
 - **Body,** as plain text and simple HTML: "Here's the download link you asked for: https://annotake.app/download. Open it on your Mac (macOS 15 or later), open the disk image, and drag Annotake to Applications. This is the only email we'll send you." It's signed "Annotake, made by Fayzan Malik in Ontario, Canada", with links to annotake.app and the privacy policy.
 - **DNS records,** in Vercel:
   - Resend's DKIM record, and the MX and SPF records for its sending subdomain, exactly as Resend lists them;
-  - `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:hello@annotake.app`, tightened to `p=quarantine` once reports are clean;
-  - ImprovMX's two MX records and the records it lists.
-
-  Resend's SPF sits on its own subdomain, so the two don't clash.
+  - `_dmarc` TXT `v=DMARC1; p=none`, with no report address, since nothing receives mail at annotake.app; tightened to `p=quarantine` later.
 
 ### 5.5 Counting
 
@@ -403,7 +400,6 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
 | Email me the link | A separate function; Resend free sends 100 a day, Pro 50,000 a month with no daily cap. Resend's API takes 10 requests a second, which it raises on request | The form shows the link with Copy and Share. The page never depends on it |
 | Bots on the function | A honeypot, a too-fast check, one email per address per day, and a WAF rule of 10 requests per 10 minutes per IP (Hobby allows one rule). The limit is loose because phones on one carrier often share an IP, and the fallback covers anyone it catches | Next step: BotID Basic, free on all plans, after confirming it sets no cookies |
 | Analytics | Hobby counts 50,000 events a month | Counting pauses; the site is unaffected |
-| `hello@` and `feedback@` | ImprovMX free forwards 500 a day | Upgrade, or move to a helpdesk |
 | Without JavaScript | A plain link and a plain form | Still downloads, and still sends the link |
 
 - **No database.** Nothing is stored on our side, so there's nothing to scale, back up, migrate, or leak.
@@ -422,7 +418,6 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
 | Link emails pass about 60 a day, or before a launch | Resend Pro | US$20 a month |
 | Bots get past the rate limit | BotID on `/api/link` | Free |
 | Stage 3, or installs in the thousands | Move Sparkle's feed from GitHub to annotake.app (edge-cached), in an app release. Not before Vercel Pro, so a paused project can't stop updates | Free |
-| Send Feedback passes 500 emails a day | ImprovMX's paid plan, or a helpdesk | About US$9 a month |
 
 Real per-user server load arrives with Stage 2: Supabase sign-in and the daily counts. Its design plans for that the same way.
 
@@ -461,9 +456,9 @@ Real per-user server load arrives with Stage 2: Supabase sign-in and the daily c
 
 ## 8. Fayzan's part (all at the end)
 
-- **Accounts:** create the Resend and ImprovMX accounts, and the Vercel project connected to `fayzan123/annotake`, with `site` as its root directory.
+- **Accounts:** create the Resend account, and the Vercel project connected to `fayzan123/annotake`, with `site` as its root directory.
 - **The Resend API key** goes into Vercel as a Production-only variable. `EMAIL_DRY_RUN=1` goes into Preview.
-- **DNS:** add the records Resend and ImprovMX list in Vercel, or let a session add them with the Vercel CLI under his login.
+- **DNS:** add the records Resend lists in Vercel, or let a session add them with the Vercel CLI under his login.
 - **The domain:** register annotake.com in Vercel and set its redirect.
 - **The firewall:** turn on the WAF rate-limit rule for `/api/link`: 10 requests per 10 minutes per IP, fixed window, answering 429.
 - **Optional:** an uptime monitor account.
@@ -473,7 +468,7 @@ Real per-user server load arrives with Stage 2: Supabase sign-in and the daily c
 ## 9. Open items
 
 - **The 20-second video.** When it exists, it goes in a section after How it works: self-hosted MP4 and WebM, muted and looping while in view, with a poster frame. It also goes on X and Reddit.
-- **The app's Send Feedback address** switches to `feedback@annotake.app` in the next app release, once forwarding works. It's one line (`Feedback.address`).
+- **The app's Send Feedback address** stays Fayzan's Gmail: annotake.app receives no mail. If it ever does, the switch is one line (`Feedback.address`).
 - **Sparkle's MIT notice** goes into the app bundle in the next app release.
 - **Stage 2:** news consent at sign-in, if wanted, under §4.4's rules. The privacy policy is updated before sign-in ships.
 - **Stage 3:** pricing, the FAQ, a changelog, the feed move, and maybe Astro.
@@ -520,5 +515,9 @@ Made alongside this doc:
 - **The animations play only while on screen** through one small module, `player.js`, which also pauses their CSS animations off screen.
 - **On a phone, the Finder window drops its sidebar and Kind column,** and Quick Look sits under it.
 - **The home page's preview image puts the gate right of center,** so all three captioned frames are in the picture, and the page names it in `og:image:alt`.
-- **The privacy policy says the US services handle data under US law,** as Canada's privacy commissioner expects for cross-border transfers, and that earlier versions are sent on request.
+- **The privacy policy says the US services handle data under US law,** as Canada's privacy commissioner expects for cross-border transfers, and that earlier versions are kept.
 - **The first load is 137 KB before compression,** under the 200 KB budget. Raw, the CSS (35 KB) and the JavaScript (44 KB) are over §5.8's per-type figures (25 and 40 KB), but those are transfers, and Vercel compresses them to about 9 KB and 15 KB.
+
+**Decided after the session** (Fayzan, 2026-10-01):
+- **No email address on the site.** `hello@` and `feedback@annotake.app` won't exist, so ImprovMX is out. The footer, the privacy policy, and the Terms give no address: the policy's Contact section and the Terms' contact line are gone. A test checks every page. Fayzan chose this knowing the privacy policy then names no contact, which Canadian and EU privacy rules expect.
+- **The link email stays.** It comes from `noreply@annotake.app`, with no reply address, and DMARC has no report address.

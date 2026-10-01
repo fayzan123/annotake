@@ -85,36 +85,34 @@ Items follow the Stage 1 plan's Task 15 list. Every step passed, with the `feedb
 
 ## Checkpoint 4 (the site)
 
-Steps from the landing page plan's Task 15, for connecting annotake.app. Session 10 built and tested the site locally, and did none of this: it never deploys, creates accounts, or touches DNS. Fill in each result.
+Steps from the landing page plan's Task 15, for connecting annotake.app. Session 10 built and tested the site locally, and did none of this: it never deploys, creates accounts, or touches DNS. After the session, Fayzan dropped the ImprovMX step: annotake.app receives no mail, and the site shows no email address. Fill in each result.
 
 1. **Resend:** create the account and add `annotake.app`. Add its DNS records in Vercel (or have a session run `npx vercel dns add …` under your login), then verify the domain.
    Result: not done yet.
-2. **ImprovMX:** create the account and add `annotake.app`. Add its MX records, and anything else it lists, in Vercel. Make `hello@` and `feedback@` forward to your Gmail, and check that a test email to `hello@annotake.app` arrives.
+2. **DMARC:** add `_dmarc` TXT `v=DMARC1; p=none`. (No report address: nothing receives mail at annotake.app.)
    Result: not done yet.
-3. **DMARC:** add `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:hello@annotake.app`.
-   Result: not done yet.
-4. **Vercel:**
+3. **Vercel:**
    - create a project from `fayzan123/annotake`, with Root Directory `site` and Framework Preset Other;
    - add the environment variables `RESEND_API_KEY` (Production) and `EMAIL_DRY_RUN=1` (Preview);
    - turn on Web Analytics;
    - add `annotake.app` and `www.annotake.app`.
 
    Result: not done yet.
-5. **annotake.com:** register it in Vercel, and add it and `www` as redirects to `https://annotake.app`.
+4. **annotake.com:** register it in Vercel, and add it and `www` as redirects to `https://annotake.app`.
    Result: not done yet.
-6. **The firewall:** add a rule for when the request path is `/api/link` and the method is `POST`: Rate Limit, Fixed Window, 10 requests per 600 s, keyed by IP, answering 429. Then publish it.
+5. **The firewall:** add a rule for when the request path is `/api/link` and the method is `POST`: Rate Limit, Fixed Window, 10 requests per 600 s, keyed by IP, answering 429. Then publish it.
    Result: not done yet.
-7. **The first deploy:** run `make site-smoke URL=https://annotake.app` and `make site-burst URL=https://annotake.app`. The burst sends no email.
+6. **The first deploy:** run `make site-smoke URL=https://annotake.app` and `make site-burst URL=https://annotake.app`. The burst sends no email.
    Result: not done yet.
-8. **On your iPhone:** use Email me the link with your own address. The email arrives (outside spam), and a reply reaches your Gmail. Open the link on a Mac, and the DMG downloads.
+7. **On your iPhone:** use Email me the link with your own address. The email arrives (outside spam), from `noreply@annotake.app`. Open the link on a Mac, and the DMG downloads.
    Result: not done yet.
-9. **The look:** on your iPhone and both Macs, in light and dark, check how the hero, the steps, and the footer look and move.
+8. **The look:** on your iPhone and both Macs, in light and dark, check how the hero, the steps, and the footer look and move.
    Result: not done yet.
-10. **PageSpeed Insights on mobile:** performance at least 95, accessibility 100.
+9. **PageSpeed Insights on mobile:** performance at least 95, accessibility 100.
+   Result: not done yet.
+10. **The policies:** read the privacy policy and the Terms, and approve them or ask for changes.
     Result: not done yet.
-11. **The policies:** read the privacy policy and the Terms, and approve them or ask for changes.
+11. **Optional:** an uptime monitor on `/` and `/download`.
     Result: not done yet.
-12. **Optional:** an uptime monitor on `/` and `/download`.
-    Result: not done yet.
-13. **Before the first public post:** move to Vercel Pro.
+12. **Before the first public post:** move to Vercel Pro.
     Result: not done yet.

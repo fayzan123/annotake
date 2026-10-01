@@ -9,16 +9,16 @@ const PAGES = {
     title: 'Privacy policy · Annotake',
     h1: 'Privacy policy',
     h2s: ['The short version', 'The Annotake app', 'This website', 'The link email', 'Who else sees data', 'Your rights',
-      'Children', 'Changes', 'Contact'],
+      'Children', 'Changes'],
     phrases: ['Nothing you record leaves your Mac', 'This website doesn’t use cookies', 'Vercel Web Analytics', 'Resend',
-      '30 days', 'GitHub', 'ImprovMX', 'United States', 'We never sell', 'before that version ships',
-      'Office of the Privacy Commissioner of Canada', 'Fayzan Malik', 'Ontario, Canada', 'hello@annotake.app'],
+      '30 days', 'GitHub', 'United States', 'We never sell', 'before that version ships',
+      'Office of the Privacy Commissioner of Canada', 'Fayzan Malik', 'Ontario, Canada'],
   },
   '/terms': {
     title: 'Terms · Annotake',
     h1: 'Terms',
     h2s: ['Who we are', 'The beta', 'Your license', 'Your recordings', 'No warranty', 'Limitation of liability',
-      'Trademarks', 'Open-source software', 'Ending', 'Governing law', 'Changes and contact'],
+      'Trademarks', 'Open-source software', 'Ending', 'Governing law', 'Changes'],
     phrases: ['free during the beta', 'as is', 'reverse-engineer',
       'Claude Code, Cursor, ChatGPT, Mac, and macOS are trademarks of their owners',
       'isn’t affiliated with or endorsed by them', 'Ontario'],
@@ -41,14 +41,21 @@ for (const [path, page] of Object.entries(PAGES)) {
   });
 }
 
-test('the Terms link the two licenses, and the policy links the Terms and back', async ({ page }) => {
+test('the Terms link the two licenses and the privacy policy', async ({ page }) => {
   await page.goto('/terms');
   await expect(page.locator('main a[href="/licenses/sparkle.txt"]')).toHaveCount(1);
   await expect(page.locator('main a[href="/licenses/jost-ofl.txt"]')).toHaveCount(1);
   await expect(page.locator('main a[href="/privacy"]')).not.toHaveCount(0);
-  await page.goto('/privacy');
-  await expect(page.locator('main a[href="mailto:hello@annotake.app"]')).not.toHaveCount(0);
 });
+
+// annotake.app receives no mail, so no page gives an address.
+for (const path of ['/', '/privacy', '/terms', '/nope']) {
+  test(`${path} shows no email address`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+    expect(await page.locator('body').textContent()).not.toMatch(/[^\s@]+@[^\s@]+\.[a-z]{2,}/i);
+  });
+}
 
 test('the licenses are published as plain text', async ({ request }) => {
   const sparkle = await request.get('/licenses/sparkle.txt');
