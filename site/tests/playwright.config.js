@@ -8,8 +8,8 @@ const PORT = 4174;
 export default defineConfig({
   testDir: 'pages',
   fullyParallel: true,
-  // Five or more Google Chromes starting at once left one stuck creating its first context (in 2 of 3 runs on
-  // 2026-10-01, a 10-core Mac); four never did.
+  // Google Chromes starting at the same moment sometimes stick creating their first context, so Chrome workers start
+  // 600 ms apart (pages/support.js), and there are four of them.
   workers: 4,
   forbidOnly: !!process.env.CI,
   reporter: [['line']],
@@ -18,9 +18,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
   },
   projects: [
-    // Now and then (about 1 run in 15 on 2026-10-01) the installed Chrome never finishes creating a test's context.
-    // One retry, in a fresh worker, gets past it; Playwright still reports the test as flaky.
-    { name: 'chrome', retries: 1, use: { browserName: 'chromium', channel: 'chrome' } },
+    { name: 'chrome', use: { browserName: 'chromium', channel: 'chrome' } },
     { name: 'webkit', use: { browserName: 'webkit' } },
     { name: 'firefox', use: { browserName: 'firefox' } },
   ],
