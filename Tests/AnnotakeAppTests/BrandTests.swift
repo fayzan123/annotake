@@ -11,6 +11,27 @@ struct BrandTests {
         #expect(abs(BrandMark.bounds.maxY) < 0.01)
     }
 
+    @Test func legAndBraceThicknessesAreNamed() {
+        #expect(BrandMark.legThickness == 0.95 * BrandMark.stem)
+        #expect(BrandMark.braceThickness == 0.85 * BrandMark.stem)
+    }
+
+    /// The site's generator (scripts/make-site-brand.swift) reads the shapes by position.
+    @Test func shapesComeInTheirListedOrder() {
+        let shapes = BrandMark.shapes
+        #expect(shapes.count == 7)
+        guard shapes.count == 7 else { return }
+        let boxes = shapes.map(\.path.boundingBoxOfPath)
+        let near = { (a: CGFloat, b: CGFloat) in abs(a - b) <= 0.01 }
+        #expect(near(boxes[0].minX, 0) && near(boxes[0].maxX, 76.52), "the left leg")
+        #expect(near(boxes[1].minX, 44.48) && near(boxes[1].maxX, 121), "the right leg")
+        #expect(near(boxes[2].minY, -46.8) && near(boxes[2].maxY, -29.2), "the brace")
+        #expect(near(boxes[3].minY, -163.76) && near(boxes[3].maxY, -96), "the body")
+        #expect(near(boxes[4].minX, 119.79) && near(boxes[4].maxX, 151.25), "the lens")
+        #expect(near(boxes[5].midX, 27.83), "the back reel")
+        #expect(shapes[6].part == .frontReel, "the front reel")
+    }
+
     @Test func onlyTheFrontReelIsAccentedAndItIsARing() {
         let reels = BrandMark.shapes.filter { $0.part == .frontReel }
         #expect(reels.count == 1)
