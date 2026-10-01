@@ -94,22 +94,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusMenu: StatusMenu?
     private var contentCache: ShareableContentCache?
     private var screenObserver: NSObjectProtocol?
+    /// What migration brought over from the old app, and whether the old app was retired (spec §3.8).
+    private var migration: MigrationPlan?
+    private var retiredFlipbook = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. The log.
         log("launched")
         InputLog.setHandler { log($0) }
 
-        // 2. Settings.
+        // 2. Coming from the old app (spec §3.8): its settings and captures, once, and only Annotake answers the key.
+        migration = Migration.run(defaults: .standard, home: FileManager.default.homeDirectoryForCurrentUser)
+        retiredFlipbook = LegacyApp.retire()
+
+        // 3. Settings.
         let settingsStore = SettingsStore(defaults: .standard)
         let settings = settingsStore.settings
 
-        // 3. Crash leftovers, then retention: now, then on wake and hourly once 24 h have passed.
+        // 4. Crash leftovers, then retention: now, then on wake and hourly once 24 h have passed.
         self.settingsStore = settingsStore
         CaptureStore(root: settings.saveLocation).removeLeftovers()
         startRetentionSchedule()
 
-        // 4. The screen and window list, kept fresh.
+        // 5. The screen and window list, kept fresh.
         let contentCache = ShareableContentCache()
         contentCache.refresh()
         screenObserver = NotificationCenter.default.addObserver(
@@ -118,7 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         self.contentCache = contentCache
 
-        // 5. The pill.
+        // 6. The pill.
         let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel())
         let cards = CardController()
         let filmstrip = FilmstripController()
@@ -132,7 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.cards = cards
         self.filmstrip = filmstrip
 
-        // 6. The menu, and the Settings window it opens.
+        // 7. The menu, and the Settings window it opens.
         let settingsModel = SettingsModel(store: settingsStore)
         settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
         let settingsWindow = SettingsWindowController(
@@ -160,14 +167,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.statusMenu = statusMenu
         self.statusMenu = statusMenu
 
-        // 7. The key.
+        // 8. The key.
         let monitor = InputMonitor(trigger: settings.triggerKey, gestures: settings.gestureConfig,
                                    layout: CurrentKeyboardLayout(), delegate: controller)
         controller.inputMonitor = monitor
         monitor.start()
         self.monitor = monitor
 
-        // 8. First launch: the permission checklist until the first recording, and the login item.
+        // 9. First launch: the permission checklist until the first recording, and the login item.
         Permissions.logStatus()
         let firstLaunch = FirstLaunchController(trigger: settings.triggerKey, defaults: .standard)
         controller.onRecordingSaved = { [weak firstLaunch] in firstLaunch?.recordingSaved() }

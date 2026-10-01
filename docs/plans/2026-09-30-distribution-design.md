@@ -74,6 +74,10 @@ Everything switches, in the Stage 1 build (§5.2), because permissions get grant
   - If `~/Pictures/Flipbook` exists, the save location is still the default, and `~/Pictures/Annotake` doesn't exist yet, the folder is renamed.
   - Each capture's `.flipbook` marker becomes `.annotake`, wherever the captures are, so the 30-day cleanup keeps finding them.
   - Settings are copied from the old `com.fayzanmalik.flipbook` domain, except the first-run state (`firstLaunch.v1`, `loginItem.initialized`), because permissions have to be granted again.
+  - Added by the [Stage 1 plan](2026-09-30-stage-1-build.md):
+    - **Old markers stay readable.** A capture with a `.flipbook` marker and no `.annotake` one still counts, so captures on a drive that's unplugged at first launch keep working when it comes back. Migration still renames markers where it can reach them.
+    - **Existing Flipbook users skip the welcome and the practice run,** and go straight to the permissions, which macOS asks for again because of the new signature and bundle ID.
+    - **The old app is retired.** Annotake's first launch quits an installed Flipbook and moves it to the Trash. Otherwise, after a disk-image install, both apps would start a recording on Right ⌘.
 - **Docs:** the spec, backlog, research notes, and session guide switch to Annotake. The dated plans and checkpoint logs keep their text, with one line at the top saying they were written when the app was called Flipbook.
 - **Friends on the early install:** the same install command installs Annotake and removes Flipbook.app. The old command keeps working: GitHub redirects renamed repos, which is checked at the rename, and a stub stays at the old address if it doesn't.
 

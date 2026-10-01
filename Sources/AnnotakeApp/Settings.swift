@@ -32,7 +32,12 @@ public struct Settings: Codable, Equatable, Sendable {
     public static let fullLongEdge = 1920
     public static let compactLongEdge = 1568
     public static var defaultSaveLocation: URL {
-        FileManager.default.homeDirectoryForCurrentUser.appending(path: "Pictures/Annotake")
+        defaultSaveLocation(home: FileManager.default.homeDirectoryForCurrentUser)
+    }
+
+    /// `<home>/Pictures/Annotake`
+    public static func defaultSaveLocation(home: URL) -> URL {
+        home.appending(path: "Pictures/Annotake")
     }
 
     public var triggerKey: TriggerKey = .rightCommand

@@ -36,6 +36,7 @@ public struct PendingCapture: Sendable {
 public struct CaptureStore: Sendable {
     /// Marks a folder as a capture and holds its date; cleanup only ever touches folders that have it.
     public static let markerName = ".annotake"
+    public static let legacyMarkerName = ".flipbook"   // read-only: captures made by Flipbook
     public static let tempFolderName = ".annotake-tmp"
     public static let rawFolderName = ".raw"
 
@@ -79,7 +80,7 @@ public struct CaptureStore: Sendable {
         return pending
     }
 
-    /// Writes the marker, then moves the capture to `<root>/<name>`, or "<name> (2)", "<name> (3)" …
+    /// Writes the marker (only ever `markerName`), then moves the capture to `<root>/<name>`, or "<name> (2)", "<name> (3)" …
     /// when the name is taken.
     public func commit(_ pending: PendingCapture, name: String, date: Date) throws -> URL {
         try Data(ISO8601DateFormatter().string(from: date).utf8)
@@ -113,11 +114,15 @@ public struct CaptureStore: Sendable {
             .sorted { $0.date > $1.date }
     }
 
-    /// The date in the folder's `.annotake` marker (ISO 8601), or nil without a readable one.
+    /// The date in the folder's marker (ISO 8601), or nil without a readable one. Without a readable
+    /// `markerName`, the legacy marker counts, so captures that migration couldn't reach stay listed and
+    /// still expire (spec §3.8).
     public static func readMarker(in folder: URL) -> Date? {
-        guard let data = try? Data(contentsOf: folder.appending(path: markerName)),
-              let text = String(data: data, encoding: .utf8)
-        else { return nil }
+        date(inMarker: folder.appending(path: markerName)) ?? date(inMarker: folder.appending(path: legacyMarkerName))
+    }
+
+    private static func date(inMarker url: URL) -> Date? {
+        guard let data = try? Data(contentsOf: url), let text = String(data: data, encoding: .utf8) else { return nil }
         return ISO8601DateFormatter().date(from: text.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }

@@ -166,6 +166,20 @@ First launch also registers Annotake to launch at login (`SMAppService`), becaus
 - It registers only when Annotake runs from `/Applications` or `~/Applications`, so a development build never leaves a stale login item. Otherwise Settings → General says to move Annotake there.
 - It can be turned off in Settings → General.
 
+### 3.8 Coming from Flipbook
+
+Annotake was called Flipbook until 2026-09-30, and it's a new app to macOS: a new bundle id (`com.fayzanmalik.annotake`) and a new signature. Its first launch brings Flipbook's settings and captures over, once, before it reads its own settings ([distribution design §3.1](plans/2026-09-30-distribution-design.md#31-the-rename)).
+- **Settings.** Flipbook's settings are copied from its `com.fayzanmalik.flipbook` domain, value by value; unreadable values fall back to their defaults. Its first-run state isn't copied, because macOS asks for the permissions again for the new app.
+- **The captures folder.** If the save location was Flipbook's default, `~/Pictures/Flipbook`:
+  - it's renamed `~/Pictures/Annotake`, and the save location follows it;
+  - if `~/Pictures/Annotake` already exists, the old folder stays where it is, Annotake saves to `~/Pictures/Annotake`, and the log says so;
+  - if the rename fails, the old folder stays the save location.
+- **A custom save location** stays as it is.
+- **Markers.** In the save location, each capture's `.flipbook` marker is renamed `.annotake`, and Flipbook's `.flipbook-tmp` is deleted. Captures it can't reach, such as on a drive that's unplugged at first launch, keep their `.flipbook` marker. It's read like `.annotake` but never written, so those captures still show in Recent Captures and are still cleaned up (§4.1).
+- **Existing users.** Flipbook was used on this Mac if its settings, its captures folder, or any of its preferences exist. Existing users skip the welcome and the practice run, and go straight to the permissions (§3.7).
+- **The old app.** Annotake quits a running Flipbook (forcing it after 2 s) and moves every copy in `/Applications` or `~/Applications` to the Trash, so only Annotake answers the trigger key. Copies elsewhere, such as development builds, stay. The first run says "Flipbook was moved to the Trash. Annotake replaces it."
+- The log records only what happened and how many markers were renamed, never paths.
+
 ## 4. Output
 
 ### 4.1 Folder layout
@@ -177,7 +191,7 @@ First launch also registers Annotake to launch at login (`SMAppService`), becaus
     02_0m03s.png
     …
     steps.md
-    .annotake          # marker file holding the capture's date: cleanup only ever touches folders that have it
+    .annotake          # marker file holding the capture's date: cleanup only ever touches folders that have one
     .raw/              # used to re-render after trims; internal, not a public format
       capture.json     # name, target, date, render options, picked frames and their actions, removals
       frame-000017.png # unrendered picked frames, named by frame index
@@ -190,6 +204,7 @@ First launch also registers Annotake to launch at login (`SMAppService`), becaus
 - A capture whose folder name is already taken gets " (2)", " (3)", and so on.
 - `.raw/capture.json` exists so the filmstrip and Recent Captures work after a relaunch. It is not the machine-readable capture file the backlog defers.
 - **Cleanup** runs at launch and every 24 h. It moves capture folders older than the retention period to the Trash, but only if they contain `.annotake`, and it reads the date from that marker.
+- **Captures made by Flipbook** have a `.flipbook` marker instead. Migration renames it (§3.8). Where it couldn't, `.flipbook` counts as the marker for listing and cleanup when there's no readable `.annotake`; it's never written.
 
 ### 4.2 Frames
 

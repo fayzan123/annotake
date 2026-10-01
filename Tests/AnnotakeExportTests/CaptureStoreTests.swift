@@ -93,6 +93,35 @@ struct CaptureStoreTests {
         #expect(captures.map(\.date) == [day3, day2, day1])
     }
 
+    /// Captures Flipbook made keep only their `.flipbook` marker where migration couldn't reach them, for example
+    /// on a drive unplugged at first launch. They still list, and still expire.
+    @Test func legacyMarkerStillCounts() throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = CaptureStore(root: root)
+        func mark(_ name: String, _ marker: String, _ date: Date) throws {
+            let folder = root.appending(path: name)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data(ISO8601DateFormatter().string(from: date).utf8).write(to: folder.appending(path: marker))
+        }
+        let legacyDate = utcDate("2026-09-01T10:00:00Z")
+        let newerDate = utcDate("2026-09-03T10:00:00Z")
+        try mark("legacy only", ".flipbook", legacyDate)
+        try mark("both", ".flipbook", legacyDate)
+        try mark("both", CaptureStore.markerName, newerDate)
+
+        let captures = store.captures()
+        #expect(captures.map(\.url.lastPathComponent) == ["both", "legacy only"])
+        #expect(captures.map(\.date) == [newerDate, legacyDate])
+        #expect(CaptureStore.legacyMarkerName == ".flipbook")
+        let expired = Retention.expired(in: store, days: 7, now: utcDate("2026-09-09T10:00:00Z"))
+        #expect(expired.map(\.lastPathComponent) == ["legacy only"])
+
+        let committed = try store.commit(try store.begin(), name: "new", date: Date())
+        #expect(exists(committed.appending(path: CaptureStore.markerName)))
+        #expect(!exists(committed.appending(path: CaptureStore.legacyMarkerName)))
+    }
+
     @Test func unwritableSaveLocationThrows() throws {
         let base = temporaryRoot()
         defer {
