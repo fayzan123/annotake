@@ -31,6 +31,10 @@ enum BrandMark {
     static let legTop: CGFloat = -112
     /// The crossbar, the tripod's leg brace, centered 0.38 cap heights up.
     static let crossbarY: CGFloat = -38
+    /// How thick the legs and the brace are, square to their length. The site's footer animation
+    /// (scripts/make-site-brand.swift) reads them too.
+    static let legThickness = 0.95 * stem
+    static let braceThickness = 0.85 * stem
 
     /// The camera is as wide as the A's feet, and its body sits just below the cap line so the apex disappears.
     static let cameraWidth = footSpan
@@ -48,10 +52,10 @@ enum BrandMark {
 
     static var shapes: [Shape] {
         let t = tan(splay)
-        let leg = 0.95 * stem / cos(splay)  // across, horizontally
+        let leg = legThickness / cos(splay)  // across, horizontally
         let leftOuter = { (y: CGFloat) in -y * t }
         let rightOuter = { (y: CGFloat) in footSpan + y * t }
-        let bar = 0.85 * stem
+        let bar = braceThickness
         let bodyTop = bodyBottom - bodyHeight
         let lensY = bodyBottom - bodyHeight / 2
         let lensStart = cameraWidth - 0.01 * cameraWidth
