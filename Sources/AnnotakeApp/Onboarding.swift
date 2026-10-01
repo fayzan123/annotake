@@ -60,8 +60,8 @@ enum OnboardingCopy {
                     + "this window."]
         case .practice:
             return ["1. Double-tap \(key). The pill appears at the bottom of the screen.",
-                    "2. Click Open, then tick Remember me.",
-                    "3. Double-tap \(key) again."]
+                    "2. Click through something in another app. Annotake keeps its own windows out of recordings.",
+                    "3. Double-tap \(key) again. A card appears at the bottom right, and this window comes back."]
         case .dropCard:
             return ["The card is at the bottom right of your screen."]
         case .done:
@@ -115,9 +115,10 @@ final class OnboardingViewModel: ObservableObject {
     let retiredFlipbook: Bool
     /// Called when the Done button finishes the first run.
     var onFinish: (() -> Void)?
-    /// Called when polling finds a grant that moves the first run on. By then the window has usually fallen
-    /// behind System Settings, and with no Dock icon there's no way back to it.
-    var onGrantAdvanced: (() -> Void)?
+    /// Called when something outside the window moves the first run on: a grant found by polling, or the practice
+    /// recording saved. By then the window is usually behind System Settings or the app recorded, and with no Dock
+    /// icon there's no way back to it.
+    var onAdvancedElsewhere: (() -> Void)?
     private let defaults: UserDefaults?
     private let status: () -> Permissions.Status
     private let report: (String) -> Void
@@ -156,7 +157,7 @@ final class OnboardingViewModel: ObservableObject {
         let step = model.step
         let granted = status().byPermission
         change { $0.update(granted: granted) }
-        if model.step != step { onGrantAdvanced?() }
+        if model.step != step { onAdvancedElsewhere?() }
     }
 
     /// The step's main button.
@@ -185,7 +186,11 @@ final class OnboardingViewModel: ObservableObject {
     /// "Continue" on a permission step, before macOS confirms the grant.
     func proceed() { change { $0.proceed() } }
     func skip() { change { $0.skip() } }
-    func recordingSaved() { change { $0.recordingSaved() } }
+    func recordingSaved() {
+        let step = model.step
+        change { $0.recordingSaved() }
+        if model.step != step { onAdvancedElsewhere?() }
+    }
     func relaunched() { change { $0.relaunched() } }
     func closed() { change { $0.closed() } }
 
@@ -298,7 +303,7 @@ struct OnboardingView: View {
         case .reopen:
             SimpleStep(step: .reopen, symbol: "arrow.clockwise.circle.fill", tint: .accentColor, paragraphs: paragraphs)
         case .practice:
-            PracticeStep(paragraphs: paragraphs)
+            SimpleStep(step: .practice, symbol: "record.circle", tint: .red, paragraphs: paragraphs)
         case .dropCard:
             DropStep(viewModel: viewModel, paragraphs: paragraphs)
         case .done:
@@ -497,7 +502,7 @@ private struct SettingsRowMock: View {
     }
 }
 
-/// A big symbol, the title, and the text: Reopen and Done.
+/// A big symbol, the title, and the text: Reopen, the practice run, and Done.
 private struct SimpleStep: View {
     let step: OnboardingModel.Step
     let symbol: String
@@ -509,31 +514,6 @@ private struct SimpleStep: View {
             Image(systemName: symbol).font(.system(size: 44)).foregroundStyle(tint)
             StepTitle(text: OnboardingCopy.title(step))
             ForEach(paragraphs, id: \.self) { Paragraph(text: $0) }
-        }
-    }
-}
-
-/// A practice run in the same window: real controls, so Accessibility names what's clicked.
-private struct PracticeStep: View {
-    let paragraphs: [String]
-    @State private var opened = false
-    @State private var remember = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            StepTitle(text: OnboardingCopy.title(.practice))
-            ForEach(paragraphs, id: \.self) { Paragraph(text: $0) }
-            HStack(spacing: 20) {
-                Button("Open") { opened.toggle() }.controlSize(.large)
-                Toggle("Remember me", isOn: $remember)
-                Spacer()
-                if opened {
-                    Label("Opened", systemImage: "checkmark").foregroundStyle(.secondary)
-                }
-            }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.secondary.opacity(0.08)))
         }
     }
 }
@@ -638,10 +618,10 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         // Every launch is a relaunch for permissions that wait for one, so a first run left at Reopen moves on.
         viewModel.relaunched()
         viewModel.onFinish = { [weak self] in self?.window?.close() }
-        viewModel.onGrantAdvanced = { [weak self] in self?.bringForward() }
+        viewModel.onAdvancedElsewhere = { [weak self] in self?.bringForward() }
     }
 
-    /// Back in front of System Settings, at the next step.
+    /// Back in front, at the next step.
     private func bringForward() {
         guard let window, window.isVisible else { return }
         NSApp.activate()

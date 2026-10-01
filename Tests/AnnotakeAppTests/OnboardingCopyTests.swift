@@ -35,6 +35,15 @@ struct OnboardingCopyTests {
         }
     }
 
+    /// Annotake keeps its own windows out of recordings, so the practice run happens in another app (Checkpoint 3:
+    /// the old Open button and Remember me box were in the first run's own window, and never in the frames).
+    @Test func practiceRecordsAnotherApp() {
+        let practice = OnboardingCopy.body(.practice, trigger: .rightCommand, mode: .firstRun)
+        #expect(practice.contains("another app"))
+        #expect(!practice.contains("Remember me"))
+        #expect(practice.contains("Double-tap Right ⌘ again"))
+    }
+
     @Test func titlesMatchTheSteps() {
         #expect(OnboardingCopy.title(.welcome) == "Annotake")
         #expect(OnboardingCopy.title(.permission(.inputMonitoring)) == "Allow Input Monitoring")

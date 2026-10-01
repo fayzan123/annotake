@@ -392,7 +392,7 @@ struct SettingsFooter: View {
     static let logoHeight: CGFloat = 24
     var version = AppVersion.current
 
-    static func versionText(_ version: AppVersion) -> String { "Version \(version)" }
+    nonisolated static func versionText(_ version: AppVersion) -> String { "Version \(version)" }
 
     var body: some View {
         VStack(spacing: 0) {

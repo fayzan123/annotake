@@ -214,7 +214,7 @@ struct OnboardingViewModelTests {
                                             persisted: .init(step: .permission(.accessibility)),
                                             retiredFlipbook: false, status: { granted.status }, report: { _ in })
         var forward = 0
-        viewModel.onGrantAdvanced = { forward += 1 }
+        viewModel.onAdvancedElsewhere = { forward += 1 }
 
         viewModel.refresh()
         #expect(forward == 0)
@@ -223,6 +223,21 @@ struct OnboardingViewModelTests {
         #expect(forward == 1)
         #expect(viewModel.model.step == .permission(.inputMonitoring))
         viewModel.refresh()
+        #expect(forward == 1)
+    }
+
+    /// The practice recording is made in another app, since Annotake keeps its own windows out of recordings,
+    /// so once it's saved the window comes back with the drop box (Checkpoint 3).
+    @Test func savedRecordingBringsTheDropBoxForward() {
+        let all = Permissions.Status(screenRecording: true, inputMonitoring: true, accessibility: true)
+        let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil, persisted: .init(step: .practice),
+                                            retiredFlipbook: false, status: { all }, report: { _ in })
+        var forward = 0
+        viewModel.onAdvancedElsewhere = { forward += 1 }
+        viewModel.recordingSaved()
+        #expect(viewModel.model.step == .dropCard)
+        #expect(forward == 1)
+        viewModel.recordingSaved()
         #expect(forward == 1)
     }
 
