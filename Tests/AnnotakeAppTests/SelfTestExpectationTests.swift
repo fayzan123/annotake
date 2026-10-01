@@ -104,4 +104,13 @@ struct SelfTestExpectationTests {
         #expect(captions == SelfTest.expectedCaptions)
         #expect(result.frames.map { Captions.line2(for: $0.context) } == SelfTest.expectedContexts)
     }
+
+    /// `make selftest-intel` runs under Rosetta, where signature timings measure translation, not a Mac.
+    @Test func signatureLimitLoosensOnlyUnderTranslation() {
+        #expect(SelfTest.signatureLimit(translated: false) == SelfTest.signatureMillisecondsLimit)
+        #expect(SelfTest.signatureLimit(translated: true) == 2 * SelfTest.signatureMillisecondsLimit)
+        #expect(SelfTest.architectureName(arm64: true, translated: false) == "arm64")
+        #expect(SelfTest.architectureName(arm64: false, translated: true) == "x86_64 (Rosetta)")
+        #expect(SelfTest.architectureName(arm64: false, translated: false) == "x86_64")
+    }
 }
