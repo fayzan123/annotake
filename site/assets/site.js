@@ -1,4 +1,6 @@
 // The page's module entry. boot.js has already set the theme; this wires the parts that respond to the visitor.
+import { initLinkForm } from './linkform.js';
+
 const boot = window.annotakeBoot;
 const root = document.documentElement;
 
@@ -38,3 +40,4 @@ function wireDownloads() {
 
 wireThemeToggles();
 wireDownloads();
+for (const form of document.querySelectorAll('form.linkform')) initLinkForm(form);

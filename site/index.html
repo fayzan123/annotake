@@ -31,6 +31,25 @@
     <p class="note mac-only"><span>Free during the beta · macOS 15 or later</span> <span>By downloading, you agree to the <a href="/terms">Terms</a>.</span></p>
     <details class="getlink other-only">
       <summary><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 5.5 7 5.5 7-5.5"/></svg>Email me the link</summary>
+      <form class="linkform" action="/api/link" method="post" novalidate>
+        <label class="vh" for="email-hero">Your email</label>
+        <input id="email-hero" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="email-hero-error">
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <input type="hidden" name="t" value="">
+        <button type="submit">Send link</button>
+        <p class="linkform-error" id="email-hero-error" role="alert" hidden>That doesn’t look like an email address.</p>
+        <p class="linkform-note">We’ll send one email with the download link, and that’s all. <a href="/privacy">Privacy policy</a></p>
+      </form>
+      <div class="linkform-sent" role="status" tabindex="-1" hidden>
+        <p class="linkform-title"><span class="check" aria-hidden="true">✓</span>Check your inbox</p>
+        <p>We sent the link to <span class="linkform-sent-to"></span>. Open it on your Mac.</p>
+        <button type="button" class="linkform-retry">Wrong address? Try again</button>
+      </div>
+      <div class="linkform-fallback" role="status" tabindex="-1" hidden>
+        <p>We couldn’t send it right now. Here’s the link:</p>
+        <p class="linkform-link">annotake.app/download</p>
+        <div class="linkform-actions"><button type="button" class="linkform-copy">Copy</button><button type="button" class="linkform-share" hidden>Share</button></div>
+      </div>
     </details>
     <p class="note link-note other-only">Annotake is a Mac app. Get the link in your inbox and download it there.</p>
     <div role="status"><p class="dl-hint" hidden>Open Annotake.dmg, then drag Annotake to Applications.</p></div>
