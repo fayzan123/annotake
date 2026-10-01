@@ -11,7 +11,7 @@ UNIVERSAL := .build/universal
 VERSION := $(shell cat VERSION)
 BUILD := $(shell git rev-list --count HEAD)
 RELEASE ?= 0
-.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon
+.PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon devid-csr devid-import
 app:
 	swift build -c release --product Annotake --triple $(ARM_TRIPLE)
 	swift build -c release --product Annotake --triple $(X86_TRIPLE)
@@ -45,6 +45,11 @@ ui-snapshots: app
 	ls build/ui
 cert:
 	scripts/make-cert.sh
+# The Developer ID Application certificate: the request to upload to Apple, then the certificate it issues.
+devid-csr:
+	scripts/devid.sh csr
+devid-import:
+	scripts/devid.sh import "$(CER)"
 # Redraws the app icon; Resources/AppIcon.icns is committed.
 icon:
 	rm -rf build/AppIcon.iconset && mkdir -p build Resources

@@ -473,12 +473,14 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 - **Make targets:**
   - `make icon` redraws the app icon; the `.icns` is committed.
   - `make cert` runs once. It creates a free self-signed signing identity, "Annotake Local Signing", so macOS permissions survive rebuilds (ad-hoc signatures silently lose them).
+  - `make devid-csr` writes `.signing/devid.csr`, the request to upload to Apple for a Developer ID Application certificate (G2 Sub-CA). `make devid-import CER=<file>` imports the certificate Apple issues, with Apple's Developer ID G2 intermediate (without Xcode nothing installs it), into `.signing/annotake-signing.keychain-db`, and writes the team id to `.signing/team-id`.
   - `make` builds and assembles `Annotake.app`: one app for Apple silicon and Intel, from two release builds (`--triple arm64-apple-macosx15.0` and `x86_64-apple-macosx15.0`) merged with `lipo`. Two `--arch` flags would need Xcode's XCBuild.
   - `make run` builds it and opens it.
   - `make install` copies it into `/Applications`, removing any older copy in `~/Applications`.
   - `make zip` produces a zip for the work Mac.
   - `make selftest` runs the self-test, `make selftest-intel` runs it as Intel through Rosetta, and `make ui-snapshots` renders the UI to PNGs (§8).
   - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
+- **Signing:** every build is signed with the hardened runtime, nested code first. The bundler uses the Developer ID Application identity once it's in the signing keychain, and "Annotake Local Signing" until then (`SIGN_IDENTITY` overrides both). Development and release builds then share one signature, so permissions granted to one carry over to the other. A release (`RELEASE=1`) requires the Developer ID and adds a secure timestamp; other builds use `--timestamp=none`. Secrets stay in `.signing/` (gitignored) or the keychain, never in the repo.
 - **Versions:** `VERSION` holds the marketing version (`0.2.0`), and the build number is the commit count (`git rev-list --count HEAD`). The bundler writes them into `CFBundleShortVersionString` and `CFBundleVersion`, and each launch logs them, e.g. `launched Annotake 0.2.0 (78)`.
 - **The app is built only on the personal MacBook,** using Fayzan's own Claude membership rather than work AI.
 - **Other Macs, until the app is notarized** (the work Mac and friends' Macs): `curl -fsSL https://raw.githubusercontent.com/fayzan123/flipbook-releases/main/install.sh | sh` installs or updates the latest release from the public, releases-only repo. Files `curl` downloads get no quarantine flag, so there's no `xattr` step, and permissions survive updates. Details: [distribution design §5.1](plans/2026-09-30-distribution-design.md#51-the-early-install-done-2026-09-30).
