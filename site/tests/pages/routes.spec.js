@@ -1,6 +1,5 @@
-import { expect, test } from '@playwright/test';
 import { CSP, DMG_URL, HOME_TITLE } from '../expected.js';
-import { watchErrors } from './support.js';
+import { expect, test, watchErrors } from './support.js';
 
 test('the home page loads with the CSP, no console errors, and no cookies', async ({ page, context }) => {
   const errors = await watchErrors(page);

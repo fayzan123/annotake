@@ -28,6 +28,7 @@
   --hole: #FFFFFF;
   --blank: #262628;
   --red: #FF3B30;
+  --red-text: #D70015;
   --btn-bg: #1C1C1E;
   --btn-fg: #FFFFFF;
   --glow: transparent;
@@ -60,6 +61,7 @@
   --film: #2A2A2D;
   --hole: #141416;
   --blank: #3A3A3D;
+  --red-text: #FF6961;
   --btn-bg: #FFFFFF;
   --btn-fg: #1C1C1E;
   --glow: rgba(255, 255, 255, .07);
@@ -93,6 +95,7 @@
     --film: #2A2A2D;
     --hole: #141416;
     --blank: #3A3A3D;
+    --red-text: #FF6961;
     --btn-bg: #FFFFFF;
     --btn-fg: #1C1C1E;
     --glow: rgba(255, 255, 255, .07);
@@ -136,6 +139,7 @@ body {
   transition: background-color .3s, color .3s;
 }
 
+[hidden] { display: none !important; }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
 svg { flex: none; }
@@ -277,6 +281,108 @@ body::before {
 }
 :root:not([data-device]) .getlink > summary svg { width: 16px; height: 16px; }
 .getlink[open] + .link-note { display: none; }
+/* Open, the summary steps back, and Send link is the main button. */
+[data-device="other"] .getlink[open] > summary {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+
+/* ---------- Email me the link: the form, then sent or the fallback ---------- */
+
+.linkform {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 16px;
+  text-align: left;
+}
+.linkform input[type="email"] {
+  min-width: 0;
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font: 16px Jost, system-ui, sans-serif;
+}
+.linkform input[type="email"][aria-invalid="true"] { border-color: var(--red-text); }
+.linkform button[type="submit"] {
+  height: 50px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: 500 16px Jost, system-ui, sans-serif;
+  cursor: pointer;
+}
+.linkform button[type="submit"]:disabled { opacity: .6; cursor: progress; }
+.linkform-note,
+.linkform-error { grid-column: 1 / -1; }
+.linkform-note { margin-top: 4px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
+.linkform-note a { color: var(--ink-2); text-underline-offset: 2px; }
+.linkform-error { font-size: 14px; color: var(--red-text); }
+/* The honeypot: out of sight, but still in the form for bots to fill. */
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.linkform-sent,
+.linkform-fallback {
+  margin-top: 16px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  text-align: left;
+}
+/* Focus moves here so screen readers read the result; the container itself isn't a control. */
+.linkform-sent:focus,
+.linkform-fallback:focus { outline: none; }
+.linkform-title { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 600; }
+.check {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #34C759;
+  color: #FFFFFF;
+  font-size: 13px;
+}
+.linkform-sent > p:not(.linkform-title),
+.linkform-fallback > p { margin-top: 8px; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.linkform-fallback > p:first-child { margin-top: 0; }
+.linkform-retry {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.linkform-fallback > .linkform-link {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--code-bg);
+  color: var(--ink);
+  font: 500 15px ui-monospace, "SF Mono", Menlo, monospace;
+  user-select: all;
+  -webkit-user-select: all;
+}
+.linkform-actions { display: flex; gap: 8px; margin-top: 12px; }
+.linkform-actions button {
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: 500 15px Jost, system-ui, sans-serif;
+  cursor: pointer;
+}
 
 /* ---------- Footer ---------- */
 

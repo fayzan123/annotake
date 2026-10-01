@@ -79,20 +79,17 @@ test.describe('on an iPhone', () => {
   });
 });
 
-test('an iPad asking for the desktop site (a Mac user agent with touch) gets the link by email', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, userAgent: UA.macSafari, viewport: { width: 1024, height: 1366 } });
-  const page = await context.newPage();
+test('an iPad asking for the desktop site (a Mac user agent with touch) gets the link by email', async ({ openPage }) => {
+  const page = await openPage({ userAgent: UA.macSafari, viewport: { width: 1024, height: 1366 } });
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => 5 }));
   await page.goto('/');
   await expect(page.locator('section.hero details.getlink summary')).toBeVisible();
   await expect(page.locator('a[href="/download"]')).toHaveCount(2);
   for (const link of await page.locator('a[href="/download"]').all()) await expect(link).toBeHidden();
-  await context.close();
 });
 
-test('without JavaScript, both the download and the email link show, download first', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
-  const page = await context.newPage();
+test('without JavaScript, both the download and the email link show, download first', async ({ openPage }) => {
+  const page = await openPage({ javaScriptEnabled: false });
   await page.goto('/');
   const download = page.locator('section.hero .cta a.btn-lg');
   const summary = page.locator('section.hero details.getlink summary');
@@ -101,7 +98,6 @@ test('without JavaScript, both the download and the email link show, download fi
   await expect(summary).toHaveText('Email me the link');
   const [a, b] = [await download.boundingBox(), await summary.boundingBox()];
   expect(b.y).toBeGreaterThan(a.y + a.height);
-  await context.close();
 });
 
 for (const width of [320, 1440]) {
