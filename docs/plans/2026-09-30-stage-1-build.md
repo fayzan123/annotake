@@ -9,11 +9,13 @@
 >
 > Tasks marked **Glue** wrap macOS APIs, scripts, or tools that unit tests can't reach. They're verified by building, by the self-test, by UI snapshots, by the log, and by the dry-run release. They still get unit tests for any pure logic they contain.
 >
-> **Stop and ask Fayzan only when:**
-> - macOS shows a permission or keychain prompt the session can't answer, or
-> - a test expectation in this plan looks wrong. Say why, and don't change the expectation.
+> **No stops until the end.** Fayzan isn't there, so the session never waits for an answer:
+> - **A test expectation in this plan looks wrong:** decide what's right, implement it with a test that pins it, and record the decision and why under "Decisions" in the Session 8 notes (Task 15). Don't stop to ask.
+> - **A step can't finish without someone present** (a macOS or keychain prompt, or a command that hangs): give it at most 10 minutes, then end it and skip only that step. Record it under "Skipped" with what it needs, and carry on with everything that doesn't depend on it.
+> - **The network fails** (Sparkle's download, pip, GitHub): retry up to three times, a few minutes apart. Meanwhile carry on with tasks that don't need it, and come back to it.
+> - **The self-test can't capture**, because the Mac went to sleep or locked: carry on, and run it again in Task 15.
 >
-> Everything else the session verifies itself. The checkpoint at the end is the only planned stop.
+> The session verifies everything else itself. The checkpoint at the end is the only stop, and it lists every decision and skipped step.
 >
 > **Never launch the full app during the session**, because it requests permissions at launch and now also moves data on first launch. Use `make selftest`, `make selftest-intel`, `make ui-snapshots`, and `make release DRY_RUN=1` instead. None of them launches the normal app.
 >
@@ -204,7 +206,7 @@ Design §3.1. Mechanical, but it touches every target. After it, the tree builds
 - **Scripts:** `make-cert.sh` uses `NAME="Annotake Local Signing"`, `PASS=annotake-local`, and `KC=$PWD/.signing/annotake-signing.keychain-db`. `bundle-app.sh` unlocks and signs with those.
 - **`.vscode/launch.json`:** targets `Annotake` and `annotake-replay`, with `"cwd": "${workspaceFolder}"`. No folder name, so it survives the folder rename at the checkpoint.
 
-**The fixtures don't change.** `Tests/AnnotakeCoreTests/Fixtures/synthetic-click-flow` contains no app name. `goldenFixturesMatch` must pass unchanged. If it doesn't, stop and say why.
+**The fixtures don't change.** `Tests/AnnotakeCoreTests/Fixtures/synthetic-click-flow` contains no app name. `goldenFixturesMatch` must pass unchanged. If it doesn't, the rename changed behavior somewhere: fix the code, never the fixtures.
 
 - [ ] **Step 1: Clean and move.** Run `make clean`, then the `git mv` commands.
 - [ ] **Step 2: Rename in code.** `Package.swift`, imports, strings, scripts, Makefile, `.vscode`. Update the tests that assert the old strings:
@@ -558,6 +560,11 @@ enum MenuModel {
 5. Is idempotent: an existing key is reused.
 
 Signing updates always uses `sign_update --ed-key-file .signing/sparkle-private-key`, so it never prompts for keychain access.
+
+**If `generate_keys` waits on a keychain prompt,** end it and skip `make sparkle-keys` (record it under "Skipped"). The rest of the task still lands:
+- the bundler leaves `SUPublicEDKey` out, with a warning, while `Resources/sparkle-public-key.txt` is missing; `RELEASE=1` fails without it;
+- the dry run in Task 14 skips `sign_update` with a warning;
+- Checkpoint 3 starts with `make sparkle-keys`, then a commit of the public key.
 
 **Bundling:**
 - The Makefile passes `FRAMEWORKS_DIR=<arm bin>`, the arm64 release bin path. SwiftPM puts the binary target's `Sparkle.framework` there next to the executable, and the xcframework's macOS slice is universal. The bundler copies `$FRAMEWORKS_DIR/Sparkle.framework` into `Contents/Frameworks/` with `ditto`, and fails if it's missing.
@@ -1027,7 +1034,7 @@ Design §5.1 and §5.2, items 2, 3, and 10. **Glue.**
    1. `dmgbuild` → `build/release/Annotake.dmg`.
    2. Sign it with the same identity, plus `--timestamp` unless it's a dry run.
    3. Unless it's a dry run: notarize it, staple it, and check it with `spctl -a -t open --context context:primary-signature -vv`.
-6. **The Sparkle signature.** `sign_update --ed-key-file .signing/sparkle-private-key build/release/Annotake.zip`. Parse `sparkle:edSignature` and `length`.
+6. **The Sparkle signature.** `sign_update --ed-key-file .signing/sparkle-private-key build/release/Annotake.zip`. Parse `sparkle:edSignature` and `length`. A dry run without the key file skips this with a warning and writes a placeholder signature, so the rest still runs; a real release fails without it.
 7. **Publish.** In a dry run, instead write `build/release/appcast.xml` with `annotake-appcast` (a fresh feed), and stop.
    1. `gh repo clone fayzan123/annotake-releases build/release/repo -- --depth 1`.
    2. `gh release create v<VERSION>-<BUILD> build/release/Annotake.zip build/release/Annotake.dmg --repo fayzan123/annotake-releases --title "Annotake <VERSION> (<BUILD>)" --notes "$NOTES" --latest`.
@@ -1077,10 +1084,11 @@ Design §5.1 and §5.2, items 2, 3, and 10. **Glue.**
   - `make ui-snapshots` renders every panel; look at each once.
   - `make release DRY_RUN=1 NOTES="Dry run."` passes.
 - [ ] **Step 2: Docs.**
-  - **`docs/plans/README.md`:** mark Session 8 done with a one-line summary. Note anything later plans need, for example:
-    - where Sparkle's tools were found;
-    - how long notarization took, if it ran;
-    - anything that behaved differently from this plan.
+  - **`docs/plans/README.md`:** mark Session 8 done with a one-line summary, then add two lists to its section:
+    - **Decisions:** every place the session chose differently from this plan, and why;
+    - **Skipped:** every step it couldn't finish unattended, and what it needs.
+
+    Also note anything later plans need, such as anything that behaved differently from this plan.
   - **Design §5.2:** mark the build done.
   - **The spec:** each task updated its own sections. Read the spec once end to end for leftovers.
   - Commit with `docs: session 8 done`.
@@ -1089,7 +1097,7 @@ Design §5.1 and §5.2, items 2, 3, and 10. **Glue.**
   2. `gh repo rename annotake --repo fayzan123/flipbook --yes`.
   3. `git remote set-url origin https://github.com/fayzan123/annotake.git`.
   4. `git fetch origin` succeeds.
-- [ ] **Step 4: The checkpoint. Stop here, and give Fayzan this list.** The results go into `docs/checkpoints.md` in the next session.
+- [ ] **Step 4: The checkpoint. Stop here, and give Fayzan this list.** Put the session's Decisions and Skipped lists first, each skipped step with its own instructions. The results go into `docs/checkpoints.md` in the next session.
 
 **Checkpoint 3** (both Macs):
 0. **Before starting.**
