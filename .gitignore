@@ -5,3 +5,6 @@ build/
 *.xcodeproj
 .DS_Store
 .superpowers/
+site/tests/node_modules/
+site/tests/test-results/
+site/tests/playwright-report/
