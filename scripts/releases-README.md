@@ -14,7 +14,7 @@ Or paste this into Terminal:
 curl -fsSL https://raw.githubusercontent.com/fayzan123/annotake-releases/main/install.sh | sh
 ```
 
-It downloads the latest release, checks its signature, puts Annotake in your Applications folder, and opens it. It also replaces Flipbook, Annotake's old name.
+It downloads the latest release, checks its signature, puts Annotake in your Applications folder, and opens it.
 
 Annotake needs macOS 15 or later, on Apple silicon or Intel. It updates itself.
 

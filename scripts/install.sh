@@ -54,15 +54,19 @@ main() {
 
   # Keep one copy: another in the other Applications folder would confuse launch at login. Flipbook goes
   # too, from both, so only Annotake answers Right ⌘, and its old permission rows leave System Settings.
+  replaced=0
   for folder in /Applications "$HOME/Applications"; do
     if [ "$folder" != "$dest" ] && [ -d "$folder/Annotake.app" ]; then
       rm -rf "$folder/Annotake.app" 2>/dev/null || true
     fi
     if [ -d "$folder/Flipbook.app" ]; then
-      rm -rf "$folder/Flipbook.app" 2>/dev/null || true
+      rm -rf "$folder/Flipbook.app" 2>/dev/null && replaced=1
     fi
   done
   tccutil reset All com.fayzanmalik.flipbook >/dev/null 2>&1 || true
+  if [ "$replaced" = 1 ]; then
+    echo "Flipbook, Annotake's old name, was removed."
+  fi
 
   open "$dest/Annotake.app"
   echo "Annotake is installed in $dest and opening now."
