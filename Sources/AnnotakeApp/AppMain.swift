@@ -100,7 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. The log.
-        log("launched")
+        log("launched Annotake \(AppVersion.current)")
         InputLog.setHandler { log($0) }
 
         // 2. Coming from the old app (spec §3.8): its settings and captures, once, and only Annotake answers the key.

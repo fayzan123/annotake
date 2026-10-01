@@ -1,10 +1,15 @@
 .DEFAULT_GOAL := app
 KC := $(CURDIR)/.signing/annotake-signing.keychain-db
 BIN = $(shell swift build -c release --show-bin-path)
+# The marketing version, and the build number: the commit count.
+VERSION := $(shell cat VERSION)
+BUILD := $(shell git rev-list --count HEAD)
+RELEASE ?= 0
 .PHONY: app run install zip selftest ui-snapshots cert clean
 app:
 	swift build -c release --product Annotake
-	scripts/bundle-app.sh $(BIN)/Annotake Annotake com.fayzanmalik.annotake build
+	RELEASE=$(RELEASE) VERSION=$(VERSION) BUILD=$(BUILD) \
+		scripts/bundle-app.sh $(BIN)/Annotake Annotake com.fayzanmalik.annotake build
 run: app
 	open build/Annotake.app
 install: app
