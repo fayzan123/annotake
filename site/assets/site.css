@@ -610,6 +610,232 @@ body::before {
 }
 .gate .pill { top: 11.1em; height: 2.1em; padding: 0 .95em; font-size: 7.4em; line-height: 2.1em; }
 
+/* ---------- How it works: a vertical strip of three frames. Canvases are 720 × 450 units; 1 em is one unit. ---------- */
+
+.how { padding: 140px 20px 40px; }
+.how h2,
+.privacy h2,
+.final h2 { font-weight: 600; line-height: 1.04; letter-spacing: -0.03em; }
+.how h2 { margin-bottom: 48px; text-align: center; font-size: clamp(34px, 4.2vw, 56px); }
+.film {
+  --cw: min(752px, calc(94vw - 68px));
+  position: relative;
+  width: calc(var(--cw) + 68px);
+  margin: 0 auto;
+  padding: 22px 34px;
+  border-radius: 16px;
+  background: var(--film);
+  transition: background-color .3s;
+}
+.film::before,
+.film::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 11px;
+  background: var(--hole);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='28'><rect x='0' y='8' width='11' height='14' rx='3'/></svg>") 0 0 / 11px 28px repeat-y;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='28'><rect x='0' y='8' width='11' height='14' rx='3'/></svg>") 0 0 / 11px 28px repeat-y;
+}
+.film::before { left: 12px; }
+.film::after { right: 12px; }
+.step { position: relative; overflow: hidden; border-radius: 6px; }
+.step + .step { margin-top: 22px; }
+.how.ready .step { transition: opacity .8s, transform .8s cubic-bezier(.2, .7, .2, 1); }
+.how.ready .step:not(.in) { opacity: 0; transform: translateY(36px); }
+.canvas {
+  position: relative;
+  width: var(--cw);
+  height: calc(var(--cw) * 450 / 720);
+  overflow: hidden;
+  font-size: calc(var(--cw) / 720);
+  background: linear-gradient(155deg, var(--desk-1), var(--desk-2));
+}
+.stepcap {
+  padding: 15px 22px 17px;
+  border-top: 1px solid rgba(255, 255, 255, .06);
+  background: #1C1C1E;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.stepcap b { display: block; color: #FFFFFF; font-size: clamp(16px, 1.6vw, 20px); font-weight: 700; }
+.stepcap span { display: block; margin-top: 3px; color: #98989D; font-size: clamp(13.5px, 1.25vw, 15.5px); }
+
+.menubar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.2em;
+  padding: 0 1.3em;
+  background: var(--menubar);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--menu-ink);
+  font: 500 9.5em/1 system-ui, -apple-system, sans-serif;
+}
+.menubar .menus { display: flex; gap: 1.6em; }
+.menubar .menus b { font-weight: 700; }
+.menubar .status { display: flex; align-items: center; gap: 1.1em; }
+.menubar svg { display: block; width: 1.45em; height: 1.45em; color: var(--menu-ink); }
+/* The mark's front reel has no fill of its own: it takes the fill set here, red while recording. */
+.menubar use { fill: var(--menu-ink); transition: fill .25s; }
+.menubar.rec use { fill: var(--red); }
+.win {
+  position: absolute;
+  width: calc(196em * var(--s));
+  height: calc(104em * var(--s));
+  overflow: hidden;
+  border-radius: 1.2em;
+  box-shadow: 0 1.2em 3.4em rgba(0, 0, 0, .18), 0 0 0 .4em rgba(0, 0, 0, .04);
+}
+.win .acme { font-size: calc(var(--s) * 1em); }
+
+.canvas .pill {
+  bottom: 1.6em;
+  height: 2.3em;
+  padding: 0 1em;
+  font-size: 11.5em;
+  line-height: 2.3em;
+  opacity: 0;
+  transform: translate(-50%, .8em);
+}
+.canvas .pill.show { opacity: 1; transform: translate(-50%, 0); }
+.canvas .ring { width: 30em; height: 30em; border-width: 4em; box-shadow: 0 0 0 1.6em rgba(255, 255, 255, .95); }
+.canvas .press { width: 30em; height: 30em; }
+.canvas .cursor { width: 19em; height: 28em; }
+.cursor.gone { opacity: 0; }
+
+/* Step 1: the key */
+.keycap {
+  position: absolute;
+  left: 66em;
+  top: 150em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 140em;
+  height: 128em;
+  border: 1.5em solid #DCDCE0;
+  border-radius: 22em;
+  background: #FFFFFF;
+  color: #1C1C1E;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-shadow: 0 7em 0 #C9C9CF, 0 14em 30em rgba(0, 0, 0, .12);
+  transition: transform .09s, box-shadow .09s;
+}
+.keycap.down { transform: translateY(6em); box-shadow: 0 1em 0 #C9C9CF, 0 6em 16em rgba(0, 0, 0, .1); }
+.keycap .glyph { font-size: 52em; line-height: 1; }
+.keycap .word { margin-top: .55em; font-size: 13em; opacity: .7; }
+:root[data-theme="dark"] .keycap {
+  border-color: #3A3A3C;
+  background: #2C2C2E;
+  color: #F5F5F7;
+  box-shadow: 0 7em 0 #0D0D0E, 0 14em 30em rgba(0, 0, 0, .4);
+}
+:root[data-theme="dark"] .keycap.down { box-shadow: 0 1em 0 #0D0D0E, 0 6em 16em rgba(0, 0, 0, .3); }
+.keyname { position: absolute; left: 66em; top: 300em; width: 140em; text-align: center; font-family: system-ui, -apple-system, sans-serif; }
+.keyname b { display: block; color: var(--ink-2); font-size: 15em; font-weight: 600; }
+.keyname small { display: block; margin-top: .3em; color: var(--ink-3); font-size: 10.8em; }
+
+/* Step 2: clicks become captions, then the card */
+.chip { position: absolute; opacity: 0; transform: translateY(5em); transition: opacity .3s, transform .3s; }
+.chip.show { opacity: 1; transform: none; }
+.chip-text {
+  display: block;
+  padding: .55em .8em;
+  border-radius: .45em;
+  background: #1C1C1E;
+  color: #FFFFFF;
+  font: 600 10.5em/1 system-ui, -apple-system, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 .4em 1.2em rgba(0, 0, 0, .2);
+}
+.chip-text .n { color: #98989D; }
+.appcard {
+  position: absolute;
+  width: 206em;
+  padding: 12em 14em 13em;
+  border-radius: 15em;
+  background: rgba(26, 26, 26, .95);
+  color: #FFFFFF;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-shadow: 0 18em 44em rgba(0, 0, 0, .3);
+  opacity: 0;
+  transform: translateY(14em) scale(.96);
+  transition: opacity .35s, transform .45s cubic-bezier(.2, 1.3, .4, 1);
+}
+:root[data-theme="dark"] .appcard { background: rgba(44, 44, 46, .97); box-shadow: 0 0 0 1em rgba(255, 255, 255, .08), 0 18em 44em rgba(0, 0, 0, .5); }
+.appcard.show { opacity: 1; transform: none; }
+.appcard .stack { position: relative; height: 106em; }
+.appcard .s { position: absolute; overflow: hidden; border-radius: 5em; font-size: .86em; }
+.appcard .s1 { left: 14em; top: 0; opacity: .56; }
+.appcard .s2 { left: 7em; top: 6em; opacity: .78; }
+.appcard .s3 { left: 0; top: 12em; }
+.appcard .card-title { margin-top: .55em; font-size: 13.5em; font-weight: 700; }
+.appcard .card-hint { margin-top: .2em; color: #A8A8AD; font-size: 11em; }
+
+/* Step 3: into the agent */
+.term {
+  position: absolute;
+  left: 318em;
+  top: 64em;
+  width: 368em;
+  height: 268em;
+  overflow: hidden;
+  border-radius: 12em;
+  background: #1D1D1F;
+  color: #E5E5EA;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  box-shadow: 0 18em 44em rgba(0, 0, 0, .25);
+}
+:root[data-theme="dark"] .term { background: #0F0F10; box-shadow: 0 0 0 1em rgba(255, 255, 255, .08), 0 18em 44em rgba(0, 0, 0, .5); }
+.term .titlebar { display: flex; align-items: center; gap: 6em; height: 26em; padding-left: 11em; background: #2B2B2E; }
+:root[data-theme="dark"] .term .titlebar { background: #1C1C1E; }
+.term .titlebar i { width: 9em; height: 9em; border-radius: 50%; background: #4A4A4D; }
+.term .titlebar span { margin-left: .95em; color: #8E8E93; font-size: 10.5em; }
+.term .body { padding: 18em 16em; }
+.term .dim { color: #8E8E93; font-size: 11em; }
+.term .input {
+  min-height: 74em;
+  margin-top: 14em;
+  padding: 11em 12em;
+  border: 1.4em solid #48484A;
+  border-radius: 9em;
+  transition: border-color .2s, background-color .2s;
+}
+.term .input.drop { border-color: var(--red); border-style: dashed; background: rgba(255, 59, 48, .07); }
+.term .line { font-size: 12.5em; line-height: 1.55; }
+.term .prompt { margin-right: .5em; }
+.term .tchip {
+  display: inline-block;
+  margin: 0 .45em .35em 0;
+  padding: 0 .4em;
+  border-radius: .3em;
+  background: #3A3A3C;
+  color: #FFFFFF;
+  font-size: .92em;
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity .2s, transform .25s cubic-bezier(.2, 1.4, .4, 1);
+}
+.term .tchip.show { opacity: 1; transform: none; }
+.caret { display: inline-block; width: .55em; height: 1.1em; background: #E5E5EA; vertical-align: -.18em; animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+[data-visible="false"] .caret { animation-play-state: paused; }
+.hand { position: absolute; z-index: 5; width: 30em; height: 30em; opacity: 0; transition: opacity .2s; }
+.hand.show { opacity: 1; }
+.appcard.lift { transform: scale(1.04) rotate(-2deg); }
+.appcard.drag,
+.hand.drag {
+  transition: left .95s cubic-bezier(.5, 0, .2, 1), top .95s cubic-bezier(.5, 0, .2, 1), transform .3s, opacity .3s;
+}
+.appcard.gone { opacity: 0; transform: scale(.6); }
+
 /* ---------- Footer ---------- */
 
 .site-footer { max-width: 1280px; margin: 0 auto; padding: 0 40px 36px; }
@@ -660,5 +886,7 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .strip,
-  .strip * { transition: none !important; animation: none !important; }
+  .strip *,
+  .how .step,
+  .how .step * { transition: none !important; animation: none !important; }
 }
