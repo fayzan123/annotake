@@ -2,7 +2,7 @@
 
 **Status:** approved 2026-09-30 · **Plan:** the Stage 1 plan comes next (§11) · **Spec:** [../spec.md](../spec.md), updated with the changes in §12
 
-Worked out in Session 7, with web research from 2026-09-28 and name checks from 2026-09-30 (both in [../research-notes.md](../research-notes.md)). The app is being renamed from Flipbook to **Annotake** (§3). The code and older docs say Flipbook until Stage 1's rename lands; this doc says Annotake.
+Worked out in Session 7, with web research from 2026-09-28 and name checks from 2026-09-30 (both in [../research-notes.md](../research-notes.md)). The app was renamed from Flipbook to **Annotake** (§3) in the Stage 1 build (Session 8); the dated plans and checkpoint logs before it say Flipbook.
 
 ## 1. Goal
 
@@ -134,6 +134,8 @@ Everything switches, in the Stage 1 build (§5.2), because permissions get grant
 - **New builds for friends:** a new GitHub release on the same repo, until `make release` exists (§5.2).
 
 ### 5.2 The Stage 1 build
+
+**Built 2026-09-30 in Session 8** ([the plan](2026-09-30-stage-1-build.md); what it decided and skipped is in [the session guide](README.md#session-8-the-stage-1-build)). Checkpoint 3 adds the Developer ID and the notarization key, makes the first notarized release, and checks the result on both Macs.
 
 One long unattended session, then one checkpoint. It lands while friends use the early install, and they move to it with the same command.
 

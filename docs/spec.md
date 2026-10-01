@@ -191,7 +191,7 @@ Annotake was called Flipbook until 2026-09-30, and it's a new app to macOS: a ne
 - **A custom save location** stays as it is.
 - **Markers.** In the save location, each capture's `.flipbook` marker is renamed `.annotake`, and Flipbook's `.flipbook-tmp` is deleted. Captures it can't reach, such as on a drive that's unplugged at first launch, keep their `.flipbook` marker. It's read like `.annotake` but never written, so those captures still show in Recent Captures and are still cleaned up (§4.1).
 - **Existing users.** Flipbook was used on this Mac if its settings, its captures folder, or any of its preferences exist. Existing users skip the welcome and the practice run, and go straight to the permissions (§3.7).
-- **The old app.** Annotake quits a running Flipbook (forcing it after 2 s) and moves every copy in `/Applications` or `~/Applications` to the Trash, so only Annotake answers the trigger key. Copies elsewhere, such as development builds, stay. The first run says "Flipbook was moved to the Trash. Annotake replaces it."
+- **The old app.** Annotake quits a running Flipbook (forcing it after 2 s) and moves every copy in `/Applications` or `~/Applications` to the Trash, so only Annotake answers the trigger key. Copies elsewhere, such as development builds, stay. A new user's welcome says "Flipbook was moved to the Trash. Annotake replaces it."; existing users skip the welcome, and their permission steps say "Annotake replaces Flipbook, so macOS asks for these again."
 - The log records only what happened and how many markers were renamed, never paths.
 
 ## 4. Output
@@ -362,7 +362,8 @@ Sources/
   AnnotakeExport/   caption strips, click markers, PNGs + steps.md, capture folders,
                     filmstrip trims, retention cleanup
   AnnotakeApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
-                    card, filmstrip, Settings, first launch, self-test (§8)
+                    card, filmstrip, Settings, the first run, migration from Flipbook, Send Feedback,
+                    the move to Applications, self-test (§8)
   Annotake/         the executable: main.swift, and SparkleUpdater.swift (Sparkle is linked only here)
   annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
   AnnotakeRelease/  Foundation only: the Sparkle feed (appcast) writer
@@ -502,9 +503,9 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - `make zip` produces a zip for the work Mac, without resource forks, extended attributes, or ACLs (`ditto --norsrc --noextattr --noacl`), so iCloud's tags and the provenance attribute stay out.
   - `make release NOTES="…"` makes a release (below); `make release DRY_RUN=1 NOTES="…"` runs the same pipeline locally, without credentials, and publishes nothing.
   - `make dmg-background` redraws the disk image's background (`scripts/make-dmg-background.swift`, 600 × 400 at 1× and 2×, combined with `tiffutil`); `Resources/dmg-background.tiff` is committed. `make dmg-venv` puts dmgbuild 1.6.5 in a Python virtual environment in `.build/dmgbuild-venv`.
-  - `make selftest` runs the self-test, `make selftest-intel` runs it as Intel through Rosetta, and `make ui-snapshots` renders the UI to PNGs (§8).
-  - Bundling strips extended attributes before signing, because iCloud Drive syncs `~/Documents` and tags new bundles in ways `codesign` rejects.
-- **Signing:** every build is signed with the hardened runtime, nested code first. The bundler uses the Developer ID Application identity once it's in the signing keychain, and "Annotake Local Signing" until then (`SIGN_IDENTITY` overrides both). Development and release builds then share one signature, so permissions granted to one carry over to the other. A release (`RELEASE=1`) requires the Developer ID and adds a secure timestamp; other builds use `--timestamp=none`. Secrets stay in `.signing/` (gitignored) or the keychain, never in the repo. The hardened runtime loads only libraries signed by the app's own team, and the local identity has none, so only builds without a Developer ID carry `com.apple.security.cs.disable-library-validation`, to load their own Sparkle. The app is assembled and signed in a temporary folder and then copied to `build/`, because iCloud Drive tags bundle folders in `~/Documents` faster than they can be stripped and signed.
+  - `make selftest` runs the self-test, `make selftest-intel` runs it as Intel through Rosetta, and `make ui-snapshots` renders the UI to PNGs (§8); it fails if a first-run step would be clipped.
+  - Bundling assembles and signs the app in a temporary folder, then copies it to `build/`: iCloud Drive syncs `~/Documents` and tags bundle folders with Finder information faster than it can be stripped, and `codesign` rejects that.
+- **Signing:** every build is signed with the hardened runtime, nested code first. The bundler uses the Developer ID Application identity once it's in the signing keychain, and "Annotake Local Signing" until then (`SIGN_IDENTITY` overrides both). Development and release builds then share one signature, so permissions granted to one carry over to the other. A release (`RELEASE=1`) requires the Developer ID and adds a secure timestamp; other builds use `--timestamp=none`. Secrets stay in `.signing/` (gitignored) or the keychain, never in the repo. The hardened runtime loads only libraries signed by the app's own team, and the local identity has none, so only builds without a Developer ID carry `com.apple.security.cs.disable-library-validation`, to load their own Sparkle.
 - **Versions:** `VERSION` holds the marketing version (`0.2.0`), and the build number is the commit count (`git rev-list --count HEAD`). The bundler writes them into `CFBundleShortVersionString` and `CFBundleVersion`, and each launch logs them, e.g. `launched Annotake 0.2.0 (78)`.
 - **The app is built only on the personal MacBook,** using Fayzan's own Claude membership rather than work AI.
 - **Releases** come from `make release` (`scripts/release.sh`), on `main` with a clean tree that matches `origin/main`. It:
@@ -538,7 +539,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - Session 4 builds M2 and M3, then comes Checkpoint 1 on the personal Mac.
   - Session 5 builds M4, then comes Checkpoint 2 on both Macs.
 - **M5: Dogfood.** A week of real use at work, tuning thresholds from local raw sessions.
-- **M6: Distribution.** The friends round, the beta, then the paywall and launch, in the [distribution design](plans/2026-09-30-distribution-design.md).
+- **M6: Distribution.** The friends round, the beta, then the paywall and launch, in the [distribution design](plans/2026-09-30-distribution-design.md). The Stage 1 build (Session 8) is done; Checkpoint 3 makes the first notarized release.
 
 ## 11. Not in v1
 
@@ -569,6 +570,7 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 - **Accessibility flags change other apps.** Setting them makes Cursor offer screen-reader mode, and may affect others. Hence recording-only, and clearing them is verified at Checkpoint 1.
 - **Chrome may expose web content late.** M0 saw labels on the next click, about 4 s after setting the flag, so the first Chrome clicks after a recording starts may be unlabeled. Checkpoint 1 measures it.
 - **Unexplained dirty rects on macOS 26.** A bottom-center region was reported dirty at 10 fps with nobody touching the Mac. Tile comparison should ignore it; it's rechecked at Checkpoint 2, once the real pill ticks every second.
+- **Retiring Flipbook.** macOS's App Management protection may stop Annotake from moving Flipbook.app to the Trash. Flipbook is then quit but stays installed, the failure is logged, and it has to be dragged to the Trash by hand. Checkpoint 3 shows whether it happens.
 - **The self-test needs an awake, unlocked Mac.** While the Mac is asleep or locked, capture delivers no frames, so unattended sessions retry the self-test later.
 
 ## 13. Decision log (2026-09-23)
@@ -600,3 +602,6 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Closed source and freemium: a weekly soft limit, a hard stop at 2.5×, Pro at $9/month or $72/year (2026-09-30) | Reputation first, with revenue as proof. Wispr's cap design, without the slowdown |
 | Accounts, with sign-in first; "nothing you record leaves your Mac" replaces "never touches the network" (2026-09-30) | Counting users, emails, referrals, and team plans need accounts. Nothing recorded is ever sent |
 | Rename to Annotake, internals included, in the Developer ID build (2026-09-30) | "Flipbook" search results and domains are crowded, and one name everywhere avoids confusion |
+| Updates through Sparkle 2, linked only into the executable (2026-09-30, Session 8) | Fixes reach everyone fast, and the libraries and their tests keep no network code |
+| One app for Intel and Apple silicon (2026-09-30, Session 8) | Friends and coworkers may have Intel Macs, and one download fits everyone |
+| Builds signed without a Developer ID opt out of library validation (2026-09-30, Session 8) | The self-signed identity has no team, so the hardened runtime wouldn't load the app's own Sparkle. Developer ID builds share one team and don't need it |

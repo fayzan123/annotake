@@ -21,7 +21,7 @@ Rules for every session:
 
 ## Order
 
-1. **Session 1: M0 spikes. Done 2026-09-24.** Results and decisions are in [../spikes/findings.md](../spikes/findings.md); the spec and the M1 plan are already updated with them. The repo is pushed to the private GitHub repo `fayzan123/flipbook`.
+1. **Session 1: M0 spikes. Done 2026-09-24.** Results and decisions are in [../spikes/findings.md](../spikes/findings.md); the spec and the M1 plan are already updated with them. The repo is pushed to the private GitHub repo `fayzan123/flipbook`, renamed `fayzan123/annotake` at the end of Session 8.
 2. **Session 2: M1 core. Done 2026-09-24.** `AnnotakeCore` (the frame picker, gesture recognizer, cap fitting, and caption and `steps.md` text), its tests, and `annotake-replay` are on `main`. What it found for later plans is under Session 2 below.
 3. **Session 3: the M2–M4 plan. Done 2026-09-24.** The design is [2026-09-24-m2-m4-design.md](2026-09-24-m2-m4-design.md) and the plan is [2026-09-24-m2-m4-app.md](2026-09-24-m2-m4-app.md); `docs/spec.md` has the changes the design made.
 4. **Session 4: M2 + M3, the recording loop. Done 2026-09-24.** Recording end to end: capture, input, `LiveSession`, export with caption strips and markers, the pill, card, filmstrip, and Recent Captures, plus `make selftest` and `make ui-snapshots`. Checkpoint 1 passed apart from one label bug; the results are in [../checkpoints.md](../checkpoints.md).
@@ -32,7 +32,8 @@ Rules for every session:
 9. **Session 7: the distribution design and the Stage 1 plan. Done 2026-09-30.**
    - The design covers how the app reaches other developers and makes money, and the rename from Flipbook to Annotake: [2026-09-30-distribution-design.md](2026-09-30-distribution-design.md). Friends can already install the current build with the one-line command in its §5.1.
    - The plan: [2026-09-30-stage-1-build.md](2026-09-30-stage-1-build.md).
-10. **Next: Session 8, the Stage 1 build,** then Checkpoint 3.
+10. **Session 8: the Stage 1 build. Done 2026-09-30.** Flipbook is Annotake everywhere, with migration from Flipbook; one signed app for Intel and Apple silicon, with an icon, version numbers, Sparkle updates, Send Feedback, a step-by-step first run, the move to Applications, and `make release` with a disk image (369 tests). What it decided and skipped is under Session 8 below.
+11. **Next: Checkpoint 3** on both Macs (the plan's Task 15), then the Stage 2 design and plan ([distribution design §11](2026-09-30-distribution-design.md#11-sessions)).
 
 ## Session 1: M0 spikes (done)
 
@@ -246,6 +247,38 @@ Your part is Checkpoint 3 at the end, on both Macs. The list is in the plan's Ta
 - the first run as a new user;
 - the work Mac;
 - renaming the local folder once the session is closed.
+
+What Session 8 decided, skipped, and found (everything else went as the plan says):
+
+**Decisions:**
+- **Task 1:** the old Flipbook keychain was deleted as planned, but a copy stays in `.signing/retired/` (gitignored, off the search list). It holds the only key that signed friends' Flipbook installs; delete it once Annotake has shipped.
+- **Task 3:** `Migration.run` takes `oldDomain` and `report`, which default to Flipbook's real preferences and the log. Without them a test would import this Mac's real Flipbook settings, could rename markers in the real `~/Pictures/Flipbook`, and wrote into the real log.
+- **Task 3:** when the captures folder can't be moved, `~/Pictures/Flipbook` stays the save location, so its captures stay listed and cleaned up (`failedMoveKeepsTheOldFolder`). The plan said only that the folder stays where it is. A `.flipbook` marker also counts when `.annotake` is unreadable, not only missing.
+- **Task 5:** the self-test report names its architecture, and `make selftest-intel` checks it ran as `x86_64 (Rosetta)`. Under Rosetta the signature-time limit is 16 ms instead of 8: it measures translation, not a Mac, and the first Intel run averaged 7.3 ms.
+- **Task 6:** icon sizes up to 64 px come from a simplified drawing with a bolder ring. Scaled down from the full one, the 32 px icon had no clearly red pixel; now it has 18.
+- **Task 7:** `scripts/devid.sh` takes `SIGNING_DIR`, and the whole request → import ran against a throwaway keychain with a fake certificate. That caught a bug that made a good import fail and leave the `.p12` behind. The import refuses a certificate from another request, and expands `~` in `CER=` (zsh passes it to make as is). The bundler puts the signing keychain back on the search list when the folder moves.
+- **Task 8:** the bundler assembles, signs, and checks the app in a temporary folder, then copies it to `build/`. With Sparkle's nested bundles, iCloud Drive re-tagged folders faster than they could be signed: three of three attempts failed. `codesign --verify --strict` inside `build/` stays unreliable for the same reason.
+- **Task 8:** builds signed without a Developer ID carry `com.apple.security.cs.disable-library-validation`: without it the app crashed at launch, because the self-signed identity has no team, and the hardened runtime loads only libraries from the app's team. Developer ID builds don't carry it.
+- **Task 8:** Sparkle's key is in the login keychain under its own account, `annotake`, as Sparkle recommends; `make sparkle-keys` ran without a prompt. "Check for Updates…" sits with Settings… above Quit.
+- **Task 9:** the report ends with a newline, so its crash section ends with "… (truncated)" and a newline; the crash text is cut at a line.
+- **Task 11:** the first-run window is 560 × 440 pt (the plan set only the width; the tallest step needs 392). Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set, or closing a Fix permissions… pass, finishes it (`closingLeavesOnlyPermissionsToComeBack`). Fix permissions… during an unfinished first run shows it where it is.
+- **Task 11:** "a ✓ once granted" is a row above each permission step with a ✓ on every granted permission, since a grant moves the step on at once. The System Settings picture's switch is drawn, so it looks on even when the window isn't key. `make ui-snapshots` fails when a step would be clipped, through `build/ui/problems.txt`, because the app's printed output goes nowhere under `open`.
+- **Task 11:** the "Flipbook was moved to the Trash" line is on the welcome step, as planned, which existing users skip; they see "Annotake replaces Flipbook, so macOS asks for these again." instead.
+- **Tasks 3 and 11:** the constraint's grep also matches the plan's own identifiers outside the allowed files (`retiredFlipbook`, and the `LegacyFlipbook` type for its two notes). No string literal names the old app outside the allowed files; Task 15's check excluded those two identifiers.
+- **Task 12:** the original goes to the Trash before the relaunch, since nothing runs after quitting, and the moved copy's quarantine flag is removed, so it gets no second Gatekeeper prompt. A development build in `build/` gets the offer too, and Not Now is remembered for the whole `com.fayzanmalik.annotake` domain.
+- **Task 14:** `make release` works in a temporary folder outside iCloud Drive and copies the zip, the disk image, and a dry run's feed to `build/release`. Every zip, the one sent to Apple included, is made with `--norsrc --noextattr --noacl`. Publishing commits the feed, `install.sh`, and README in the releases repo's clone, then creates the GitHub release, then pushes, so the feed never names a release that doesn't exist.
+- **Task 14:** dmgbuild 1.6.5 puts the background at `.background.tiff` in the volume's root, not in a `.background` folder; Finder finds it through `.DS_Store` either way. `install.sh` also removes an Annotake.app from the other Applications folder, and refuses a tampered or missing download (both checked).
+- **Task 15:** the releases README doesn't name Flipbook, since the grep covers `scripts/`; `install.sh` says "Flipbook, Annotake's old name, was removed." when it removes one.
+
+**Skipped:** nothing. Every step ran, including `make cert`, `make devid-csr`, `make sparkle-keys`, the dmgbuild install, and the dry run. What only a person can check (notarization, the real first run, Sparkle installing an update, Send Feedback's draft, retiring Flipbook) is in Checkpoint 3.
+
+**For later plans:**
+- `make test` runs 369 tests in 58 suites (322 before the session).
+- Sparkle 2.10.0 resolved in 3 s from SwiftPM's cache in `~/Library/Caches/org.swift.swiftpm`, not 19 minutes.
+- The self-test's signature time varied between runs: 2.8–6.1 ms natively (limit 8) and 6.3–7.3 ms through Rosetta (limit 16).
+- macOS's App Management protection may stop Annotake from moving Flipbook.app to the Trash ("Annotake was prevented from modifying apps on your Mac"). Flipbook is still quit, and the failure is logged. Checkpoint 3 step 7 shows whether it happens.
+- The disk image's background is light (#F5F5F7); in dark mode Finder may draw the icon labels in white over it.
+- Run strict `codesign` checks on copies outside `~/Documents`: iCloud Drive tags bundles in `build/` within a second.
 
 Prompt:
 
