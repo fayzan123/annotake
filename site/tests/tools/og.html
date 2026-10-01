@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  /* The preview image: 1200 × 630, light. make-og.mjs renders it with the CSP bypassed, so this style block is fine
+     here; nothing on the site itself has one. */
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body { min-height: 0; }
+  body::before { display: none; }
+  .og { position: relative; display: flex; flex-direction: column; width: 1200px; height: 630px; }
+  .og .logo { position: absolute; left: 56px; top: 44px; height: 46px; }
+  .og h1 {
+    margin-top: 128px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 84px;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  .og h1 span { display: block; color: var(--head-2); }
+  .og .gate-wrap { margin-top: auto; }
+  .og .strip { --fw: 234px; }
+  /* The gate sits right of center, so all three captioned frames are in the picture. */
+  .og .gate { left: calc(78% - 98em); }
+  .og .track { left: calc(78% - 98em - 3 * 218em); }
+</style>
+</head>
+<body>
+<div class="og">
+  <svg class="logo" viewBox="0 0 644.06 240.11" aria-hidden="true"><use href="/assets/img/brand.svg#logo"/></svg>
+  <h1>Show your coding agent <span>exactly what happened.</span></h1>
+  <section class="gate-wrap" aria-hidden="true"></section>
+</div>
+</body>
+</html>

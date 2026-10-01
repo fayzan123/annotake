@@ -61,6 +61,8 @@ function page(kind) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} · Annotake</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>

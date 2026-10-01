@@ -127,3 +127,7 @@ site-brand-check: build/make-site-brand
 	diff -u site/assets/img/brand.svg build/site-brand-check/img/brand.svg
 	diff -u site/assets/img/favicon.svg build/site-brand-check/img/favicon.svg
 	@echo "The brand files are up to date."
+# The preview image for links on X, Reddit, and Discord: site/assets/img/og.v1.png, rendered from site/tests/tools/og.html.
+.PHONY: site-og
+site-og: site-deps
+	cd $(SITE_TESTS) && node tools/make-og.mjs

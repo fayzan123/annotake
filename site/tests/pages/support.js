@@ -32,6 +32,12 @@ function retryFirstLoad(page, browserName) {
  *   about following that setting.
  */
 export const test = base.extend({
+  // Google Chromes started at the same moment sometimes never finish creating their first context (4 of 80 launches
+  // on 2026-10-01, against 0 of 80 started 600 ms apart), so each Chrome worker waits its turn before launching.
+  launchOptions: [async ({ launchOptions, browserName }, use, workerInfo) => {
+    if (browserName === 'chromium') await new Promise(resolve => setTimeout(resolve, workerInfo.parallelIndex * 600));
+    await use(launchOptions);
+  }, { scope: 'worker' }],
   page: async ({ page, browserName }, use) => {
     await use(retryFirstLoad(page, browserName));
   },
@@ -75,8 +81,6 @@ export async function watchErrors(page) {
     });
   });
   page.on('console', message => {
-    // Until Task 12 names the icons, Chrome asks for /favicon.ico on its own.
-    if (new URL(message.location().url || 'about:blank').pathname === '/favicon.ico') return;
     if (message.type() === 'error') errors.push(message.text());
   });
   page.on('pageerror', error => errors.push(error.message));
