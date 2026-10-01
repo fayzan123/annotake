@@ -183,14 +183,14 @@ After that, a 15-minute chat with each: what they used it for, what confused the
 
 - **Who:** 20–30 developers who use AI coding agents on a Mac, at least half of them strangers. Strangers are the real test, because they don't owe Fayzan anything.
 - **Where they come from:**
-  - a landing page at annotake.app with the 20-second video, three lines (one key, any app, nothing you record leaves your Mac), and a "Join the beta" email box. It's hosted on Vercel, and the domain is bought through Vercel, so DNS and HTTPS set themselves up;
+  - a landing page at annotake.app, hosted on Vercel. Since the [landing page design](2026-10-01-landing-page-design.md) (2026-10-01), it offers the notarized download directly instead of a "Join the beta" box: the notarized disk image removed the reason for invites, and phones get the link by email;
   - one helpful post or comment where people already ask for this: Claude Code's video-input request, Cursor's forum thread, r/ClaudeAI, r/cursor, and AI-coding Discords;
   - two waves of invites a week apart, so support keeps up;
   - posting on X, a habit that starts now: the demo first, then what the beta teaches.
 - **What gets built,** with its own design and plan, during the friends round:
   - sign-in with Google, GitHub, or Apple on Supabase, in the first run's slot;
   - the daily counts in §8;
-  - the landing page, the waitlist, and a short privacy policy;
+  - the landing page with its privacy policy and Terms, pulled ahead into its own [design](2026-10-01-landing-page-design.md);
   - the founding-member checkout ($36 a year) through Polar, matched to the account by email.
 
   Everything stays free and unlimited; the server only counts.
@@ -228,7 +228,7 @@ After that, a 15-minute chat with each: what they used it for, what confused the
 - **Homebrew:** `brew install --cask` from Fayzan's own tap.
 
 **Launch week.** There's one shot, so launch only once the first run is smooth and the paywall works.
-- **Day 1:** Product Hunt, plus an email to the waitlist and the beta testers.
+- **Day 1:** Product Hunt, plus an email to the beta testers (there's no waitlist; see the [landing page design](2026-10-01-landing-page-design.md)).
 - **Day 2:** Show HN.
 - **Days 2–4:** r/ClaudeAI, r/macapps, r/cursor, developer newsletters, and curated "awesome" lists on GitHub.
 - **All week:** 3–5 short videos on X, LinkedIn, and YouTube Shorts, covering Claude Code, Cursor, ChatGPT, a drop into Jira, and MP4.
