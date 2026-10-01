@@ -81,7 +81,10 @@ export async function watchErrors(page) {
     });
   });
   page.on('console', message => {
-    if (message.type() === 'error') errors.push(message.text());
+    if (message.type() !== 'error') return;
+    // The 404 page's own status, which Chrome reports as a failed load.
+    if (message.text().startsWith('Failed to load resource') && message.location().url === page.url()) return;
+    errors.push(message.text());
   });
   page.on('pageerror', error => errors.push(error.message));
   return errors;
