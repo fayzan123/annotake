@@ -36,7 +36,7 @@ Annotake checks for updates once a day, and that check sends only its version.
 
 ## Feedback
 
-Choose **Send Feedback…** in Annotake's menu-bar menu. It opens an email to feedback@annotake.app with a short report attached: the app and macOS versions, which permissions are on, the recent log, and the latest crash report if there is one. The log never contains button names, window titles, or keys, and nothing is sent until you send the email.
+Choose **Send Feedback…** in Annotake's menu-bar menu. It opens an email to Annotake's developer with a short report attached: the app and macOS versions, which permissions are on, the recent log, and the latest crash report if there is one. The log never contains button names, window titles, or keys, and nothing is sent until you send the email.
 
 ## Uninstall
 

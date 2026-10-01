@@ -279,7 +279,7 @@ After that, a 15-minute chat with each: what they used it for, what confused the
 - **MP4:** its own design and plan.
 - **When their stage comes:** team plans, how school emails are checked, and the creator program.
 - **Fayzan's checks:** the employment contract and IT rules, and the USPTO search for "Annotake".
-- **The Send Feedback address:** `feedback@annotake.app`, forwarding to Fayzan's inbox. He can still pick another before the Stage 1 build ships.
+- **The Send Feedback address:** Fayzan's Gmail for now, because the separate address isn't mission critical. annotake.app was bought on Vercel at Checkpoint 3, so `feedback@annotake.app` needs only the ImprovMX forwarding, then a one-line change to `Feedback.address`.
 
 ## 11. Sessions
 

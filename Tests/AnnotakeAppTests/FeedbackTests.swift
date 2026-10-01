@@ -73,7 +73,7 @@ struct FeedbackTests {
                                      body: String(repeating: "é and more", count: 500))
         #expect(url.scheme == "mailto")
         let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
-        #expect(components.path == "feedback@annotake.app")
+        #expect(components.path == "fayzanm786@gmail.com")
         #expect(!url.absoluteString.contains(" "))
         #expect(!url.absoluteString.contains("—"))
         #expect(url.absoluteString.contains("Annotake%20feedback%20%E2%80%94%200.2.0"))
