@@ -22,6 +22,13 @@ enum SelfTestLayout {
     /// How many rows the list moves when it scrolls.
     static let listShiftRows = 6
 
+    /// Which screen the window goes on: the sharpest, and the first (the main one) on a tie. The script's picks
+    /// hold on a Retina screen; on a 1× monitor the drawn pointer covers fewer tiles, and an extra frame is kept.
+    static func preferredScreen(scales: [CGFloat]) -> Int? {
+        guard let sharpest = scales.max() else { return nil }
+        return scales.firstIndex(of: sharpest)
+    }
+
     static var openCenter: CGPoint { CGPoint(x: openButton.midX, y: openButton.midY) }
     static var checkboxCenter: CGPoint { CGPoint(x: checkbox.midX, y: checkbox.midY) }
 }
@@ -456,7 +463,14 @@ final class SelfTestWindow {
     var windowNumber: Int { window.windowNumber }
 
     func show() {
-        window.center()
+        let screens = NSScreen.screens
+        if let index = SelfTestLayout.preferredScreen(scales: screens.map(\.backingScaleFactor)) {
+            let visible = screens[index].visibleFrame
+            window.setFrameOrigin(CGPoint(x: (visible.midX - window.frame.width / 2).rounded(),
+                                          y: (visible.midY - window.frame.height / 2).rounded()))
+        } else {
+            window.center()
+        }
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
