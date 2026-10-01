@@ -110,6 +110,7 @@ Rules:
   - Recent Captures ▸ (last 5)
   - Open Captures Folder
   - Settings…
+  - Send Feedback… (a draft to `feedback@annotake.app` with a diagnostic report, §8)
   - Check for Updates… (Sparkle checks now and shows the result)
   - Quit
 - There is no Dock icon.
@@ -456,6 +457,10 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   Event taps, the stream, AX calls, and the UI are covered by the self-test and the checkpoints.
 - **Self-test:** `make selftest` opens a test window of Annotake's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports the architecture, frames, timings, and picked captions in `selftest.json`. `make selftest-intel` runs the Intel half through Rosetta, where the signature-time limit is twice as loose, because it measures translation rather than a Mac. `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
 - **Log:** `~/Library/Logs/Annotake.log` records gestures, state changes, timings, and errors. It never records labels, window titles, or keys.
+- **Send Feedback…** prepares a draft to `feedback@annotake.app` (defined once, as `Feedback.address`); the user sends it. The report is the version, the macOS version and Mac model, the three permissions' states, the last 400 lines of the log, and the newest `Annotake-*.ips` crash report from the last 7 days, capped at 200,000 bytes. It's written to a temporary `Annotake-report-<date>.txt`:
+  - When Mail can take an attachment, its compose window opens with "What happened?", the three fact lines, and the report attached.
+  - Otherwise (Gmail in a browser, say, or no account set up) a mailto draft opens with the same text, its body capped at 1,500 characters, and Finder shows the report to attach.
+  - The log records only that a report was prepared, never its contents.
 - **Fixture privacy:** sessions recorded on the work Mac never go in the repo, because window titles and labels can be internal. Work sessions stay local, or have all text stripped before use.
 - **Manual checklist (Fayzan).** It's run at the two checkpoints in [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md) §10:
   - Drag the card into Cursor chat, Claude Code in Terminal, ChatGPT and Claude web, Slack, and Jira.

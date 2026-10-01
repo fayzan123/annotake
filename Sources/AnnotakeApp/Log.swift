@@ -8,7 +8,7 @@ public final class LogFile: @unchecked Sendable {
         url: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Logs/Annotake.log"),
         cap: 5 * 1024 * 1024)
 
-    private let url: URL
+    let url: URL
     private let cap: Int
     private let queue = DispatchQueue(label: "com.fayzanmalik.annotake.log")
     private let formatter: DateFormatter = {
