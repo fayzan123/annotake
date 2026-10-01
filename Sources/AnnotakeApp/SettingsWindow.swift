@@ -373,8 +373,48 @@ struct AdvancedTab: View {
 
 // MARK: - The window
 
-/// The Settings window (spec §3.6): toolbar tabs, each a SwiftUI form. Annotake stays menu-bar-only
-/// while it's open.
+/// Every Settings tab's page: the tab, then the footer bar.
+struct SettingsPage<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            content
+            SettingsFooter()
+        }
+    }
+}
+
+/// The bar along the bottom of every Settings tab: the Annotake logo, and the version for bug reports.
+struct SettingsFooter: View {
+    static let barHeight: CGFloat = 48
+    /// From the reels to the baseline.
+    static let logoHeight: CGFloat = 24
+    var version = AppVersion.current
+
+    static func versionText(_ version: AppVersion) -> String { "Version \(version)" }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack {
+                WordmarkView(label: "Annotake").frame(height: Self.logoHeight)
+                Spacer()
+                Text(Self.versionText(version))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            .padding(.horizontal, 20)
+            .frame(height: Self.barHeight)
+        }
+        // The grouped forms' own background, which is the window's.
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+}
+
+/// The Settings window (spec §3.6): toolbar tabs, each a SwiftUI form over the footer bar. Annotake stays
+/// menu-bar-only while it's open.
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let model: SettingsModel
@@ -422,9 +462,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         return controller
     }
 
-    /// The window takes each tab's size.
+    /// The window takes each tab's size, footer included.
     private static func host(_ view: some View) -> NSViewController {
-        let controller = NSHostingController(rootView: view)
+        let controller = NSHostingController(rootView: SettingsPage { view })
         controller.sizingOptions = .preferredContentSize
         return controller
     }

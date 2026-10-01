@@ -360,6 +360,8 @@ private struct Paragraph: View {
 
 /// What Annotake does, with a demo: three tiles highlighted in turn.
 private struct WelcomeStep: View {
+    /// The logo's height in points, from the reels to the baseline: about 26 pt to the cap line.
+    static let logoHeight: CGFloat = 60
     static let demoInterval: TimeInterval = 1.6
     static let symbols = ["keyboard", "cursorarrow.click.2", "photo.stack"]
     let trigger: TriggerKey
@@ -368,13 +370,10 @@ private struct WelcomeStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 16) {
-                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 72, height: 72)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(OnboardingCopy.title(.welcome)).font(.system(size: 30, weight: .bold))
-                    Text(OnboardingCopy.welcomeSubtitle).font(.title3).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                WordmarkView(label: OnboardingCopy.title(.welcome)).frame(height: Self.logoHeight)
+                Text(OnboardingCopy.welcomeSubtitle).font(.title3).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             ForEach(paragraphs, id: \.self) { Paragraph(text: $0) }
             TimelineView(.periodic(from: .now, by: Self.demoInterval)) { context in

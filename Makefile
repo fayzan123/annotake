@@ -73,10 +73,12 @@ devid-import:
 # Sparkle's update-signing key: the public half is committed, the private half stays in .signing and the keychain.
 sparkle-keys:
 	scripts/sparkle-keys.sh
-# Redraws the app icon; Resources/AppIcon.icns is committed.
+# Redraws the app icon; Resources/AppIcon.icns is committed. The script draws the mark from the app's own
+# BrandMark.swift, so the two are compiled together.
 icon:
 	rm -rf build/AppIcon.iconset && mkdir -p build Resources
-	swift scripts/make-icon.swift build/AppIcon.iconset
+	swiftc -parse-as-library -o build/make-icon scripts/make-icon.swift Sources/AnnotakeApp/BrandMark.swift
+	build/make-icon build/AppIcon.iconset
 	iconutil -c icns build/AppIcon.iconset -o Resources/AppIcon.icns
 clean:
 	rm -rf .build build
