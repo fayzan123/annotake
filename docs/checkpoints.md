@@ -88,28 +88,28 @@ Items follow the Stage 1 plan's Task 15 list. Every step passed, with the `feedb
 Steps from the landing page plan's Task 15, for connecting annotake.app. Session 10 built and tested the site locally, and did none of this: it never deploys, creates accounts, or touches DNS. After the session, Fayzan dropped the ImprovMX step: annotake.app receives no mail, and the site shows no email address. Fill in each result.
 
 1. **Resend:** create the account and add `annotake.app`. Add its DNS records in Vercel (or have a session run `npx vercel dns add …` under your login), then verify the domain.
-   Result: not done yet.
+   Result: **done by Fayzan.** `annotake.app` is verified in Resend, with its three records in Vercel's DNS (`resend._domainkey` TXT, and `send` TXT and MX). The API key isn't in Vercel yet: see step 3.
 2. **DMARC:** add `_dmarc` TXT `v=DMARC1; p=none`. (No report address: nothing receives mail at annotake.app.)
-   Result: not done yet.
+   Result: **done** (by Claude, 2026-10-01); Vercel's nameservers serve it.
 3. **Vercel:**
    - create a project from `fayzan123/annotake`, with Root Directory `site` and Framework Preset Other;
    - add the environment variables `RESEND_API_KEY` (Production) and `EMAIL_DRY_RUN=1` (Preview);
    - turn on Web Analytics;
    - add `annotake.app` and `www.annotake.app`.
 
-   Result: not done yet.
+   Result: **done** (by Claude, 2026-10-01), except the API key. The project is `annotake-site` (Root Directory `site`, preset Other), at `annotake-site.vercel.app`. `EMAIL_DRY_RUN=1` is set for Preview only, Web Analytics is on (Hobby, free), `annotake.app` serves Production, and `www.annotake.app` answers 308 to it. **Still to do (Fayzan): `RESEND_API_KEY`.** In Resend, create a key with Sending access for `annotake.app`; in Vercel, add it as a Secret for Production only, then redeploy. Until then, the email form shows its fallback, the link to copy.
 4. **annotake.com:** register it in Vercel, and add it and `www` as redirects to `https://annotake.app`.
-   Result: not done yet.
+   Result: not done yet: it costs money, so it's Fayzan's call.
 5. **The firewall:** add a rule for when the request path is `/api/link` and the method is `POST`: Rate Limit, Fixed Window, 10 requests per 600 s, keyed by IP, answering 429. Then publish it.
-   Result: not done yet.
+   Result: **done** (by Claude, 2026-10-01): "Email link rate limit", published.
 6. **The first deploy:** run `make site-smoke URL=https://annotake.app` and `make site-burst URL=https://annotake.app`. The burst sends no email.
-   Result: not done yet.
+   Result: **pass** (by Claude, 2026-10-01). Smoke: every check passed after a redeploy turned Web Analytics on, except annotake.com's redirect (not registered; step 4). The disk image is 3.6 MB, and `tests/` and the README aren't served. Burst: 10 × 200, then 40 × 429.
 7. **On your iPhone:** use Email me the link with your own address. The email arrives (outside spam), from `noreply@annotake.app`. Open the link on a Mac, and the DMG downloads.
    Result: not done yet.
 8. **The look:** on your iPhone and both Macs, in light and dark, check how the hero, the steps, and the footer look and move.
    Result: not done yet.
 9. **PageSpeed Insights on mobile:** performance at least 95, accessibility 100.
-   Result: not done yet.
+   Result: **pass** (by Claude, 2026-10-01): Performance 99, Accessibility 100, Best Practices 100, SEO 100. First Contentful Paint 1.1 s, Largest Contentful Paint 1.4 s, Total Blocking Time 0 ms, Cumulative Layout Shift 0.066.
 10. **The policies:** read the privacy policy and the Terms, and approve them or ask for changes.
     Result: not done yet.
 11. **Optional:** an uptime monitor on `/` and `/download`.
