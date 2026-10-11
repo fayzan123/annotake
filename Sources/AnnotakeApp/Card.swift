@@ -180,7 +180,7 @@ final class CardView: NSView, NSDraggingSource {
             onDismiss()
         } else if case .failed(let folder) = state {
             if Self.buttonRect.contains(point) { NSWorkspace.shared.open(folder) }
-        } else {
+        } else if case .ready = state {
             onClick()
         }
     }
@@ -424,6 +424,14 @@ final class CardController {
         let id = nextReopenedID
         nextReopenedID -= 1
         show(capture, id: id)
+    }
+
+    /// A filmstrip trim is re-rendering the card's frames: it shows "Saving…" and can't be dragged or opened until
+    /// `update` (spec §3.4).
+    func trimming(id: Int) {
+        guard let card = cards[id], let capture = card.capture else { return }
+        card.view.state = .saving(duration: capture.manifest.result.duration)
+        startTimer()
     }
 
     /// Updates a card after a filmstrip trim.

@@ -93,12 +93,15 @@ Rules:
   - The newest card sits in the corner and older ones stack upward. At most 4 are visible; a fifth pushes the oldest out, and that one stays in Recent Captures.
 - **Clicking the card** (moving less than 4 pt) opens the **filmstrip**, a horizontal strip of the frames with their captions.
   - Click ✕ on a frame to remove it. Clicking again restores it while the filmstrip is open. The last remaining frame can't be removed.
+  - **Keys.** A ring marks the current frame: the first when the filmstrip opens, or the one last clicked. ← and → move it, stopping at the ends, and the strip scrolls to keep it in view. ⌫ removes the current frame, or restores it. Return applies the removals and closes the filmstrip.
+  - The header counts the frames to remove, e.g. `20 frames · 3 to remove`.
   - Drag a single frame out of the strip.
-  - Closing the filmstrip (✕, Esc, a click outside it, or a click on the card) applies the removals:
+  - Closing the filmstrip (✕, Return, Esc, a click outside it, or a click on the card) applies the removals:
     - Removed frames move to the capture's hidden `.raw/removed/` folder.
     - The remaining frames are re-rendered and renumbered with no gaps (1/6 … 6/6).
     - A removed frame's actions merge into the previous frame's caption.
     - `steps.md` is regenerated.
+    - Until that's done, the card shows "Saving…" and can't be dragged or opened, so a drag never picks up half-renamed files.
 - **Recent Captures** in the menu bar brings back the cards for the last 5 captures.
 
 ### 3.5 Menu bar

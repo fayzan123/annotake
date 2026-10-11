@@ -142,6 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let cards else { return }
             filmstrip?.toggle(capture, cardID: id, cards: cards)
         }
+        filmstrip.onTrimStarted = { [weak cards] id in cards?.trimming(id: id) }
         filmstrip.onTrimmed = { [weak cards] capture, id in cards?.update(capture, id: id) }
         controller.cards = cards
         self.controller = controller

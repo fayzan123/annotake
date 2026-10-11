@@ -10,6 +10,15 @@ struct FilmstripSelectionTests {
         #expect(selection.removed == [])
     }
 
+    @Test func noFramesLeavesTheCurrentFrameAlone() {
+        var selection = FilmstripSelection(frameIndices: [])
+        selection.moveCurrent(by: 1)
+        selection.moveCurrent(to: 3)
+        selection.toggleCurrent()
+        #expect(selection.current == 0)
+        #expect(selection.removed == [])
+    }
+
     @Test func lastFrameStays() {
         var selection = FilmstripSelection(frameIndices: [1, 2])
         selection.toggle(1)

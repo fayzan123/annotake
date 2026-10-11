@@ -68,6 +68,34 @@ struct CardTests {
         #expect(!ClickOrDrag.isClick(from: .zero, to: CGPoint(x: 2.9, y: 2.9)))
     }
 
+    /// Presses and releases in the middle of the card.
+    @MainActor private func click(_ card: CardView) {
+        let middle = CGPoint(x: CardView.size.width / 2, y: CardView.size.height / 2)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = NSEvent.mouseEvent(with: type, location: card.convert(middle, to: nil), modifierFlags: [],
+                                           timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, clickCount: 1,
+                                           pressure: 1)!
+            type == .leftMouseDown ? card.mouseDown(with: event) : card.mouseUp(with: event)
+        }
+    }
+
+    @MainActor @Test func aReadyCardOpensItsFilmstrip() {
+        let card = CardView(state: .ready(UISnapshots.sampleCapture(frames: 3, duration: 12), thumbnails: []))
+        var opened = false
+        card.onClick = { opened = true }
+        click(card)
+        #expect(opened)
+    }
+
+    /// While a filmstrip trim re-renders the frames, the card is saving again: opening it would show files being renamed.
+    @MainActor @Test func aSavingCardDoesNotOpen() {
+        let card = CardView(state: .saving(duration: 12))
+        var opened = false
+        card.onClick = { opened = true }
+        click(card)
+        #expect(!opened)
+    }
+
     /// AppKit lays out a drag of 17 or more items on worker threads, which read the card's `isFlipped`. When only
     /// the main thread could read it, that trapped: dragging a 20-frame card quit Annotake.
     @Test func cardCanBeReadOffTheMainThread() async {
