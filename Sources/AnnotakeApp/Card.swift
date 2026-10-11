@@ -128,7 +128,8 @@ final class CardView: NSView, NSDraggingSource {
         fatalError("init(coder:) is not used")
     }
 
-    override var isFlipped: Bool { true }
+    /// Nonisolated: AppKit lays out a drag of 17 or more items on worker threads, and they read it there.
+    nonisolated override var isFlipped: Bool { true }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
