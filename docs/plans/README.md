@@ -38,6 +38,9 @@ Rules for every session:
 13. **Session 9: the landing page design and plan. Done 2026-10-01.** Pulled ahead of the rest of Stage 2: annotake.app offers the download directly (no waitlist), with a privacy policy, Terms, and the link by email for phones. The design is [2026-10-01-landing-page-design.md](2026-10-01-landing-page-design.md), and the plan is [2026-10-01-landing-page-build.md](2026-10-01-landing-page-build.md).
 14. **Session 10: the landing page build. Done 2026-10-01.** annotake.app is built and tested locally in `site/`: the page with its three animations, the policies, the `/download` redirect, and the "Email me the link" function (73 unit tests, 312 page tests in Chrome, WebKit, and Firefox). What it decided and skipped is under Session 10 below.
 15. **Next: Checkpoint 4,** which connects the site to Vercel, email, and DNS: the list is in [../checkpoints.md](../checkpoints.md#checkpoint-4-the-site). It can run alongside the friends round.
+16. **2026-10-11, inline (no session prompt): two fixes from Fayzan's own use.** Dragging a card with 17 or more frames quit Annotake (9bfed66), and the filmstrip got its keys: ← → move a ring between frames, ⌫ removes or restores, Return applies, and the card shows "Saving…" while a trim re-renders (spec §3.4). Frame sensitivity was parked in [../v2-backlog.md](../v2-backlog.md). For later plans:
+    - AppKit lays out a drag of 17 or more items on worker threads, which read the source view's `isFlipped`, and its ancestors'. In Swift 6 a main-actor override traps there, so a drag source's `isFlipped` must be `nonisolated`. The filmstrip drags one frame at a time, so its views don't need it yet.
+    - `make app` failed until `.build/*/release/ModuleCache` was deleted: its precompiled headers still pointed at `flipbook/`.
 
 ## Session 1: M0 spikes (done)
 

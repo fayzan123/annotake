@@ -155,6 +155,21 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 Dropping the card into VS Code's integrated terminal inserted only the first file path, as plain text, while the drag still reported success. A card action (or a modifier-drag) that puts all frame paths on the clipboard, one per line or space-separated and shell-quoted, would cover terminals that take a single path. Check Terminal.app and iTerm first; they may already take all 20.
 
+## Frame sensitivity, changeable while recording
+
+**Status:** parked on 2026-10-11 by Fayzan, from his own use, behind the long-capture drag crash and the filmstrip's keyboard controls.
+
+**The idea:** a control for how big a screen change must be to count as a new frame. Lower keeps small changes, higher keeps only big ones. It can't live only in Settings: the right level differs between recordings, and even within one (close-together steps in one part, only big changes in another). So it should be one move away right before a recording starts and while it runs, maybe on the pill. Where it's easiest to reach is still open.
+
+**What it would change** (spec §5.2–5.3): a tile has changed when its signature moves by more than 3/255. With no input, a frame is kept once 2% of tiles differ from the last kept frame (0.5% after 10 s without a keep). After a click, a commit key, an app switch, or a typing pause, one changed tile is enough, and scrolling keeps a frame every 80% of a screen. Max frames (20) then keeps the best N. A sensitivity control would mostly scale the visual thresholds (`visualTriggerFraction`, `keepFraction`). Frames after input keep on a single changed tile, so whether "strict" should also drop small changes after a click is part of the design.
+
+**Open questions:**
+- **Changing it mid-recording.** The picker reads its config once, at the start. A live change needs the picker to take a new config, and the raw session to record when it changed, so `annotake-replay` still reproduces the capture.
+- **Where it lives.** Every click inside the recorded area is recorded, Annotake's own windows included, so a pill control would add a "Clicked at (x, y)" step unless those clicks are left out. A key combination with the trigger key, such as trigger + ↑/↓, avoids that.
+- **Max frames.** Whether it moves with the sensitivity or stays separate.
+
+**An alternative to weigh first** (Claude, 2026-10-11): choose after the fact instead of before. The filmstrip could re-pick fewer or more frames from the ones Annotake considered, ranked by cap fitting (spec §5.5), so the choice is made while looking at the result and the record flow gets no new control; removing frames by hand covers a part that should be stricter. "More" needs the dropped candidates kept: today the 7 in "best 20 of 27" are deleted when the capture is saved. Before building either, tune the defaults from real captures with Settings → Advanced → Save raw sessions on, as M5 planned.
+
 ## From the M2–M4 design
 
 **Status:** deferred on 2026-09-24 while designing M2–M4 ([design](plans/2026-09-24-m2-m4-design.md)).
