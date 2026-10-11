@@ -174,7 +174,7 @@ enum UISnapshots {
         return view
     }
 
-    /// Four frames, the second removed, the third hovered.
+    /// Four frames: the first current, the second removed, the third hovered.
     @MainActor
     private static func filmstrip() -> NSView {
         let capture = sampleCapture(frames: 4, duration: 12)

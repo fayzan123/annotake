@@ -1,11 +1,15 @@
 import AppKit
 import AnnotakeCore
 import AnnotakeExport
+import Carbon.HIToolbox
 
-/// Which frames the filmstrip will remove on close (spec §3.4). The last frame can't be removed.
+/// Which frames the filmstrip will remove on close, and the current frame, which the keys act on (spec §3.4).
+/// The last frame can't be removed.
 struct FilmstripSelection {
     private let frameIndices: [Int]
     private(set) var removed: Set<Int> = []
+    /// The current frame's position in the strip.
+    private(set) var current = 0
 
     init(frameIndices: [Int]) {
         self.frameIndices = frameIndices
@@ -24,6 +28,22 @@ struct FilmstripSelection {
             removed.insert(frameIndex)
         }
     }
+
+    /// Moves the current frame, stopping at the ends.
+    mutating func moveCurrent(by offset: Int) {
+        moveCurrent(to: current + offset)
+    }
+
+    mutating func moveCurrent(to position: Int) {
+        guard !frameIndices.isEmpty else { return }
+        current = min(max(position, 0), frameIndices.count - 1)
+    }
+
+    /// Removes the current frame, or restores it.
+    mutating func toggleCurrent() {
+        guard frameIndices.indices.contains(current) else { return }
+        toggle(frameIndices[current])
+    }
 }
 
 /// One frame in the strip.
@@ -37,46 +57,57 @@ struct FilmstripTile {
 }
 
 /// The row of frames, drawn by hand. ✕ on hover removes a frame, which then dims and offers Restore;
-/// a frame can be dragged out on its own.
+/// a frame can be dragged out on its own. A ring marks the current frame, which the keys move and remove.
 final class FilmstripStripView: NSView, NSDraggingSource {
     static let frameHeight: CGFloat = 200
     static let captionHeight: CGFloat = 22
     static let spacing: CGFloat = 12
     static let closeSize: CGFloat = 22
     static let captionFont = NSFont.systemFont(ofSize: 11)
+    /// Room around the frames for the ring.
+    static let ringInset: CGFloat = 5
+    /// The ring's line runs this far outside its frame.
+    static let ringOffset: CGFloat = 3.5
+    static let ringWidth: CGFloat = 2.5
+    static let height = ringInset + frameHeight + captionHeight
 
     var tiles: [FilmstripTile] = [] {
         didSet { resize() }
     }
 
     var selection = FilmstripSelection(frameIndices: []) {
-        didSet { needsDisplay = true }
+        didSet {
+            needsDisplay = true
+            onSelectionChange()
+        }
     }
 
     var hovered: Int? {
         didSet { needsDisplay = true }
     }
 
-    var onToggle: (Int) -> Void = { _ in }
+    var onSelectionChange: () -> Void = {}
     private var downPoint: CGPoint?
     private var dragStarted = false
 
     override var isFlipped: Bool { true }
 
+    override var acceptsFirstResponder: Bool { true }
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     func tileRects() -> [CGRect] {
-        var x: CGFloat = 0
+        var x = Self.ringInset
         return tiles.map { tile in
             let width = (Self.frameHeight * tile.aspect).rounded()
             defer { x += width + Self.spacing }
-            return CGRect(x: x, y: 0, width: width, height: Self.frameHeight)
+            return CGRect(x: x, y: Self.ringInset, width: width, height: Self.frameHeight)
         }
     }
 
     private func resize() {
-        let width = (tileRects().last?.maxX ?? 0)
-        setFrameSize(CGSize(width: max(width, 1), height: Self.frameHeight + Self.captionHeight))
+        let width = (tileRects().last?.maxX ?? 0) + Self.ringInset
+        setFrameSize(CGSize(width: width, height: Self.height))
         needsDisplay = true
     }
 
@@ -128,12 +159,36 @@ final class FilmstripStripView: NSView, NSDraggingSource {
         guard let downPoint, !dragStarted, let position = tile(at: downPoint) else { return }
         let point = convert(event.locationInWindow, from: nil)
         guard ClickOrDrag.isClick(from: downPoint, to: point) else { return }
+        selection.moveCurrent(to: position)
         let rect = tileRects()[position]
         let frameIndex = tiles[position].frameIndex
         let removed = selection.removed.contains(frameIndex)
         if removed || closeRect(for: rect).insetBy(dx: -4, dy: -4).contains(point) {
-            onToggle(frameIndex)
+            selection.toggle(frameIndex)
         }
+    }
+
+    /// ← and → move the ring, and ⌫ removes the current frame or restores it. Return and Esc go on to the panel.
+    override func keyDown(with event: NSEvent) {
+        switch Int(event.keyCode) {
+        case kVK_LeftArrow:
+            moveCurrent(by: -1)
+        case kVK_RightArrow:
+            moveCurrent(by: 1)
+        case kVK_Delete, kVK_ForwardDelete:
+            // Held down, it would flip the frame back and forth.
+            if !event.isARepeat { selection.toggleCurrent() }
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    /// Moves the ring and scrolls it into view, with a little room on the side it moved to.
+    private func moveCurrent(by offset: Int) {
+        selection.moveCurrent(by: offset)
+        let rects = tileRects()
+        guard rects.indices.contains(selection.current) else { return }
+        scrollToVisible(rects[selection.current].insetBy(dx: -(Self.ringInset + Self.spacing), dy: 0).intersection(bounds))
     }
 
     func draggingSession(_ session: NSDraggingSession,
@@ -142,7 +197,8 @@ final class FilmstripStripView: NSView, NSDraggingSource {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        for (position, rect) in tileRects().enumerated() where rect.intersects(dirtyRect.insetBy(dx: -1, dy: -1)) {
+        let dirty = dirtyRect.insetBy(dx: -Self.ringInset, dy: -Self.ringInset)
+        for (position, rect) in tileRects().enumerated() where rect.intersects(dirty) {
             let tile = tiles[position]
             let removed = selection.removed.contains(tile.frameIndex)
             let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
@@ -161,6 +217,14 @@ final class FilmstripStripView: NSView, NSDraggingSource {
             NSGraphicsContext.restoreGraphicsState()
             NSColor(white: 1, alpha: 0.15).setStroke()
             path.stroke()
+            if position == selection.current {
+                let radius = 6 + Self.ringOffset
+                let ring = NSBezierPath(roundedRect: rect.insetBy(dx: -Self.ringOffset, dy: -Self.ringOffset),
+                                        xRadius: radius, yRadius: radius)
+                ring.lineWidth = Self.ringWidth
+                NSColor.controlAccentColor.setStroke()
+                ring.stroke()
+            }
 
             if removed {
                 drawCapsule("Restore", in: restoreRect(for: rect))
@@ -203,7 +267,8 @@ final class FilmstripStripView: NSView, NSDraggingSource {
     }
 }
 
-/// The filmstrip's content: a header with the capture's name and a ✕, then the scrolling strip.
+/// The filmstrip's content: a header with the capture's name, how many frames will be removed, and a ✕, then the
+/// scrolling strip.
 final class FilmstripView: NSView {
     static let padding: CGFloat = 16
     static let headerHeight: CGFloat = 28
@@ -212,6 +277,7 @@ final class FilmstripView: NSView {
     static let height = padding * 2 + headerHeight + FilmstripStripView.frameHeight + FilmstripStripView.captionHeight
         + scrollerHeight
     static let background = NSColor(white: 0.1, alpha: 0.96)
+    static let hint = "← → pick a frame · ⌫ removes or restores · Return applies · drag a frame out on its own"
 
     let strip = FilmstripStripView(frame: .zero)
     let scrollView = FilmstripScrollView(frame: .zero)
@@ -220,6 +286,12 @@ final class FilmstripView: NSView {
     }
 
     var onClose: () -> Void = {}
+
+    /// The title, then how many frames will be removed, e.g. `… · 20 frames · 3 to remove`.
+    var heading: String {
+        let count = strip.selection.removed.count
+        return count == 0 ? title : "\(title) · \(count) to remove"
+    }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -232,6 +304,7 @@ final class FilmstripView: NSView {
         scrollView.drawsBackground = false
         scrollView.documentView = strip
         addSubview(scrollView)
+        strip.onSelectionChange = { [weak self] in self?.needsDisplay = true }
     }
 
     required init?(coder: NSCoder) {
@@ -244,12 +317,13 @@ final class FilmstripView: NSView {
         CGRect(x: bounds.maxX - Self.padding - 20, y: Self.padding + 2, width: 20, height: 20)
     }
 
+    /// The strip reaches past the padding by the ring's room, so the frames line up with the title.
     override func layout() {
         super.layout()
-        scrollView.frame = CGRect(x: Self.padding, y: Self.padding + Self.headerHeight,
-                                  width: bounds.width - 2 * Self.padding,
-                                  height: FilmstripStripView.frameHeight + FilmstripStripView.captionHeight
-                                      + Self.scrollerHeight)
+        let inset = Self.padding - FilmstripStripView.ringInset
+        scrollView.frame = CGRect(x: inset, y: Self.padding + Self.headerHeight - FilmstripStripView.ringInset,
+                                  width: bounds.width - 2 * inset,
+                                  height: FilmstripStripView.height + Self.scrollerHeight)
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -259,14 +333,14 @@ final class FilmstripView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         Self.background.setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 14, yRadius: 14).fill()
-        (title as NSString).draw(at: CGPoint(x: Self.padding, y: Self.padding + 2),
-                                 withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold),
-                                                  .foregroundColor: NSColor.white])
-        let hint = "Hover a frame and click ✕ to remove it · drag a frame out on its own" as NSString
+        let headingAttributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                                                                .foregroundColor: NSColor.white]
+        (heading as NSString).draw(at: CGPoint(x: Self.padding, y: Self.padding + 2), withAttributes: headingAttributes)
         let hintAttributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11),
                                                              .foregroundColor: NSColor(white: 0.6, alpha: 1)]
-        let titleWidth = (title as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold)]).width
-        hint.draw(at: CGPoint(x: Self.padding + titleWidth + 12, y: Self.padding + 4), withAttributes: hintAttributes)
+        let headingWidth = (heading as NSString).size(withAttributes: headingAttributes).width
+        (Self.hint as NSString).draw(at: CGPoint(x: Self.padding + headingWidth + 12, y: Self.padding + 4),
+                                     withAttributes: hintAttributes)
 
         NSColor(white: 0.35, alpha: 1).setFill()
         NSBezierPath(ovalIn: closeRect).fill()
@@ -304,25 +378,25 @@ final class FilmstripScrollView: NSScrollView {
     }
 }
 
-/// A panel that can become key without activating the app, so Esc reaches it.
+/// A panel that can become key without activating the app, so keys reach it. Return and Esc close it, which
+/// applies the removals.
 final class FilmstripPanel: NSPanel {
-    var onCancel: () -> Void = {}
+    var onClose: () -> Void = {}
 
     override var canBecomeKey: Bool { true }
 
     override func cancelOperation(_ sender: Any?) {
-        onCancel()
+        onClose()
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == Self.escapeKeycode {
-            onCancel()
-        } else {
+        switch Int(event.keyCode) {
+        case kVK_Escape, kVK_Return, kVK_ANSI_KeypadEnter:
+            onClose()
+        default:
             super.keyDown(with: event)
         }
     }
-
-    static let escapeKeycode: UInt16 = 53
 }
 
 /// One filmstrip at a time (spec §3.4), above the card column. Closing it with removals trims the
@@ -340,7 +414,9 @@ final class FilmstripController: NSObject, NSWindowDelegate {
     private var capture: FinishedCapture?
     private var cardID: Int?
     private var closing = false
-    /// A trim finished; its card shows the new frames.
+    /// A trim started: its card shows "Saving…" until `onTrimmed`.
+    var onTrimStarted: (Int) -> Void = { _ in }
+    /// A trim finished, or failed and left the capture as it was; its card shows the frames.
     var onTrimmed: (FinishedCapture, Int) -> Void = { _, _ in }
 
     var openCardID: Int? { panel == nil ? nil : cardID }
@@ -359,7 +435,6 @@ final class FilmstripController: NSObject, NSWindowDelegate {
         let view = FilmstripView(frame: .zero)
         Self.configure(view, capture: capture)
         view.onClose = { [weak self] in self?.close() }
-        view.strip.onToggle = { [weak view] frameIndex in view?.strip.selection.toggle(frameIndex) }
 
         guard let screen = cards.currentScreen else { return }
         let visible = screen.visibleFrame
@@ -368,6 +443,20 @@ final class FilmstripController: NSObject, NSWindowDelegate {
                          visible.maxY - FilmstripView.height)
         let frame = CGRect(x: visible.maxX - CardStack.inset - width, y: bottom, width: width, height: FilmstripView.height)
 
+        let panel = Self.makePanel(view, frame: frame)
+        panel.delegate = self
+        panel.onClose = { [weak self] in self?.close() }
+        panel.setFrame(frame, display: true)
+        panel.makeKeyAndOrderFront(nil)
+
+        self.panel = panel
+        self.view = view
+        self.capture = capture
+        self.cardID = cardID
+    }
+
+    /// The filmstrip's panel, with the strip taking the keys.
+    static func makePanel(_ view: FilmstripView, frame: CGRect) -> FilmstripPanel {
         let panel = FilmstripPanel(contentRect: frame, styleMask: [.nonactivatingPanel, .borderless],
                                    backing: .buffered, defer: false)
         panel.level = .statusBar
@@ -377,15 +466,9 @@ final class FilmstripController: NSObject, NSWindowDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.contentView = view
-        panel.delegate = self
-        panel.onCancel = { [weak self] in self?.close() }
-        panel.setFrame(frame, display: true)
-        panel.makeKeyAndOrderFront(nil)
-
-        self.panel = panel
-        self.view = view
-        self.capture = capture
-        self.cardID = cardID
+        panel.initialFirstResponder = view.strip
+        panel.makeFirstResponder(view.strip)
+        return panel
     }
 
     /// Loads the capture's frames and captions into the view.
@@ -421,13 +504,18 @@ final class FilmstripController: NSObject, NSWindowDelegate {
         guard !removed.isEmpty else { return }
         let folder = capture.folder
         log("filmstrip: removing \(removed.count) frame(s)")
+        onTrimStarted(cardID)
         Task { [weak self] in
             let trimmed = await Task.detached {
                 Result { try CaptureExporter.remove(frameIndices: removed, from: folder) }
             }.value
             switch trimmed {
-            case .success(let capture): self?.onTrimmed(capture, cardID)
-            case .failure(let error): log("filmstrip trim failed: \(error)")
+            case .success(let trimmed):
+                self?.onTrimmed(trimmed, cardID)
+            case .failure(let error):
+                log("filmstrip trim failed: \(error)")
+                // The re-renders are staged first, so a failed trim leaves the capture as it was.
+                self?.onTrimmed(capture, cardID)
             }
         }
     }
