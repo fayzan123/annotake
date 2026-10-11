@@ -87,6 +87,8 @@ final class FilmstripStripView: NSView, NSDraggingSource {
     }
 
     var onSelectionChange: () -> Void = {}
+    /// A click on a frame, or Space: show the current frame full screen.
+    var onShowFrame: () -> Void = {}
     private var downPoint: CGPoint?
     private var dragStarted = false
 
@@ -111,11 +113,11 @@ final class FilmstripStripView: NSView, NSDraggingSource {
         needsDisplay = true
     }
 
-    private func closeRect(for rect: CGRect) -> CGRect {
+    func closeRect(for rect: CGRect) -> CGRect {
         CGRect(x: rect.maxX - Self.closeSize - 6, y: rect.minY + 6, width: Self.closeSize, height: Self.closeSize)
     }
 
-    private func restoreRect(for rect: CGRect) -> CGRect {
+    func restoreRect(for rect: CGRect) -> CGRect {
         CGRect(x: rect.midX - 40, y: rect.midY - 13, width: 80, height: 26)
     }
 
@@ -154,6 +156,7 @@ final class FilmstripStripView: NSView, NSDraggingSource {
         beginDraggingSession(with: [item], event: event, source: self)
     }
 
+    /// ✕ removes a frame and Restore brings it back; a click anywhere else on a frame shows it full screen.
     override func mouseUp(with event: NSEvent) {
         defer { downPoint = nil }
         guard let downPoint, !dragStarted, let position = tile(at: downPoint) else { return }
@@ -162,14 +165,27 @@ final class FilmstripStripView: NSView, NSDraggingSource {
         selection.moveCurrent(to: position)
         let rect = tileRects()[position]
         let frameIndex = tiles[position].frameIndex
-        let removed = selection.removed.contains(frameIndex)
-        if removed || closeRect(for: rect).insetBy(dx: -4, dy: -4).contains(point) {
+        let button = selection.removed.contains(frameIndex) ? restoreRect(for: rect)
+            : selection.canRemove(frameIndex) ? closeRect(for: rect) : nil
+        if let button, button.insetBy(dx: -4, dy: -4).contains(point) {
             selection.toggle(frameIndex)
+        } else {
+            onShowFrame()
         }
     }
 
-    /// ← and → move the ring, and ⌫ removes the current frame or restores it. Return and Esc go on to the panel.
+    /// Space shows the current frame full screen; the frame keys are below. Return and Esc go on to the panel.
     override func keyDown(with event: NSEvent) {
+        if Int(event.keyCode) == kVK_Space {
+            onShowFrame()
+        } else if !handleFrameKey(event) {
+            super.keyDown(with: event)
+        }
+    }
+
+    /// The keys the strip and full screen share: ← and → move the current frame, and ⌫ removes it or restores it.
+    /// False for any other key.
+    func handleFrameKey(_ event: NSEvent) -> Bool {
         switch Int(event.keyCode) {
         case kVK_LeftArrow:
             moveCurrent(by: -1)
@@ -179,12 +195,13 @@ final class FilmstripStripView: NSView, NSDraggingSource {
             // Held down, it would flip the frame back and forth.
             if !event.isARepeat { selection.toggleCurrent() }
         default:
-            super.keyDown(with: event)
+            return false
         }
+        return true
     }
 
     /// Moves the ring and scrolls it into view, with a little room on the side it moved to.
-    private func moveCurrent(by offset: Int) {
+    func moveCurrent(by offset: Int) {
         selection.moveCurrent(by: offset)
         let rects = tileRects()
         guard rects.indices.contains(selection.current) else { return }
@@ -277,7 +294,8 @@ final class FilmstripView: NSView {
     static let height = padding * 2 + headerHeight + FilmstripStripView.frameHeight + FilmstripStripView.captionHeight
         + scrollerHeight
     static let background = NSColor(white: 0.1, alpha: 0.96)
-    static let hint = "← → pick a frame · ⌫ removes or restores · Return applies · drag a frame out on its own"
+    static let hint = "Click a frame or press Space to see it full screen · ← → pick a frame · ⌫ removes or restores · "
+        + "Return applies · drag a frame out on its own"
 
     let strip = FilmstripStripView(frame: .zero)
     let scrollView = FilmstripScrollView(frame: .zero)
@@ -338,9 +356,13 @@ final class FilmstripView: NSView {
         (heading as NSString).draw(at: CGPoint(x: Self.padding, y: Self.padding + 2), withAttributes: headingAttributes)
         let hintAttributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11),
                                                              .foregroundColor: NSColor(white: 0.6, alpha: 1)]
-        let headingWidth = (heading as NSString).size(withAttributes: headingAttributes).width
-        (Self.hint as NSString).draw(at: CGPoint(x: Self.padding + headingWidth + 12, y: Self.padding + 4),
-                                     withAttributes: hintAttributes)
+        // Truncated, so it never runs under the ✕ on a narrow screen.
+        let style = NSMutableParagraphStyle()
+        style.lineBreakMode = .byTruncatingTail
+        let hintX = Self.padding + (heading as NSString).size(withAttributes: headingAttributes).width + 12
+        (Self.hint as NSString).draw(in: CGRect(x: hintX, y: Self.padding + 4, width: max(closeRect.minX - 12 - hintX, 0),
+                                                height: 16),
+                                     withAttributes: hintAttributes.merging([.paragraphStyle: style]) { $1 })
 
         NSColor(white: 0.35, alpha: 1).setFill()
         NSBezierPath(ovalIn: closeRect).fill()
@@ -411,6 +433,8 @@ final class FilmstripController: NSObject, NSWindowDelegate {
 
     private var panel: FilmstripPanel?
     private var view: FilmstripView?
+    /// The current frame full screen, over the filmstrip.
+    private var viewer: FrameViewerPanel?
     private var capture: FinishedCapture?
     private var cardID: Int?
     private var closing = false
@@ -435,6 +459,7 @@ final class FilmstripController: NSObject, NSWindowDelegate {
         let view = FilmstripView(frame: .zero)
         Self.configure(view, capture: capture)
         view.onClose = { [weak self] in self?.close() }
+        view.strip.onShowFrame = { [weak self] in self?.showFullScreen() }
 
         guard let screen = cards.currentScreen else { return }
         let visible = screen.visibleFrame
@@ -471,6 +496,44 @@ final class FilmstripController: NSObject, NSWindowDelegate {
         return panel
     }
 
+    /// Full screen's panel, over the filmstrip and the cards, with the viewer taking the keys.
+    static func makeViewerPanel(_ view: FrameViewerView, frame: CGRect) -> FrameViewerPanel {
+        let panel = FrameViewerPanel(contentRect: frame, styleMask: [.nonactivatingPanel, .borderless],
+                                     backing: .buffered, defer: false)
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.hidesOnDeactivate = false
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.contentView = view
+        panel.initialFirstResponder = view
+        panel.makeFirstResponder(view)
+        return panel
+    }
+
+    /// Shows the current frame full screen, on the filmstrip's screen.
+    private func showFullScreen() {
+        guard viewer == nil, let panel, let view, let screen = panel.screen ?? NSScreen.main else { return }
+        let viewerView = FrameViewerView(strip: view.strip)
+        viewerView.onBack = { [weak self] in self?.closeFullScreen() }
+        viewerView.onDone = { [weak self] in self?.close() }
+        let viewer = Self.makeViewerPanel(viewerView, frame: screen.frame)
+        viewer.delegate = self
+        // Set before it takes the keys, so the filmstrip doesn't take that for a click outside.
+        self.viewer = viewer
+        viewer.makeKeyAndOrderFront(nil)
+    }
+
+    /// Back to the filmstrip, its ring on the frame full screen showed last.
+    private func closeFullScreen() {
+        guard let viewer else { return }
+        viewer.delegate = nil
+        viewer.orderOut(nil)
+        self.viewer = nil
+        panel?.makeKeyAndOrderFront(nil)
+    }
+
     /// Loads the capture's frames and captions into the view.
     static func configure(_ view: FilmstripView, capture: FinishedCapture) {
         let frames = capture.manifest.result.frames
@@ -487,7 +550,9 @@ final class FilmstripController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        // A click outside.
+        // Full screen taking the keys from the filmstrip.
+        if viewer != nil, notification.object as? NSWindow === panel { return }
+        // A click outside, or a switch to another app while full screen.
         close()
     }
 
@@ -496,6 +561,11 @@ final class FilmstripController: NSObject, NSWindowDelegate {
         closing = true
         defer { closing = false }
         let removed = view.strip.selection.removed
+        if let viewer {
+            viewer.delegate = nil
+            viewer.orderOut(nil)
+            self.viewer = nil
+        }
         panel.delegate = nil
         panel.orderOut(nil)
         self.panel = nil

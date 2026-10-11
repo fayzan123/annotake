@@ -70,12 +70,48 @@ struct FilmstripKeysTests {
         #expect(strip.selection.removed == [1])
     }
 
-    @Test func aClickMovesTheRingWithoutRemoving() {
+    @Test func aClickOnAFrameShowsItFullScreen() {
         let strip = filmstrip().strip
+        var shown = 0
+        strip.onShowFrame = { shown += 1 }
         let third = strip.tileRects()[2]
         click(strip, at: CGPoint(x: third.midX, y: third.midY))
+        #expect(shown == 1)
         #expect(strip.selection.current == 2)
         #expect(strip.selection.removed == [])
+    }
+
+    @Test func aClickOnItsCrossRemovesAFrame() {
+        let strip = filmstrip().strip
+        var shown = 0
+        strip.onShowFrame = { shown += 1 }
+        let cross = strip.closeRect(for: strip.tileRects()[2])
+        click(strip, at: CGPoint(x: cross.midX, y: cross.midY))
+        #expect(strip.selection.removed == [3])
+        #expect(shown == 0)
+    }
+
+    @Test func aRemovedFrameComesBackFromRestoreAndShowsFromElsewhere() {
+        let strip = filmstrip().strip
+        var shown = 0
+        strip.onShowFrame = { shown += 1 }
+        press(kVK_Delete, on: strip)
+        let first = strip.tileRects()[0]
+        click(strip, at: CGPoint(x: first.minX + 10, y: first.maxY - 10))
+        #expect(shown == 1)
+        #expect(strip.selection.removed == [1])
+        let restore = strip.restoreRect(for: first)
+        click(strip, at: CGPoint(x: restore.midX, y: restore.midY))
+        #expect(strip.selection.removed == [])
+        #expect(shown == 1)
+    }
+
+    @Test func spaceShowsTheCurrentFrameFullScreen() {
+        let strip = filmstrip().strip
+        var shown = 0
+        strip.onShowFrame = { shown += 1 }
+        press(kVK_Space, on: strip)
+        #expect(shown == 1)
     }
 
     @Test func theStripScrollsToKeepTheRingInView() {
