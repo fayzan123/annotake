@@ -26,7 +26,10 @@ enum UISnapshots {
         write(ready, to: directory, as: "card-ready-hover.png")
         write(CardView(state: .failed(folder: URL(fileURLWithPath: NSHomeDirectory()))), to: directory, as: "card-error.png")
 
-        write(filmstrip(), to: directory, as: "filmstrip.png")
+        let filmstrip = filmstrip()
+        write(filmstrip, to: directory, as: "filmstrip.png")
+        write(frameViewer(filmstrip.strip, position: 2), to: directory, as: "frame-viewer.png")
+        write(frameViewer(filmstrip.strip, position: 1), to: directory, as: "frame-viewer-removed.png")
         write(menuBarIcon(), to: directory, as: "menubar.png")
 
         var problems: [String] = []
@@ -176,7 +179,7 @@ enum UISnapshots {
 
     /// Four frames: the first current, the second removed, the third hovered.
     @MainActor
-    private static func filmstrip() -> NSView {
+    private static func filmstrip() -> FilmstripView {
         let capture = sampleCapture(frames: 4, duration: 12)
         let view = FilmstripView(frame: CGRect(x: 0, y: 0, width: 1200, height: FilmstripView.height))
         view.title = RecentCaptures.title(for: capture)
@@ -193,6 +196,15 @@ enum UISnapshots {
         view.strip.selection.toggle(frames[1].frameIndex)
         view.strip.hovered = 2
         view.layoutSubtreeIfNeeded()
+        return view
+    }
+
+    /// The filmstrip's frame at `position` full screen, on a 14-inch MacBook Pro's screen.
+    @MainActor
+    private static func frameViewer(_ strip: FilmstripStripView, position: Int) -> NSView {
+        strip.selection.moveCurrent(to: position)
+        let view = FrameViewerView(strip: strip)
+        view.frame = CGRect(x: 0, y: 0, width: 1512, height: 982)
         return view
     }
 
