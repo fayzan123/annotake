@@ -155,6 +155,20 @@ Drag a rectangle to capture, using `SCStreamConfiguration.sourceRect`. It would 
 
 Dropping the card into VS Code's integrated terminal inserted only the first file path, as plain text, while the drag still reported success. A card action (or a modifier-drag) that puts all frame paths on the clipboard, one per line or space-separated and shell-quoted, would cover terminals that take a single path. Check Terminal.app and iTerm first; they may already take all 20.
 
+## steps.md in the drag
+
+**Status:** parked on 2026-10-11 by Fayzan. He hadn't known it was left out on purpose (see Considered and not planned below), and adding it may cause problems nobody has checked yet.
+
+**Why it's back:** from his own use, `steps.md` is one of the most useful parts of a capture, and no drop target ever gets it: the card drags only the PNGs. In VS Code's integrated terminal, Claude Code gets just the first frame. VS Code 1.108's terminal reads only `files[0]` from a drop (checked in its `onDrop`), as M0 found; Terminal.app and iTerm insert every path (Checkpoint 2).
+
+**The idea:** drag `steps.md` first, then the frames, and have each step's line end with its frame's file name (`1. 0:00 · Finder · Clicked image "School" · 01_0m00s.png`), plus one line saying the frames sit next to it. A terminal that keeps one file then gets the one that leads to all the others, so Claude Code can open every frame from it, and every target that takes text files gets the step log.
+
+**What could break, to test on real targets first:**
+- A target that refuses a `.md` file, maybe refusing the whole drop. Cursor is untested; M0 only dropped PNGs.
+- File caps keep the first N: with `steps.md` first, Slack keeps it and 9 frames, and ChatGPT's free plan keeps it and 1. Claude.ai may cap a message at 20 files, which a 20-frame capture plus `steps.md` would pass.
+- Claude Code in Terminal.app with `.md` and image paths mixed, which may change how it attaches the images.
+- The first run's drop box counts dropped files as frames, so it would need to count only the PNGs.
+
 ## Frame sensitivity, changeable while recording
 
 **Status:** parked on 2026-10-11 by Fayzan, from his own use, behind the long-capture drag crash and the filmstrip's keyboard controls.
@@ -180,7 +194,7 @@ Dropping the card into VS Code's integrated terminal inserted only the first fil
 
 ## Considered and not planned
 
-- **Folder drag, steps.md in the drag, or a copy-log button:** caption strips were chosen instead.
+- **Folder drag, steps.md in the drag, or a copy-log button:** caption strips were chosen instead. `steps.md` in the drag is parked again above, since 2026-10-11.
   - Web chats reject dropped folders.
   - It's unverified whether Cursor accepts a dropped .md file.
   - Revisit if an agent needs the text log separately.
