@@ -1,4 +1,4 @@
-import CoreGraphics
+import AppKit
 @testable import AnnotakeApp
 import Testing
 
@@ -66,5 +66,21 @@ struct CardTests {
         #expect(ClickOrDrag.isClick(from: .zero, to: CGPoint(x: 3, y: 0)))
         #expect(!ClickOrDrag.isClick(from: .zero, to: CGPoint(x: 4, y: 0)))
         #expect(!ClickOrDrag.isClick(from: .zero, to: CGPoint(x: 2.9, y: 2.9)))
+    }
+
+    /// AppKit lays out a drag of 17 or more items on worker threads, which read the card's `isFlipped`. When only
+    /// the main thread could read it, that trapped: dragging a 20-frame card quit Annotake.
+    @Test func cardCanBeReadOffTheMainThread() async {
+        await #expect(processExitsWith: .success) {
+            await MainActor.run {
+                nonisolated(unsafe) let card = CardView(state: .saving(duration: 0))
+                let done = DispatchSemaphore(value: 0)
+                DispatchQueue.global().async {
+                    _ = card.value(forKey: "flipped")
+                    done.signal()
+                }
+                done.wait()
+            }
+        }
     }
 }
