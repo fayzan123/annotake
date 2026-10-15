@@ -36,11 +36,25 @@ enum EmailConsent {
     }
 
     /// Whether /api/subscribe will take the address: email.js's isPlausibleEmail on the cleaned address, and on its
-    /// key, the lowercase the site keeps it under, composed again. The key can be longer: İ lowercases to i and a dot.
+    /// key. The key can be longer: İ lowercases to i and a dot.
     static func isPlausible(_ input: String) -> Bool {
         let email = clean(input)
-        let key = composed(email.lowercased())
-        return passes(email) && passes(key)
+        return passes(email) && passes(key(email))
+    }
+
+    /// The address as /api/subscribe keys its contact, email.js's emailKey: cleaned, lowercased, then composed again,
+    /// so any capitals, padding, or encoding of the accents give one key. ICU lowercases and composes it, as it does in
+    /// JavaScript. The only skew left is capitals newer than the Mac's ICU (Unicode 17's, on macOS 15), which stay as
+    /// they are: the same length as their small letters, so isPlausible still agrees with the site.
+    static func key(_ input: String) -> String {
+        composed(lowercased(clean(input)))
+    }
+
+    /// Lowercase as ICU has it, and so as JavaScript's toLowerCase() does: a Σ that ends a word becomes ς. Not
+    /// lowercased(), which writes σ for every Σ: a Greek address in capitals would get a key the site doesn't use, and
+    /// the same address retyped in small letters would look like another one.
+    private static func lowercased(_ text: String) -> String {
+        text.applyingTransform(StringTransform("Any-Lower"), reverse: false) ?? text.lowercased()
     }
 
     /// NFC as ICU composes, and so as JavaScript's normalize() does. Not precomposedStringWithCanonicalMapping, whose

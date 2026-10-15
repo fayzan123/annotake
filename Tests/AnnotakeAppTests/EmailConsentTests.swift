@@ -94,8 +94,8 @@ struct EmailConsentTests {
         #expect(EmailConsent.clean(" \n\u{3000}") == "")
     }
 
-    /// The addresses of email.test.js's emailKey tests. The app keeps no key, but /api/subscribe checks each address's
-    /// key as well as the address, and every one of these passes both.
+    /// The addresses of email.test.js's emailKey tests. /api/subscribe checks each address's key as well as the
+    /// address, and every one of these passes both.
     @Test(arguments: [
         "  Sam@Example.COM ", "J\u{DC}RGEN@M\u{DC}LLER.DE", "ju\u{308}rgen@mu\u{308}ller.de",
         "j\u{FC}rgen@m\u{FC}ller.de", "用户@例子.广告",
@@ -105,6 +105,50 @@ struct EmailConsentTests {
     ])
     func emailKeyAddressesAreAccepted(_ address: String) {
         #expect(EmailConsent.isPlausible(address))
+    }
+
+    // MARK: - The key, case for case from email.test.js's emailKey tests
+
+    /// /api/subscribe keeps a contact under the address's key, so EmailSignup compares keys to tell a changed address
+    /// from the same one retyped.
+    @Test func keyMakesOneKeyPerAddressWhateverTheCapitalsOrTheAccentsEncoding() {
+        #expect(EmailConsent.key("  Sam@Example.COM ") == "sam@example.com")
+        #expect(scalars(EmailConsent.key("J\u{DC}RGEN@M\u{DC}LLER.DE"))
+                == scalars(EmailConsent.key("j\u{FC}rgen@m\u{FC}ller.de")))
+    }
+
+    @Test(arguments: [
+        "  Sam@Example.COM ", "j\u{FC}rgen@m\u{FC}ller.de", "J\u{DC}RGEN@M\u{DC}LLER.DE", "用户@例子.广告",
+        // Capitals with a mark that composes only once they're small: ǰ, ẖ, ẗ, ẘ, and ẙ.
+        "J\u{30C}ohn@example.com", "H\u{331}ana@example.com", "T\u{308}om@example.com", "W\u{30A}ill@example.com",
+        "Y\u{30A}ara@example.com",
+        // İ lowercases to i and a dot above, which then belongs after a mark below.
+        "\u{130}\u{331}sa@example.com",
+    ])
+    func aKeysKeyIsItself(_ address: String) {
+        let key = EmailConsent.key(address)
+        #expect(scalars(EmailConsent.key(key)) == scalars(key))
+        #expect(scalars(key) == scalars(nfc(key)), "keys to NFC")
+    }
+
+    /// J and a combining caron have no composed capital, but small they compose to ǰ (U+01F0). İ lowercases to i and a
+    /// dot above, as JavaScript's toLowerCase has it (checked with node).
+    @Test func keyComposesAfterLowercasing() {
+        #expect(scalars(EmailConsent.key("J\u{30C}ohn@example.com")) == scalars("\u{1F0}ohn@example.com"))
+        #expect(scalars(EmailConsent.key("\u{130}sa@example.com")) == scalars("i\u{307}sa@example.com"))
+    }
+
+    /// JavaScript lowercases a Σ that ends a word to ς, and any other to σ; Swift's lowercased() writes σ for both. The
+    /// key lowercases as JavaScript does, so a Greek address in capitals and in small letters is one contact, as on the
+    /// site (each checked with node).
+    @Test func keyLowercasesAFinalSigmaAsJavaScriptDoes() {
+        #expect(scalars(EmailConsent.key("ΟΔΥΣΣΕΥΣ@example.gr")) == scalars("οδυσσευς@example.gr"))
+        #expect(scalars(EmailConsent.key("οδυσσευς@example.gr")) == scalars("οδυσσευς@example.gr"))
+        // Accents and dots are looked past: ΑΣ́ still ends a word, and ΣΑΜΟΣ goes on through the dot to Π.
+        #expect(scalars(EmailConsent.key("ΑΣ\u{301}@example.gr")) == scalars("ας\u{301}@example.gr"))
+        #expect(scalars(EmailConsent.key("ΣΑΜΟΣ.Π@example.gr")) == scalars("σαμοσ.π@example.gr"))
+        // A Σ with no letter before it isn't a word's end.
+        #expect(scalars(EmailConsent.key("Σ@example.gr")) == scalars("σ@example.gr"))
     }
 
     // MARK: - Where Swift's defaults differ from JavaScript's (every answer here checked against email.js with node)
@@ -205,7 +249,7 @@ struct EmailConsentTests {
         #expect(!EmailConsent.isPlausible("\(repeated("a", 63))J\u{30C}@example.com"), "65 units, and a 64-unit key")
         #expect(EmailConsent.isPlausible("\u{130}J\u{30C}\(repeated("a", 61))@example.com"),
                 "64 units, and a key of 64 once composed")
-        // JavaScript lowercases a final Σ to ς, and Swift to σ: the same length, so the same answer.
+        // A Σ that ends a word lowercases to ς, as in JavaScript: one code unit, as Σ is.
         #expect(EmailConsent.isPlausible("\u{3A3}\u{391}\u{3A3}@example.com"))
         #expect(EmailConsent.isPlausible("\(repeated("a", 63))\u{3A3}@example.com"))
     }
@@ -223,4 +267,9 @@ private func scalars(_ text: String) -> [UInt32] {
 
 private func hex(_ value: UInt32) -> String {
     String(format: "%04X", value)
+}
+
+/// The string composed (NFC) as ICU composes, and so as JavaScript's normalize() does.
+private func nfc(_ text: String) -> String {
+    text.applyingTransform(StringTransform("Any-NFC"), reverse: false) ?? text
 }

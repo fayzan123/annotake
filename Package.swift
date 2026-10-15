@@ -11,7 +11,8 @@ let package = Package(
         .executable(name: "annotake-appcast", targets: ["annotake-appcast"]),
     ],
     dependencies: [
-        // Updates, linked only into the executable, so the libraries and their tests have no network code.
+        // Updates, linked only into the executable. The libraries' one network call is EmailSignup.post, which only the
+        // app itself makes: tests, --selftest, and --render-ui make no network calls.
         .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
     ],
     targets: [
