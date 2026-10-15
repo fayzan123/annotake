@@ -121,7 +121,7 @@ Broadcasts get Resend's own unsubscribe link and preference page. The welcome em
 
 ### 5.1 The welcome email
 
-- **From** `Fayzan from Annotake <hello@annotake.app>`, on the domain Resend already sends for. **Reply-to** the same address as `Feedback.address` (open item, §10).
+- **From** `Fayzan from Annotake <hello@annotake.app>`, on the domain Resend already sends for. **Reply-to** `Feedback.address`, Fayzan's personal Gmail (decided 2026-10-15: no Google Workspace, and no inbox at annotake.app). Reply-to is only a header, so sending stays on Resend and replies land in Gmail. Every recipient sees the Gmail address.
 - **Subject:** "Welcome to Annotake".
 - **Body,** as plain text and simple HTML like the link email:
   - a one-line thank-you;
@@ -221,11 +221,16 @@ The Terms gain one line: using Annotake means getting important notices, and any
 - **Read and accept** the step's wording, the welcome email, and the privacy policy and Terms changes. A short review by a Canadian lawyer before the first email to the list is cheap insurance, but it isn't required to ship.
 - **Try it:** a fresh first run, the welcome email, a test broadcast to each topic, and an unsubscribe.
 
+**Resend works before this ships.** On 2026-10-15 a live `POST /api/link` to Fayzan's Gmail answered `502 send`, and Gmail had never received an Annotake email: the domain is verified and its DNS is right (DKIM, SPF and the bounce MX on `send.annotake.app`, DMARC `p=none`), but `RESEND_API_KEY` was never added to Vercel (Checkpoint 4, step 3). The release with the email step doesn't ship until each of these passes, in order:
+1. **The link email:** with `RESEND_API_KEY` set, `POST /api/link` answers 200, and the email arrives in Gmail's inbox, not spam, with `spf=pass`, `dkim=pass` (`d=annotake.app`) and `dmarc=pass` in its Authentication-Results header.
+2. **The list:** with §4.3's settings, a fresh first run creates the contact in Resend with the right topics and consent properties, and the welcome email passes the same checks.
+3. **Replies:** replying to the welcome email from another address lands in Fayzan's Gmail.
+4. **Unsubscribing:** the welcome email's one-click unsubscribe and a test broadcast's topic page both work, and an unsubscribed contact gets neither the next broadcast nor a second welcome after typing the address again.
+
 **Stage 2, later:** sign-in takes the email step's place. A signed-in account is matched to its Resend contact by email: nobody is subscribed twice or asked again, and an existing copy is asked to sign in once.
 
 ## 10. Open items
 
-- **The reply-to address.** This spec uses `Feedback.address` (Fayzan's Gmail today), which Send Feedback already puts in drafts. The other choices are a forwarding address on annotake.app, which goes against the 2026-10-01 "no addresses at annotake.app" decision, or no reply at all, which loses the "reply with feedback" line.
 - **The mailing address,** above.
 
 ## 11. Changes to other docs
