@@ -222,7 +222,7 @@ The Terms gain one line: using Annotake means getting important notices, and any
 - **Try it:** a fresh first run, the welcome email, a test broadcast to each topic, and an unsubscribe.
 
 **Resend works before this ships.** On 2026-10-15 a live `POST /api/link` to Fayzan's Gmail answered `502 send`, and Gmail had never received an Annotake email: the domain is verified and its DNS is right (DKIM, SPF and the bounce MX on `send.annotake.app`, DMARC `p=none`), but `RESEND_API_KEY` was never added to Vercel (Checkpoint 4, step 3). The release with the email step doesn't ship until each of these passes, in order:
-1. **The link email:** with `RESEND_API_KEY` set, `POST /api/link` answers 200, and the email arrives in Gmail's inbox, not spam, with `spf=pass`, `dkim=pass` (`d=annotake.app`) and `dmarc=pass` in its Authentication-Results header.
+1. **The link email:** with `RESEND_API_KEY` set, `POST /api/link` answers 200, and the email arrives in Gmail's inbox, not spam, with `spf=pass`, `dkim=pass` (`d=annotake.app`) and `dmarc=pass` in its Authentication-Results header. **Passed 2026-10-15** after the key was added: inbox, in the Updates tab.
 2. **The list:** with §4.3's settings, a fresh first run creates the contact in Resend with the right topics and consent properties, and the welcome email passes the same checks.
 3. **Replies:** replying to the welcome email from another address lands in Fayzan's Gmail.
 4. **Unsubscribing:** the welcome email's one-click unsubscribe and a test broadcast's topic page both work, and an unsubscribed contact gets neither the next broadcast nor a second welcome after typing the address again.
