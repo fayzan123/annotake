@@ -5,7 +5,9 @@
   "trailingSlash": false,
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
   "functions": {
-    "api/link.js": { "maxDuration": 10 }
+    "api/link.js": { "maxDuration": 10 },
+    "api/subscribe.js": { "maxDuration": 10 },
+    "api/unsubscribe.js": { "maxDuration": 10 }
   },
   "redirects": [
     {

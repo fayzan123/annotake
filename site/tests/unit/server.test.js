@@ -34,6 +34,18 @@ const FIXTURE = {
     }
     export function GET() { return Response.json({ got: 'GET' }); }
   `,
+  'api/unsubscribe.js': `
+    export function GET(request) {
+      const query = new URL(request.url).searchParams;
+      return Response.json({ e: query.get('e'), s: query.get('s'), dry: process.env.EMAIL_DRY_RUN ?? null });
+    }
+  `,
+  // The functions' shared code: Vercel never makes a function of it, so the server mustn't even import it.
+  'api/_lib/x.js': `
+    globalThis.annotakeLibImported = true;
+    export function GET() { return Response.json({ ran: 'GET' }); }
+    export function POST() { return Response.json({ ran: 'POST' }); }
+  `,
 };
 
 let dir, server, port;
@@ -176,6 +188,24 @@ test("GET /api/link runs the function's GET, and a method it doesn't export answ
   assert.equal(got.status, 200);
   assert.deepEqual(JSON.parse(got.body), { got: 'GET' });
   assert.equal((await get('/api/link', { method: 'PUT', body: '{}' })).status, 405);
+});
+
+test('another function gets its query, in dry-run mode too', async () => {
+  const res = await get('/api/unsubscribe?e=sam%40example.com&s=abc');
+  assert.equal(res.status, 200);
+  assert.deepEqual(JSON.parse(res.body), { e: 'sam@example.com', s: 'abc', dry: '1' });
+});
+
+test('the shared code in api/_lib never runs as a function, and nothing outside api/ does either', async () => {
+  for (const [method, path] of [
+    ['GET', '/api/_lib/x'], ['POST', '/api/_lib/x'], ['GET', '/api/_lib/x.js'], ['GET', '/api/_lib'],
+    ['GET', '/api/link/..%2f_lib%2fx'], ['GET', '/api/..%2fassets%2fsite'], ['GET', '/api/.hidden'],
+  ]) {
+    const res = await get(path, { method, body: method === 'POST' ? '{}' : undefined });
+    assert.equal(res.status, 404, `${method} ${path}`);
+    assert.match(res.body, /<title>Not found<\/title>/, `${method} ${path}`);
+  }
+  assert.equal(globalThis.annotakeLibImported, undefined, 'api/_lib/x.js was never imported');
 });
 
 test('HEAD answers the headers without a body', async () => {

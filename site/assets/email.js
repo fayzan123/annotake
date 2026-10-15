@@ -1,4 +1,4 @@
-// The email check, shared by the page (linkform.js) and the function (api/link.js). It accepts every real address,
+// The email check, shared by the page (linkform.js) and the functions in api/. It accepts every real address,
 // plus addressing and non-ASCII included, and rejects what can't be one, line breaks above all, which could inject
 // headers. It never decides deliverability; the email does that.
 
@@ -18,7 +18,12 @@ export function isPlausibleEmail(input) {
   return domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.') && !domain.includes('..');
 }
 
-/** One key per address, whatever the capitals, for "one email per address per day". */
+/**
+ * One key per address, whatever the capitals, for "one email per address per day" and the email list's contacts. It's
+ * composed again after lowercasing: J with a combining caron has no composed capital, but lowercased it composes to ǰ.
+ * So a key's key is itself, which the unsubscribe link's check relies on: the link carries the key, and the check keys
+ * it again.
+ */
 export function emailKey(input) {
-  return cleanEmail(input).toLowerCase();
+  return cleanEmail(input).toLowerCase().normalize('NFC');
 }

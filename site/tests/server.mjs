@@ -1,7 +1,9 @@
 // A local stand-in for Vercel, so every test runs without it. It serves a site folder the way that folder's
 // vercel.json says: clean URLs, no trailing slashes, the redirects, the headers, 404.html, and the functions in api/,
 // which get a web Request as on Vercel. Files .vercelignore lists, dotfiles, and anything above the root aren't served.
-// /api/link runs in dry-run mode (EMAIL_DRY_RUN=1) unless `env` says otherwise, so it never sends an email.
+// As on Vercel, nothing under a `_` or `.` name in api/ is a function: api/_lib holds the functions' shared code.
+// The functions run in dry-run mode (EMAIL_DRY_RUN=1) unless `env` says otherwise, so they never send an email or
+// change a contact.
 //
 //   node site/tests/server.mjs [--port 4173] [--root site]
 import http from 'node:http';
@@ -83,7 +85,13 @@ export function createServer({ root, env = {} }) {
   }
 
   async function runFunction(req, res, pathname, search) {
-    const file = join(root, `${pathname}.js`);
+    const file = resolve(root, `.${pathname}.js`);
+    // Vercel makes a function only of a file in api/ with no `_` or `.` name on its path, so api/_lib never runs. A `..`
+    // that climbs out of api/ starts with a dot too.
+    const segments = relative(join(root, 'api'), file).split(sep);
+    if (segments.some(segment => segment.startsWith('_') || segment.startsWith('.'))) {
+      return send(req, res, pathname, 404, ...(await notFound()));
+    }
     let module;
     try {
       // The modification time keeps edits live while `make site-dev` runs.
@@ -177,6 +185,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const root = values.root ? resolve(values.root) : fileURLToPath(new URL('..', import.meta.url));
   const port = Number(values.port);
   createServer({ root }).listen(port, '127.0.0.1', () => {
-    console.log(`Serving ${root} at http://localhost:${port} (/api/link in dry-run mode)`);
+    console.log(`Serving ${root} at http://localhost:${port} (the functions in dry-run mode)`);
   });
 }
