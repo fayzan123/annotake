@@ -20,8 +20,12 @@ test('a commit that leaves site/ alone skips the build', () => {
   assert.equal(config.ignoreCommand, 'git diff --quiet HEAD^ HEAD -- .');
 });
 
-test('the link function may run for 10 s', () => {
-  assert.deepEqual(config.functions, { 'api/link.js': { maxDuration: 10 } });
+test('the three functions may each run for 10 s', () => {
+  assert.deepEqual(config.functions, {
+    'api/link.js': { maxDuration: 10 },
+    'api/subscribe.js': { maxDuration: 10 },
+    'api/unsubscribe.js': { maxDuration: 10 },
+  });
 });
 
 test('/download is a 302 to the latest disk image on GitHub', () => {

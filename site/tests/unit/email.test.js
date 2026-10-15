@@ -46,3 +46,20 @@ test('emailKey makes one key per address, whatever the capitals or the accents�
   assert.equal(emailKey('  Sam@Example.COM '), 'sam@example.com');
   assert.equal(emailKey('JÜRGEN@MÜLLER.DE'), emailKey('jürgen@müller.de'));
 });
+
+test('a key’s key is itself, even where lowercasing lets an accent compose', () => {
+  // J and a combining caron (U+030C) have no composed capital, but ǰ (U+01F0) is one character.
+  assert.equal(emailKey('J\u{30C}ohn@example.com'), '\u{1F0}ohn@example.com');
+  for (const address of [
+    '  Sam@Example.COM ', 'jürgen@müller.de', 'JÜRGEN@MÜLLER.DE', '用户@例子.广告',
+    // Capitals with a mark that composes only once they're small: ǰ, ẖ, ẗ, ẘ, and ẙ.
+    'J\u{30C}ohn@example.com', 'H\u{331}ana@example.com', 'T\u{308}om@example.com', 'W\u{30A}ill@example.com',
+    'Y\u{30A}ara@example.com',
+    // İ lowercases to i and a dot above, which then belongs after a mark below.
+    '\u{130}\u{331}sa@example.com',
+  ]) {
+    const key = emailKey(address);
+    assert.equal(emailKey(key), key, JSON.stringify(address));
+    assert.equal(key, key.normalize('NFC'), `${JSON.stringify(address)} keys to NFC`);
+  }
+});
