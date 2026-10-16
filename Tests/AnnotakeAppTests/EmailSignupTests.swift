@@ -39,6 +39,14 @@ struct EmailSignupTests {
     static let sam = EmailRecord(address: "sam@example.com", news: true, consent: "consent-2026-10-15",
                                  savedAt: Date(timeIntervalSinceReferenceDate: 813_456_789), sent: false)
 
+    /// The body the site's tests post as the app's request: site/tests/subscribe-request.json, which holds what the
+    /// app sends for `sam` from version 0.3.0 (120).
+    static func siteRequest() throws -> String {
+        struct Fixture: Decodable { var body: String }
+        let url = try EmailConsentTests.repositoryRoot().appending(path: "site/tests/subscribe-request.json")
+        return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url)).body
+    }
+
     // MARK: - Saving, and what each answer does
 
     /// Continue saves the cleaned address, the choice, and the consent id, unsent, before anything goes over the
@@ -666,9 +674,10 @@ struct EmailSignupTests {
         #expect(request.allHTTPHeaderFields == [
             "Content-Type": "application/json", "User-Agent": "Annotake/0.3.0 (120)", "Accept-Language": "en",
         ])
+        // Word for word, with sorted keys: the text the site's tests post and expect it to take, so a field renamed
+        // on one side alone fails a test.
         let json = String(decoding: try #require(request.httpBody), as: UTF8.self)
-        #expect(json == #"{"appVersion":"0.3.0 (120)","consent":"consent-2026-10-15","email":"sam@example.com","#
-                + #""news":true}"#)
+        #expect(json == (try Self.siteRequest()))
     }
 
     /// The site can't read a request with an appVersion over 32 UTF-16 code units, so it would never take the address:

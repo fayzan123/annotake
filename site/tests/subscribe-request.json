@@ -1,0 +1,4 @@
+{
+  "about": "The app's request to /api/subscribe, word for word: what EmailSignup.request(for:appVersion:) sends for EmailSignupTests.sam from version 0.3.0 (120). EmailSignupTests checks the app sends this text, and subscribe.test.js and subscribe.spec.js post it and expect it to be taken, so a field renamed on one side alone fails a test.",
+  "body": "{\"appVersion\":\"0.3.0 (120)\",\"consent\":\"consent-2026-10-15\",\"email\":\"sam@example.com\",\"news\":true}"
+}

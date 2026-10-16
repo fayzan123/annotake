@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { FROM, MAX_APP_VERSION_LENGTH, MAX_BODY_BYTES, REPLY_TO, createHandler } from '../../api/subscribe.js';
 import consent from '../../api/_lib/consent.json' with { type: 'json' };
+import appRequest from '../subscribe-request.json' with { type: 'json' };
 import { ATTEMPT_TIMEOUT_MS, RESEND_BASE, RETRY_PAUSE_MS } from '../../api/_lib/resend.js';
 import { unsubscribeUrl, verifyEmail } from '../../api/_lib/unsubscribe-token.js';
 import { welcomeEmail } from '../../api/_lib/welcome.js';
@@ -130,6 +131,12 @@ function harness({ routes = {}, env = ENV } = {}) {
 /** What the app sends: its four fields, as JSON. */
 const FIELDS = Object.freeze({ email: '  Sam@Example.COM ', news: false, consent: 'consent-2026-10-15', appVersion: '0.3.0 (120)' });
 
+/**
+ * The app's request, word for word: EmailSignupTests checks the app sends this text, so a field renamed on one side
+ * alone fails one side's tests. FIELDS stays apart, for its capitals and padding.
+ */
+const APP_REQUEST = appRequest.body;
+
 /** A POST to /api/subscribe. A body that isn't text is sent as JSON. */
 function post(body, { type = 'application/json', headers = {} } = {}) {
   if (typeof body?.email === 'string' && body.email.trim()) usedAddresses.add(body.email.trim());
@@ -202,6 +209,19 @@ test('a new address: the lookup, then the contact with its topics and consent re
     assert.equal(call.headers.get('user-agent'), 'annotake-site/1.0', call.route);
   }
   assert.deepEqual(logs, ['subscribe: added']);
+});
+
+test('the app’s request, as the app’s own tests pin it, adds the contact, and passes dry run', async () => {
+  const { handler, calls, logs, routes } = harness();
+  assert.equal((await handler.POST(post(APP_REQUEST))).status, 200);
+  assert.deepEqual(routes(), [LOOKUP, 'POST /contacts', 'POST /emails']);
+  assert.equal(calls[1].body.email, 'sam@example.com');
+  assert.deepEqual(calls[1].body.properties, PROPERTIES);
+  assert.deepEqual(calls[1].body.topics, [{ id: NOTICES, subscription: 'opt_in' }, { id: NEWS, subscription: 'opt_in' }]);
+  assert.deepEqual(logs, ['subscribe: added']);
+  const dry = harness({ env: { EMAIL_DRY_RUN: '1' } });
+  assert.equal((await dry.handler.POST(post(APP_REQUEST))).status, 200);
+  assert.deepEqual(dry.logs, ['subscribe: dry run']);
 });
 
 test('a new address with the box ticked is on Feedback and news, and the welcome says so', async () => {
