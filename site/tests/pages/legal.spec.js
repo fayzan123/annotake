@@ -75,8 +75,10 @@ const EMAIL_SECTION = [
     'one welcome email.',
   'What we keep is your email address, which emails you chose, when and how you agreed, and the app version. Resend ' +
     'stores it for us, in the United States, and keeps its sending logs for 30 days.',
-  'Unsubscribing. You can unsubscribe from any email with one click. To stop only feedback requests and news, use ' +
-    'the unsubscribe link in one of them.',
+  // Not "one click": the welcome's link asks first, so a link scanner can't unsubscribe anyone, and a broadcast's opens
+  // Resend's page. Only a mail app's own Unsubscribe button, where it shows one, is a single click.
+  'Unsubscribing. You can unsubscribe from any email with its unsubscribe link, or with your mail app’s Unsubscribe ' +
+    'button where it shows one. To stop only feedback requests and news, use the unsubscribe link in one of them.',
   // Settings' Change… adds the new address and leaves the old one as it is (design §3.3, §12).
   'How long. We keep your address until you ask us to delete it, even after you unsubscribe: it stays, marked ' +
     'unsubscribed, as proof and so the list never emails it again. Changing your address in Settings doesn’t remove ' +
