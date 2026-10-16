@@ -61,6 +61,12 @@ export function checks(base) {
       await response.body?.cancel();
       return response.status === 405 ? pass('405') : fail(`${response.status}`);
     }],
+    // The email list's functions: a deployment from before them answers 404, and the app only retries.
+    ['GET /api/subscribe answers 405', async () => {
+      const response = await fetch(url('/api/subscribe'));
+      await response.body?.cancel();
+      return response.status === 405 ? pass('405') : fail(`${response.status}`);
+    }],
     // The function reads the request before the address, so an address it won't take answers 400 only once the
     // deployment has the consent id the app sends: release an app with new wording only after this passes.
     [`POST /api/subscribe has the app’s consent id, ${consent.current}`, async () => {
@@ -71,6 +77,17 @@ export function checks(base) {
       await response.body?.cancel();
       if (response.status === 422) return fail('422: this deployment doesn’t have it yet');
       return response.status === 400 ? pass('400 for an address it won’t take') : fail(`${response.status}`);
+    }],
+    // With UNSUBSCRIBE_SECRET set, as in Production only, a link with nothing to check is 400; without it, 502.
+    ['GET /api/unsubscribe with no address or signature answers 400', async () => {
+      const response = await fetch(url('/api/unsubscribe'));
+      await response.body?.cancel();
+      return response.status === 400 ? pass('400') : fail(`${response.status}`);
+    }],
+    ['/api/_lib/consent.json, the functions’ shared code, answers 404', async () => {
+      const response = await fetch(url('/api/_lib/consent.json'));
+      await response.body?.cancel();
+      return response.status === 404 ? pass('404') : fail(`${response.status}`);
     }],
     ['the font is cached as immutable', async () => {
       const response = await fetch(url('/assets/fonts/jost-latin.v1.woff2'));

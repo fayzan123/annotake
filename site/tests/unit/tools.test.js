@@ -54,7 +54,10 @@ test('checkHeaders fails a page that sets a cookie', () => {
 test('against the local server, every smoke check passes or skips', async () => {
   const results = await smokeLocally();
   for (const [name, { status, detail }] of results) assert.notEqual(status, 'FAIL', `${name}: ${detail}`);
-  assert.equal(only(results, /consent id/).status, 'PASS');
+  // The email list's checks run in full there, so an old deployment, whose functions answer 404, fails them.
+  for (const check of [/consent id/, /^GET \/api\/subscribe /, /^GET \/api\/unsubscribe /, /_lib\/consent\.json/]) {
+    assert.equal(only(results, check).status, 'PASS', `${check}`);
+  }
 });
 
 test('the smoke test fails a deployment that doesn’t have the app’s consent id yet', async () => {
