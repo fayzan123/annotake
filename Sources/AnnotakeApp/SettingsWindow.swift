@@ -31,6 +31,17 @@ enum SettingsText {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         return url.path.hasPrefix(home) ? "~" + url.path.dropFirst(home.count) : url.path
     }
+
+    /// General's Email row (email list design §3.3), and the title of the sheet its button opens.
+    static let emailRow = "Email"
+    static let changeEmail = "Change…"
+    static let noEmail = "Not set"
+    static let changeEmailTitle = "Change your email"
+
+    /// The Email row's text: the saved address, as it was saved, or Not set.
+    static func email(_ record: EmailRecord?) -> String {
+        record?.address ?? noEmail
+    }
 }
 
 /// System Settings panes for each permission.
@@ -185,7 +196,17 @@ private struct SettingsForm<Content: View>: View {
 
 struct GeneralTab: View {
     @ObservedObject var model: SettingsModel
-    var loginItem: () -> LoginItem.Availability = { LoginItem.availability }
+    /// Observed, so the Email row follows the saved address while the window is open, even one a 400 clears.
+    @ObservedObject var signup: EmailSignup
+    var loginItem: () -> LoginItem.Availability
+    @State private var changingEmail = false
+
+    init(model: SettingsModel, signup: EmailSignup,
+         loginItem: @escaping () -> LoginItem.Availability = { LoginItem.availability }) {
+        self.model = model
+        self.signup = signup
+        self.loginItem = loginItem
+    }
 
     var body: some View {
         let availability = loginItem()
@@ -219,7 +240,88 @@ struct GeneralTab: View {
                 case .available: EmptyView()
                 }
             }
+            // The address the email step saved (email list design §3.3). It isn't a setting, so Restore Defaults
+            // leaves it.
+            Section {
+                LabeledContent(SettingsText.emailRow) {
+                    HStack {
+                        Text(SettingsText.email(signup.record))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Button(SettingsText.changeEmail) { changingEmail = true }
+                    }
+                }
+            }
         }
+        .sheet(isPresented: $changingEmail) { EmailChangeSheet(signup: signup) }
+    }
+}
+
+/// The Change… sheet's field (email list design §3.3): the email step's, without the box, since the choice made there
+/// goes with the new address. It opens with the saved address in it, so a typo can be fixed in place.
+struct EmailChange {
+    var draft: String
+
+    init(record: EmailRecord?) {
+        draft = record?.address ?? ""
+    }
+
+    /// Save is enabled once what's typed is an address /api/subscribe takes, as the email step's Continue is.
+    var canSave: Bool { EmailConsent.isPlausible(draft) }
+
+    /// Saves the cleaned address, which EmailSignup sends in the background: the same address changes nothing, and one
+    /// the site already has from this Mac is saved as sent. Returns whether the sheet closes: not for an address the
+    /// site wouldn't take, which Return in the field can send while Save is greyed out.
+    @MainActor func save(to signup: EmailSignup) -> Bool {
+        guard canSave else { return false }
+        signup.change(address: EmailConsent.clean(draft))
+        return true
+    }
+}
+
+/// Change… from the Email row: the field, the privacy policy the email step links to, and Cancel and Save.
+struct EmailChangeSheet: View {
+    static let width: CGFloat = 400
+    let signup: EmailSignup
+    @State private var change: EmailChange
+    @FocusState private var fieldFocused: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    init(signup: EmailSignup) {
+        self.signup = signup
+        _change = State(initialValue: EmailChange(record: signup.record))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(SettingsText.changeEmailTitle).font(.headline)
+            TextField("Email address", text: $change.draft, prompt: Text(OnboardingCopy.emailPlaceholder))
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .textContentType(.emailAddress)
+                .autocorrectionDisabled()
+                .focused($fieldFocused)
+                // Return: save() turns away what Save, greyed out, would.
+                .onSubmit(save)
+            HStack {
+                Link("Privacy policy", destination: EmailConsent.privacyURL)
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Save", action: save)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!change.canSave)
+            }
+        }
+        .padding(20)
+        .frame(width: Self.width)
+        // The field has focus when the sheet opens, as the email step's does.
+        .defaultFocus($fieldFocused, true)
+        .onAppear { fieldFocused = true }
+    }
+
+    private func save() {
+        if change.save(to: signup) { dismiss() }
     }
 }
 
@@ -419,11 +521,13 @@ struct SettingsFooter: View {
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let model: SettingsModel
     private let picker: RecordPickerModel
+    private let signup: EmailSignup
     private var window: NSWindow?
 
-    init(model: SettingsModel, picker: RecordPickerModel) {
+    init(model: SettingsModel, picker: RecordPickerModel, signup: EmailSignup) {
         self.model = model
         self.picker = picker
+        self.signup = signup
     }
 
     func show() {
@@ -436,7 +540,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
         for tab in SettingsTab.allCases {
-            let item = NSTabViewItem(viewController: Self.hosting(tab, model: model, picker: picker))
+            let item = NSTabViewItem(viewController: Self.hosting(tab, model: model, picker: picker, signup: signup))
             item.label = tab.title
             item.image = NSImage(systemSymbolName: tab.symbol, accessibilityDescription: tab.title)
             tabs.addTabViewItem(item)
@@ -450,9 +554,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         return window
     }
 
-    static func hosting(_ tab: SettingsTab, model: SettingsModel, picker: RecordPickerModel) -> NSViewController {
+    static func hosting(_ tab: SettingsTab, model: SettingsModel, picker: RecordPickerModel,
+                        signup: EmailSignup) -> NSViewController {
         let controller = switch tab {
-        case .general: host(GeneralTab(model: model))
+        case .general: host(GeneralTab(model: model, signup: signup))
         case .record: host(RecordTab(model: model, picker: picker))
         case .output: host(OutputTab(model: model))
         case .permissions: host(PermissionsTab())

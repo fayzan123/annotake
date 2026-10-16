@@ -16,8 +16,10 @@ enum UISnapshots {
               to: directory, as: "pill-hold.png")
         write(pill(PillText.recording(mode: .handsFree, elapsed: 12, frames: 5, maxFrames: 20, trigger: .rightCommand)),
               to: directory, as: "pill-handsfree.png")
-        write(pill(PillText.message(.screenRecordingNeeded), button: "Open Settings"),
+        write(pill(PillText.message(.screenRecordingNeeded), button: PillButton.openSettings.title),
               to: directory, as: "pill-message.png")
+        write(pill(PillText.message(.emailNeeded), button: PillButton.openEmail.title),
+              to: directory, as: "pill-email.png")
 
         write(CardView(state: .saving(duration: 21)), to: directory, as: "card-saving.png")
         let ready = CardView(state: .ready(sampleCapture(frames: 8, duration: 21), thumbnails: sampleThumbnails()))
@@ -41,7 +43,8 @@ enum UISnapshots {
     /// What the snapshots found wrong, one line each; the app's stdout goes nowhere under `open`.
     static let problemsFile = "problems.txt"
 
-    /// One snapshot per Settings tab, from a throwaway store with the defaults.
+    /// One snapshot per Settings tab, from a throwaway store with the defaults, plus General without an email address,
+    /// and the Change… sheet.
     @MainActor
     private static func renderSettings(to directory: URL, problems: inout [String]) {
         let suite = "com.fayzanmalik.annotake.ui-snapshots"
@@ -49,11 +52,27 @@ enum UISnapshots {
         defaults.removePersistentDomain(forName: suite)
         defer { defaults.removePersistentDomain(forName: suite) }
         let model = SettingsModel(store: SettingsStore(defaults: defaults))
+        let noAddress = emailSignup(defaults)
+        // The address as an earlier launch would have saved it, written to the throwaway suite: nothing is sent.
+        let record = EmailRecord(address: "sam@example.com", news: true, consent: EmailConsent.id,
+                                 savedAt: Date(timeIntervalSinceReferenceDate: 813_456_789), sent: true)
+        if let data = try? JSONEncoder().encode(record) { defaults.set(data, forKey: EmailRecord.storeKey) }
+        let signup = emailSignup(defaults)
+        if signup.record != record { problems.append("the settings snapshots' email address didn't load") }
         // Each tab on its page, with the footer bar, as the window shows it.
         func tab(_ view: some View, as name: String) { writeSwiftUI(SettingsPage { view }, to: directory, as: name) }
+        // The sheet on the window's background, which a sheet draws behind it.
+        func sheet(_ signup: EmailSignup, as name: String) {
+            writeSwiftUI(EmailChangeSheet(signup: signup).background(Color(nsColor: .windowBackgroundColor)),
+                         to: directory, as: name)
+        }
 
-        tab(GeneralTab(model: model, loginItem: { .available }), as: "settings-general.png")
-        tab(GeneralTab(model: model, loginItem: { .notInApplications }), as: "settings-general-not-in-applications.png")
+        tab(GeneralTab(model: model, signup: signup, loginItem: { .available }), as: "settings-general.png")
+        tab(GeneralTab(model: model, signup: noAddress, loginItem: { .available }), as: "settings-general-no-email.png")
+        sheet(signup, as: "settings-email-change.png")
+        sheet(noAddress, as: "settings-email-change-empty.png")
+        tab(GeneralTab(model: model, signup: signup, loginItem: { .notInApplications }),
+            as: "settings-general-not-in-applications.png")
         let picker = samplePicker()
         tab(RecordTab(model: model, picker: picker), as: "settings-record.png")
         model.update { $0.recordTarget = .window(windowID: 12, title: "Checkout — Safari") }
@@ -65,9 +84,17 @@ enum UISnapshots {
         }), as: "settings-permissions.png")
         tab(AdvancedTab(model: model), as: "settings-advanced.png")
         model.update { $0.triggerKey = .fn }
-        tab(GeneralTab(model: model, loginItem: { .available }), as: "settings-general-fn.png")
+        tab(GeneralTab(model: model, signup: signup, loginItem: { .available }), as: "settings-general-fn.png")
 
         renderOnboarding(to: directory, problems: &problems)
+    }
+
+    /// An EmailSignup on the snapshots' throwaway suite that can't reach the network. Nothing here saves, changes, or
+    /// resumes, so it never posts; if it did, its post would answer retry later without a request, its retries would
+    /// never fire, and it would log nothing.
+    @MainActor
+    private static func emailSignup(_ defaults: UserDefaults) -> EmailSignup {
+        EmailSignup(defaults: defaults, post: { _ in .retryLater }, schedule: { _, _ in }, report: { _ in })
     }
 
     /// One snapshot per first-run step, from view models that save nothing and see fixed permissions.
@@ -97,6 +124,13 @@ enum UISnapshots {
                 .write(to: directory.appending(path: "onboarding-heights.txt"))
         }
         onboarding("onboarding-welcome.png", .init(), status: none)
+        onboarding("onboarding-email.png", .init(step: .email), status: none)
+        onboarding("onboarding-email-filled.png", .init(step: .email), status: none) {
+            $0.emailDraft = "sam@example.com"
+            $0.newsDraft = true
+        }
+        // An existing copy's one pass after its update (email list design §3.2).
+        onboarding("onboarding-email-only.png", OnboardingModel.emailOnly(), status: all)
         onboarding("onboarding-accessibility.png", .init(step: .permission(.accessibility)), status: none)
         onboarding("onboarding-screen-recording-requested.png",
                    .init(step: .permission(.screenRecording), requested: [.accessibility, .inputMonitoring, .screenRecording]),
