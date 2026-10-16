@@ -702,6 +702,10 @@ private final class DropCollector {
 @MainActor
 final class OnboardingController: NSObject, NSWindowDelegate {
     static let title = "Welcome to Annotake"
+    /// The email step an existing copy gets once after its update isn't a welcome: its person already uses Annotake.
+    static let emailOnlyTitle = "Annotake"
+    /// The title for the pass showing, set at every show, since one window serves every pass.
+    var windowTitle: String { viewModel.model.persisted.mode == .emailOnly ? Self.emailOnlyTitle : Self.title }
     private let viewModel: OnboardingViewModel
     private var window: NSWindow?
     /// Runs in place of showing the window, for tests.
@@ -765,13 +769,13 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         }
         if window == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: OnboardingView(viewModel: viewModel)))
-            window.title = Self.title
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.delegate = self
             window.center()
             self.window = window
         }
+        window?.title = windowTitle
         viewModel.startPolling()
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
