@@ -90,6 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: SettingsWindowController?
     private var onboarding: OnboardingController?
     private var settingsStore: SettingsStore?
+    private var signup: EmailSignup?
     private var retentionTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
     private var monitor: InputMonitor?
@@ -112,9 +113,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         //    there. Before anything else, so the first run happens in the copy that stays.
         MoveToApplications.offerIfNeeded(defaults: .standard)
 
-        // 3. Settings.
+        // 3. Settings, and the email address (email list design §3.4): the app's one EmailSignup, which reads the
+        //    saved address and sends nothing yet.
         let settingsStore = SettingsStore(defaults: .standard)
         let settings = settingsStore.settings
+        let signup = EmailSignup(defaults: .standard)
+        self.signup = signup
 
         // 4. Crash leftovers, then retention: now, then on wake and hourly once 24 h have passed.
         self.settingsStore = settingsStore
@@ -149,7 +153,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.cards = cards
         self.filmstrip = filmstrip
 
-        // 7. The menu, and the Settings window it opens.
+        // 7. The menus: the main menu, which never shows but gives text fields such as the email step's ⌘X, ⌘C, ⌘V,
+        //    ⌘A, and ⌘Z (EditMenu); then the status menu, and the Settings window it opens.
+        NSApp.mainMenu = EditMenu.make()
         let settingsModel = SettingsModel(store: settingsStore)
         settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
         let settingsWindow = SettingsWindowController(
@@ -186,9 +192,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.start()
         self.monitor = monitor
 
-        // 9. The first run, until it's done, and the login item.
+        // 9. The first run, until it's done, then the email step once while there's no address, and the login item.
         Permissions.logStatus()
-        let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard)
+        let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard, signup: signup)
         controller.onRecordingSaved = { [weak onboarding] in onboarding?.recordingSaved() }
         onboarding.showIfNeeded()
         self.onboarding = onboarding

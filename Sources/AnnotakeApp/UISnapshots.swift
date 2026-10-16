@@ -79,8 +79,9 @@ enum UISnapshots {
         var heights: [String] = []
         func onboarding(_ name: String, _ persisted: OnboardingModel.Persisted, status: Permissions.Status,
                         change: (OnboardingViewModel) -> Void = { _ in }) {
-            let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil, persisted: persisted,
-                                                status: { status })
+            // No signup: nothing here may reach the network.
+            let viewModel = OnboardingViewModel(trigger: .rightCommand, defaults: nil, signup: nil,
+                                                persisted: persisted, status: { status })
             change(viewModel)
             writeSwiftUI(OnboardingView(viewModel: viewModel), to: directory, as: name)
             // The window has a fixed height: the content at its own height must fit in it.

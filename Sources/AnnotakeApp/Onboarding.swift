@@ -10,6 +10,8 @@ enum OnboardingCopy {
     static let agents = "Claude Code, Cursor, or ChatGPT"
     static let nextTime = "Next time, drag it into \(agents)."
     static let dropHint = "Drop the card here"
+    /// The email field's placeholder.
+    static let emailPlaceholder = "you@example.com"
 
     /// "Right ⌘", "Right ⌥", "fn"
     static func keyName(_ trigger: TriggerKey) -> String {
@@ -28,6 +30,7 @@ enum OnboardingCopy {
     static func title(_ step: OnboardingModel.Step) -> String {
         switch step {
         case .welcome: "Annotake"
+        case .email: EmailConsent.title
         case .permission(let permission): "Allow \(paneName(permission))"
         case .reopen: "Reopen Annotake"
         case .practice: "Try it"
@@ -43,6 +46,9 @@ enum OnboardingCopy {
         case .welcome:
             return ["Press a key, do the thing, and drag the card into \(agents). Each step comes out as a "
                     + "screenshot, captioned with what you clicked."]
+        case .email:
+            // The consent wording itself, which the site keeps under the same id (email list design §3.1).
+            return [EmailConsent.notice]
         case .permission(let permission):
             let reason = switch permission {
             case .accessibility:
@@ -111,6 +117,10 @@ final class OnboardingViewModel: ObservableObject {
     /// How many frames were dropped on the drop box, and the first few as thumbnails.
     @Published private(set) var droppedFrames = 0
     @Published private(set) var thumbnails: [NSImage] = []
+    /// What's typed in the email step, and its box. Never saved: the field starts empty and the box unticked each time
+    /// the step shows (email list design §3.1).
+    @Published var emailDraft = ""
+    @Published var newsDraft = false
     let trigger: TriggerKey
     /// Called when the Done button finishes the first run.
     var onFinish: (() -> Void)?
@@ -119,16 +129,19 @@ final class OnboardingViewModel: ObservableObject {
     /// icon there's no way back to it.
     var onAdvancedElsewhere: (() -> Void)?
     private let defaults: UserDefaults?
+    private let signup: EmailSignup?
     private let status: () -> Permissions.Status
     private let report: (String) -> Void
     private var timer: Timer?
 
-    /// With no defaults (UI snapshots), nothing is saved. `report` is the log unless a test passes its own.
-    init(trigger: TriggerKey, defaults: UserDefaults?, persisted: OnboardingModel.Persisted,
+    /// With no defaults (UI snapshots), nothing is saved, and with no signup the email step's Continue does nothing, so
+    /// nothing is sent. `report` is the log unless a test passes its own.
+    init(trigger: TriggerKey, defaults: UserDefaults?, signup: EmailSignup?, persisted: OnboardingModel.Persisted,
          status: @escaping () -> Permissions.Status = Permissions.status,
          report: @escaping (String) -> Void = { log($0) }) {
         self.trigger = trigger
         self.defaults = defaults
+        self.signup = signup
         self.status = status
         self.report = report
         model = OnboardingModel(granted: status().byPermission, persisted: persisted)
@@ -158,7 +171,7 @@ final class OnboardingViewModel: ObservableObject {
         if model.step != step { onAdvancedElsewhere?() }
     }
 
-    /// The step's main button.
+    /// The step's main button. The email step's Continue is `submitDraft()`, which acts only there.
     func primary() {
         let step = model.step
         let action = model.action
@@ -170,7 +183,7 @@ final class OnboardingViewModel: ObservableObject {
         case .quitAndReopen:
             quitAndReopen()
             return
-        case .next, .waitForRecording, .waitForDrop, .finish:
+        case .next, .submitEmail, .waitForRecording, .waitForDrop, .finish:
             break
         }
         change { $0.perform() }
@@ -190,15 +203,49 @@ final class OnboardingViewModel: ObservableObject {
         if model.step != step { onAdvancedElsewhere?() }
     }
     func relaunched() { change { $0.relaunched() } }
-    func closed() { change { $0.closed() } }
+
+    /// The window was closed: anything typed in the email step goes with it.
+    func closed() {
+        change { $0.closed() }
+        clearEmailDraft()
+    }
 
     /// "Continue" after a drop.
     func continueAfterDrop() { change { $0.cardDropped() } }
 
-    /// Fix permissions…, once the first run is over: its own pass over the permissions.
-    func startFixingPermissions() {
+    /// Continue is enabled once what's typed is an address /api/subscribe takes.
+    var canSubmitEmail: Bool { EmailConsent.isPlausible(emailDraft) }
+
+    /// Continue in the email step, or Return in its field: what's typed, with the box as it is, so the view can't send
+    /// any other choice.
+    func submitDraft() { submitEmail(address: emailDraft, news: newsDraft) }
+
+    /// Saves the address on the Mac, where EmailSignup sends it in the background, and moves straight on (email list
+    /// design §3.1). Only at the email step, and only for an address the site takes.
+    func submitEmail(address: String, news: Bool) {
+        guard let signup, model.step == .email, EmailConsent.isPlausible(address) else { return }
+        signup.save(address: address, news: news)
+        change { $0.emailSaved() }
+    }
+
+    /// At launch, before the window shows: the email step for a copy without an address (email list design §3.2).
+    /// Whether the window shows is `model.showsAtLaunch`.
+    func launched() { change { $0.launched(hasAddress: hasAddress) } }
+
+    /// The pill's Open, while recording waits for an address: the email step, or the first run on its way there.
+    func openedForEmail() { change { $0.openedForEmail(hasAddress: hasAddress) } }
+
+    /// Fix permissions…: its own pass over the permissions, unless a first run or such a pass is in progress.
+    func fixPermissions() {
         let granted = status().byPermission
-        change { $0 = OnboardingModel(granted: granted, persisted: OnboardingModel.fixingPermissions(granted: granted)) }
+        change { $0.fixPermissions(granted: granted) }
+    }
+
+    private var hasAddress: Bool { signup?.hasAddress ?? false }
+
+    private func clearEmailDraft() {
+        emailDraft = ""
+        newsDraft = false
     }
 
     /// What landed on the drop box.
@@ -233,7 +280,10 @@ final class OnboardingViewModel: ObservableObject {
         var next = model
         body(&next)
         guard next != model else { return }
-        if next.step != model.step { report("onboarding: \(Self.logName(next.step))") }
+        if next.step != model.step {
+            report("onboarding: \(Self.logName(next.step))")
+            if next.step == .email { clearEmailDraft() }
+        }
         model = next
         save()
     }
@@ -255,6 +305,7 @@ final class OnboardingViewModel: ObservableObject {
     static func logName(_ step: OnboardingModel.Step) -> String {
         switch step {
         case .welcome: "welcome"
+        case .email: "email"
         case .permission(let permission): permission.rawValue
         case .reopen: "reopen"
         case .practice: "practice"
@@ -296,6 +347,8 @@ struct OnboardingView: View {
         switch model.step {
         case .welcome:
             WelcomeStep(trigger: viewModel.trigger, paragraphs: paragraphs)
+        case .email:
+            EmailStep(viewModel: viewModel, paragraphs: paragraphs)
         case .permission(let permission):
             PermissionStep(permission: permission, paragraphs: paragraphs, granted: model.granted)
         case .reopen:
@@ -315,6 +368,12 @@ struct OnboardingView: View {
             switch model.step {
             case .welcome:
                 primary("Get Started")
+            case .email:
+                // Not primary(), which acts on whatever step shows by the time it runs: Continue and Return in the
+                // field both submit the draft, which acts only at the email step.
+                Button("Continue") { viewModel.submitDraft() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!viewModel.canSubmitEmail)
             case .permission:
                 if model.action == .prompt {
                     primary("Allow…")
@@ -409,6 +468,66 @@ private struct DemoTile: View {
         .background(RoundedRectangle(cornerRadius: 12)
             .fill(active ? Color.accentColor.opacity(0.14) : Color.secondary.opacity(0.08)))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color.accentColor : .clear, lineWidth: 2))
+    }
+}
+
+/// The email step (email list design §3.1): the address, which Continue waits for; what it's for; the box for feedback
+/// and news, unticked; and the footer CASL asks for beside a consent request.
+private struct EmailStep: View {
+    static let fieldWidth: CGFloat = 340
+    @ObservedObject var viewModel: OnboardingViewModel
+    let paragraphs: [String]
+    @FocusState private var fieldFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            StepTitle(text: OnboardingCopy.title(.email))
+            TextField("Email address", text: $viewModel.emailDraft, prompt: Text(OnboardingCopy.emailPlaceholder))
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.large)
+                .textContentType(.emailAddress)
+                .autocorrectionDisabled()
+                .frame(maxWidth: Self.fieldWidth)
+                .focused($fieldFocused)
+                // Return: submitDraft turns away what Continue, greyed out, would.
+                .onSubmit { viewModel.submitDraft() }
+            ForEach(paragraphs, id: \.self) { Paragraph(text: $0) }
+            Toggle(EmailConsent.box, isOn: $viewModel.newsDraft)
+                .toggleStyle(.checkbox)
+            EmailFooter()
+        }
+        // The field has focus when the step opens: defaultFocus as the window first shows, onAppear when the step
+        // follows another.
+        .defaultFocus($fieldFocused, true)
+        .onAppear { fieldFocused = true }
+    }
+}
+
+/// Who's asking, a mailing address, and a contact, then the privacy policy. On one line when it fits; a longer
+/// mailing address puts the link below.
+private struct EmailFooter: View {
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                text
+                link
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                text
+                link
+            }
+        }
+        .font(.footnote)
+    }
+
+    private var text: some View {
+        Text(EmailConsent.footer).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// In the link color, not the text's grey, so it reads as a link.
+    private var link: some View {
+        Link("Privacy policy", destination: EmailConsent.privacyURL)
     }
 }
 
@@ -585,16 +704,27 @@ private final class DropCollector {
 
 // MARK: - The window
 
-/// Shows the first run at launch until it's done, and "Fix permissions…" from the menu (spec §3.7).
+/// Shows the first run at launch until it's done, the email step once to a copy without an address, and "Fix
+/// permissions…" from the menu (spec §3.7, email list design §3.2).
 @MainActor
 final class OnboardingController: NSObject, NSWindowDelegate {
     static let title = "Welcome to Annotake"
     private let viewModel: OnboardingViewModel
     private var window: NSWindow?
+    /// Runs in place of showing the window, for tests.
+    private let present: (() -> Void)?
 
-    init(trigger: TriggerKey, defaults: UserDefaults) {
-        viewModel = OnboardingViewModel(trigger: trigger, defaults: defaults,
-                                        persisted: OnboardingViewModel.load(from: defaults) ?? OnboardingModel.Persisted())
+    convenience init(trigger: TriggerKey, defaults: UserDefaults, signup: EmailSignup) {
+        self.init(viewModel: OnboardingViewModel(
+            trigger: trigger, defaults: defaults, signup: signup,
+            persisted: OnboardingViewModel.load(from: defaults) ?? OnboardingModel.Persisted()))
+    }
+
+    /// With `present`, a test sees each call to show(), which would put the window up or in front, and no window is
+    /// made, so bringForward() does nothing.
+    init(viewModel: OnboardingViewModel, present: (() -> Void)? = nil) {
+        self.viewModel = viewModel
+        self.present = present
         super.init()
         // Every launch is a relaunch for permissions that wait for one, so a first run left at Reopen moves on.
         viewModel.relaunched()
@@ -609,13 +739,22 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         window.makeKeyAndOrderFront(nil)
     }
 
+    /// At launch: the first run until it's done, then the email step once, while no address is saved.
     func showIfNeeded() {
+        viewModel.launched()
         if viewModel.model.showsAtLaunch { show() }
     }
 
-    /// From the menu: the first run where it is, or once it's over, a pass over the missing permissions.
+    /// The pill's Open, while recording waits for an address: the window in front, at the email step or the first run
+    /// on its way there. While it shows the email step, an address cleared meanwhile changes nothing on screen.
+    func showForEmail() {
+        viewModel.openedForEmail()
+        if viewModel.model.showsAtLaunch { show() }
+    }
+
+    /// From the menu: the first run where it is, or otherwise a pass over the missing permissions.
     func show(fixingPermissions: Bool) {
-        if fixingPermissions && !viewModel.model.showsAtLaunch { viewModel.startFixingPermissions() }
+        if fixingPermissions { viewModel.fixPermissions() }
         show()
     }
 
@@ -624,6 +763,12 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     }
 
     private func show() {
+        // Nothing polls while the window is closed, so first the step moves past anything granted meanwhile.
+        viewModel.refresh()
+        if let present {
+            present()
+            return
+        }
         if window == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: OnboardingView(viewModel: viewModel)))
             window.title = Self.title
@@ -633,7 +778,6 @@ final class OnboardingController: NSObject, NSWindowDelegate {
             window.center()
             self.window = window
         }
-        viewModel.refresh()
         viewModel.startPolling()
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
