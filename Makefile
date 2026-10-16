@@ -95,9 +95,10 @@ test:
 .PHONY: replay
 replay:
 	swift run annotake-replay "$(SESSION)"
-# The site (site/): plain HTML, CSS, and JavaScript, plus one Vercel function, site/api/link.js. Its tests live in
-# site/tests, with the only npm packages, dev-only. Each target installs them first if they're missing.
-# make site-dev serves the site at http://localhost:4173 the way vercel.json says, with /api/link in dry-run mode.
+# The site (site/): plain HTML, CSS, and JavaScript, plus three Vercel functions in site/api: link.js, and the email
+# list's subscribe.js and unsubscribe.js. Its tests live in site/tests, with the only npm packages, dev-only. Each
+# target installs them first if they're missing.
+# make site-dev serves the site at http://localhost:4173 the way vercel.json says, with the functions in dry-run mode.
 # make site-test runs the unit tests, then the page tests in Chrome, WebKit, and Firefox (FILTER= greps the page tests).
 SITE_TESTS := site/tests
 .PHONY: site-deps site-dev site-unit site-test
@@ -134,7 +135,8 @@ site-brand-check: build/make-site-brand
 site-og: site-deps
 	cd $(SITE_TESTS) && node tools/make-og.mjs
 # Checkpoints 4 and 5's checks against a deployment. make site-smoke URL=https://annotake.app reads the pages, the
-# redirects, the headers, and the functions' answers, and checks that /api/subscribe has the app's consent id. make
+# redirects, the headers, and the functions' answers, and posts one invalid address to /api/subscribe, which turns it
+# away before calling Resend: 400 means the deployment has the app's consent id, 422 that it doesn't yet. make
 # site-burst URL=https://annotake.app sends 50 honeypot posts to /api/link, which the firewall should answer with 429
 # after 10; the function sends no email for them.
 .PHONY: site-smoke site-burst

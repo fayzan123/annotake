@@ -1,6 +1,6 @@
 # annotake.app
 
-The landing page, the privacy policy, the Terms, and one Vercel function that emails the download link. Plain HTML, CSS, and JavaScript modules: no framework, no build step, and no runtime packages. The design is [docs/plans/2026-10-01-landing-page-design.md](../docs/plans/2026-10-01-landing-page-design.md), and the plan that built it is [docs/plans/2026-10-01-landing-page-build.md](../docs/plans/2026-10-01-landing-page-build.md).
+The landing page, the privacy policy, the Terms, and three Vercel functions. `api/link.js` emails the download link. The app's email list has the other two: `api/subscribe.js` adds the address the app sends to Resend, with a welcome email, and `api/unsubscribe.js` serves the welcome email's unsubscribe link. Their shared code is in `api/_lib/`, which Vercel never runs as a function. Plain HTML, CSS, and JavaScript modules: no framework, no build step, and no runtime packages. The design is [docs/plans/2026-10-01-landing-page-design.md](../docs/plans/2026-10-01-landing-page-design.md), and the plan that built it is [docs/plans/2026-10-01-landing-page-build.md](../docs/plans/2026-10-01-landing-page-build.md). The email list's are [docs/plans/2026-10-15-email-list-design.md](../docs/plans/2026-10-15-email-list-design.md) and [docs/plans/2026-10-15-email-list-build.md](../docs/plans/2026-10-15-email-list-build.md).
 
 This file and `tests/` are never deployed (`.vercelignore`).
 
@@ -10,12 +10,12 @@ This file and `tests/` are never deployed (`.vercelignore`).
 make site-dev
 ```
 
-Serves the site at http://localhost:4173 the way `vercel.json` says: clean URLs, the `/download` redirect, the headers, and `/api/link` in dry-run mode, so it never sends an email. The server is `tests/server.mjs`. The first run installs the test packages (`npm ci` in `tests/`).
+Serves the site at http://localhost:4173 the way `vercel.json` says: clean URLs, the `/download` redirect, the headers, and the functions in dry-run mode (`EMAIL_DRY_RUN=1`), so they never send an email or change a contact. They check unsubscribe links against `UNSUBSCRIBE_SECRET=test-secret`, never a real secret, and nothing under `api/_lib` is served or run. The server is `tests/server.mjs`. The first run installs the test packages (`npm ci` in `tests/`).
 
 ## Test it
 
 ```
-make site-unit                   # node:test: the server, the function, the email check, the brand, boot.js, the logo, the tools
+make site-unit                   # node:test: the server, the functions, the email check, the brand, boot.js, the logo, the tools
 make site-test                   # the unit tests, then the page tests in Chrome, WebKit, and Firefox
 make site-test FILTER=hero       # only the page tests whose names match
 ```
@@ -23,6 +23,7 @@ make site-test FILTER=hero       # only the page tests whose names match
 - The page tests use the installed Google Chrome, and Playwright's WebKit and Firefox. Install those two once with `cd site/tests && npx playwright install webkit firefox`.
 - Specs import `test`, `expect`, and the helpers from `tests/pages/support.js`. It works around three browser quirks; the session notes in `docs/plans/README.md` (Session 10) say why.
 - Timing tests pause Playwright's clock (`pauseClock`) before loading the page, then move it with `page.clock.runFor`.
+- `tests/subscribe-request.json` is the exact request the app sends to `/api/subscribe`. The app's `EmailSignupTests` check the app sends it, and `subscribe.test.js` and `subscribe.spec.js` post it, so a field renamed on one side alone fails a test.
 
 ## Regenerate
 
@@ -39,16 +40,18 @@ Never edit the generated files by hand. Fonts and images under `/assets/fonts/` 
 
 - **The CSP allows no inline scripts or styles:** no `<script>` with code and no `<style>` (JSON-LD data blocks are fine), and no `style="…"` or `style.cssText`. Code sets single properties (`element.style.left`, `style.setProperty('--k', …)`), toggles classes, and sets SVG attributes.
 - **No cookies, and nothing from another origin.** The theme choice lives in `localStorage` (`annotake-theme`), and every access is wrapped in `try`/`catch`.
-- **The function never logs, stores, or returns an email address.** Each request logs one `link: <outcome>` line.
+- **No function logs an email address.** Each request logs one `link: <outcome>`, `subscribe: <outcome>`, or `unsubscribe: <outcome>` line. `/api/link` never stores or returns one, and `/api/subscribe` keeps it only in Resend, as the list.
+- **The consent wording** lives in `api/_lib/consent.json`, and the app's copy (`Sources/AnnotakeApp/EmailConsent.swift`) is tested against it. A change adds a new version and moves `current`; a shipped version is never edited. Deploy it, and see `make site-smoke URL=https://annotake.app`'s consent check pass (400, not 422), before releasing an app that sends the new id: until then the site answers that id 422, and every new copy's address waits on the app's backoff.
+- **The address check** is `assets/email.js`, shared by the page and the functions. `EmailConsent.swift` mirrors it, tied to it only by test cases ported one for one, so a change to one changes the other and both test files.
 - **Copy uses `’` for apostrophes in prose,** and straight quotes inside captions.
 
 ## Deploy
 
-On Vercel (Checkpoint 4 in [docs/checkpoints.md](../docs/checkpoints.md) has the steps):
+On Vercel (Checkpoints 4 and 5 in [docs/checkpoints.md](../docs/checkpoints.md) have the steps):
 
-- **The project:** from `fayzan123/annotake`, with Root Directory `site` and Framework Preset Other. `vercel.json` skips the build when a commit leaves `site/` alone.
-- **Environment variables:** `RESEND_API_KEY` in Production only, and `EMAIL_DRY_RUN=1` in Preview.
+- **The project:** from `fayzan123/annotake`, with Root Directory `site` and Framework Preset Other. `vercel.json` skips a build only when `site/` is unchanged since the last successful deployment (`VERCEL_GIT_PREVIOUS_SHA`).
+- **Environment variables,** in Production only: `RESEND_API_KEY`, the link email's sending key, and for the email list `RESEND_CONTACTS_KEY` (full access), `RESEND_SEGMENT`, `RESEND_TOPIC_NOTICES`, `RESEND_TOPIC_NEWS`, `UNSUBSCRIBE_SECRET`, and `MAILING_ADDRESS`. `UNSUBSCRIBE_SECRET` is set once and never replaced: every unsubscribe link already sent depends on it. In Preview: `EMAIL_DRY_RUN=1`.
 - **Web Analytics:** on. It's cookieless, and its script is `/_vercel/insights/script.js`.
 - **Domains:** `annotake.app`, with `www.annotake.app`, `annotake.com`, and `www.annotake.com` redirecting to it.
-- **The firewall:** a rate limit on `POST /api/link`, 10 requests per 600 s per IP, answering 429.
-- **After a deploy:** `make site-smoke URL=https://annotake.app` checks the pages, the headers, the redirects, and the function. `make site-burst URL=https://annotake.app` checks the firewall with 50 honeypot posts, which send no email.
+- **The firewall:** a rate limit on `POST /api/link`, 10 requests per 600 s per IP, answering 429. Checkpoint 5 widens its path to `/api/*`.
+- **After a deploy:** `make site-smoke URL=https://annotake.app` checks the pages, the headers, the redirects, and the functions. Its one `POST`, to `/api/subscribe`, is an address the function turns away before calling Resend, under the current consent id: 400 means the deployment has the app's wording, and 422 that it doesn't yet. `make site-burst URL=https://annotake.app` checks the firewall with 50 honeypot posts, which send no email.
