@@ -6,8 +6,8 @@ import AnnotakeInput
 /// The app's entry point, called from the `Annotake` executable's main.swift. It isn't named
 /// `AnnotakeApp`, because a type named like its own module makes qualified names ambiguous.
 public enum AppEntry {
-    /// The normal app calls `makeUpdater` once; --selftest and --render-ui never do, so they make no
-    /// network calls.
+    /// The normal app calls `makeUpdater` once and makes the one EmailSignup that posts; --selftest and
+    /// --render-ui do neither, so they make no network calls.
     @MainActor public static func main(makeUpdater: @escaping @MainActor () -> any Updater) {
         let arguments = CommandLine.arguments
         let delegate: NSApplicationDelegate
@@ -114,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MoveToApplications.offerIfNeeded(defaults: .standard)
 
         // 3. Settings, and the email address (email list design §3.4): the app's one EmailSignup, which reads the
-        //    saved address and sends nothing yet.
+        //    saved address and sends nothing until step 10.
         let settingsStore = SettingsStore(defaults: .standard)
         let settings = settingsStore.settings
         let signup = EmailSignup(defaults: .standard)
@@ -155,12 +155,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.filmstrip = filmstrip
 
         // 7. The menus: the main menu, which never shows but gives text fields such as the email step's ⌘X, ⌘C, ⌘V,
-        //    ⌘A, and ⌘Z (EditMenu); then the status menu, and the Settings window it opens.
+        //    ⌘A, and ⌘Z (EditMenu); then the status menu, and the Settings window it opens, whose General tab shows the
+        //    email address and changes it.
         NSApp.mainMenu = EditMenu.make()
         let settingsModel = SettingsModel(store: settingsStore)
         settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
         let settingsWindow = SettingsWindowController(
-            model: settingsModel, picker: RecordPickerModel(loader: { try await contentCache.current() }))
+            model: settingsModel, picker: RecordPickerModel(loader: { try await contentCache.current() }),
+            signup: signup)
         self.settingsWindow = settingsWindow
         let statusMenu = StatusMenu(actions: .init(
             fixPermissions: { [weak self] in self?.onboarding?.show(fixingPermissions: true) },
@@ -202,8 +204,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.onboarding = onboarding
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)
 
-        // 10. Updates: the app's first network call, a daily check (spec §6.2).
+        // 10. The network, last, and in the background: the daily update check (spec §6.2), and the saved email
+        //     address if the site doesn't have it yet (email list design §3.4).
         updater = makeUpdater()
+        signup.resume()
     }
 
     /// Settings apply live where they can (design §7): the trigger and gesture timings once idle, sounds at
