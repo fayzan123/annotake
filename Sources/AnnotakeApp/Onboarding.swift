@@ -745,8 +745,9 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         if viewModel.model.showsAtLaunch { show() }
     }
 
-    /// The pill's Open, while recording waits for an address: the window in front, at the email step or the first run
-    /// on its way there. While it shows the email step, an address cleared meanwhile changes nothing on screen.
+    /// The pill's Open while recording waits for an address, and Settings' Add… with none saved: the window in front,
+    /// at the email step or the first run on its way there. While it shows the email step, an address cleared meanwhile
+    /// changes nothing on screen.
     func showForEmail() {
         viewModel.openedForEmail()
         if viewModel.model.showsAtLaunch { show() }
