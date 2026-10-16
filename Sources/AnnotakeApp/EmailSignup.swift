@@ -36,8 +36,9 @@ final class EmailSignup: ObservableObject {
     /// The record as last saved or read.
     @Published private(set) var record: EmailRecord?
     var hasAddress: Bool { record != nil }
-    /// Fired after a save or a change is stored, and after the site refuses an address and it's cleared: for the
-    /// controller and the onboarding.
+    /// Fired after a save or a change is stored, and after a 400 clears the address. Only tests set it: the session
+    /// controller reads hasAddress before each input, Settings observes `record`, and the onboarding asks again at the
+    /// next launch, or when the pill's Open or Settings' Add… brings the email step back.
     var onChange: (() -> Void)?
 
     private let defaults: UserDefaults
