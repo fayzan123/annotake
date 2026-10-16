@@ -220,11 +220,27 @@ struct SessionMachineTests {
         #expect(machine.state == .idle)
     }
 
-    /// The menu's Start, the same way.
+    /// The menu's Start shows it at once too, but leaves the gestures alone: from idle, InputMonitor has nothing to end.
     @Test func menuStartWithoutEmailShowsTheMessageAtOnce() {
         var machine = withoutEmail()
-        #expect(machine.handle(.menuStart, at: 0) == [.showMessage(.emailNeeded), .resetGestures])
+        #expect(machine.handle(.menuStart, at: 0) == [.showMessage(.emailNeeded)])
         #expect(machine.state == .idle)
+    }
+
+    /// The menu's Start can arrive before the startHold of a hold InputMonitor has already begun, with Right ⌘ held
+    /// while clicking it. A reset then would end that hold in InputMonitor, so letting go would send no stopHold, and
+    /// the machine would stay in a refused hold, refusing the next start too, even with an address saved by then.
+    /// Without one, the hold ends as any refused hold does, and the next hold records.
+    @Test func aHoldThatStartedJustBeforeTheMenusStartEndsWhenLetGo() {
+        var machine = withoutEmail()
+        #expect(machine.handle(.menuStart, at: 0.25) == [.showMessage(.emailNeeded)])
+        #expect(machine.handle(.gesture(.startHold), at: 0.25) == [])
+        #expect(machine.state == .refusedHold)
+        #expect(machine.handle(.gesture(.revealHold), at: 0.8) == [.showMessage(.emailNeeded)])
+        #expect(machine.handle(.gesture(.stopHold), at: 3) == [])
+        #expect(machine.state == .idle)
+        machine.prepare(sounds: true, hasAddress: true)
+        #expect(machine.handle(.gesture(.startHold), at: 3.25) == [.startEngine(.hold)])
     }
 
     /// A hold never sends a double-tap, but the menu can be clicked mid-hold, and it offers Start Recording, since
