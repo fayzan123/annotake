@@ -72,6 +72,7 @@ enum UISnapshots {
         tab(GeneralTab(model: model, signup: noAddress, addEmail: {}, loginItem: { .available }),
             as: "settings-general-no-email.png")
         sheet(signup, as: "settings-email-change.png")
+        // Save greyed out, as when the field is emptied by hand.
         sheet(noAddress, as: "settings-email-change-empty.png")
         tab(GeneralTab(model: model, signup: signup, addEmail: {}, loginItem: { .notInApplications }),
             as: "settings-general-not-in-applications.png")

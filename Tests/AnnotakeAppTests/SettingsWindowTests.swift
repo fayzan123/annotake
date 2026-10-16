@@ -196,7 +196,8 @@ struct SettingsWindowTests {
         #expect(wrappers.contains("ObservedObject<EmailSignup>"), "\(wrappers)")
     }
 
-    /// Change… opens the field with the saved address in it, to fix in place, or empty with none saved.
+    /// Change… opens the field with the saved address in it, to fix in place. With none saved, the row offers Add…
+    /// instead, so the sheet never starts empty.
     @Test func theChangeSheetStartsWithTheSavedAddress() {
         #expect(EmailChange(record: Self.sam).draft == "Sam@Example.com")
         #expect(EmailChange(record: nil).draft == "")
