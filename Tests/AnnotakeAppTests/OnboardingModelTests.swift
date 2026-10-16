@@ -792,6 +792,23 @@ struct OnboardingControllerTests {
                                       savedAt: harness.now, sent: true))
     }
 
+    /// The email step an existing copy gets once after its update isn't titled as a welcome: its person already uses
+    /// Annotake (design §13). A first run keeps the welcome.
+    @Test func theEmailOnlyPassIsTitledAnnotake() {
+        let harness = SignupHarness()
+        harness.defaults.set(Data(OnboardingModelTests.savedBeforeTheEmailStep[0].json.utf8),
+                             forKey: OnboardingModel.storeKey)
+        let viewModel = Self.viewModel(harness)
+        let controller = OnboardingController(viewModel: viewModel, present: {})
+        controller.showIfNeeded()
+        #expect(viewModel.model.persisted == OnboardingModel.emailOnly())
+        #expect(controller.windowTitle == "Annotake")
+
+        let firstRun = OnboardingController(viewModel: Self.viewModel(SignupHarness()), present: {})
+        firstRun.showIfNeeded()
+        #expect(firstRun.windowTitle == "Welcome to Annotake")
+    }
+
     /// The first launch after the update: a copy that finished its first run before the email step, with no address,
     /// gets the email step alone (design §3.2). With an address, nothing shows.
     @Test func atLaunchAFinishedCopyWithoutAnAddressGetsTheEmailStep() throws {
