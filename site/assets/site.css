@@ -961,6 +961,10 @@ body::before {
   color: var(--ink-3);
 }
 .legal nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+/* /privacy says big changes are noted on the home page: this note, beside the Privacy link until the policy changes
+   again. The two wrap as one, so the note never ends up away from the link. */
+.legal-end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+.legal .policy-note { margin: 0; }
 .legal a { color: var(--ink-2); text-decoration: none; }
 .legal a:hover { color: var(--ink); text-decoration: underline; }
 
