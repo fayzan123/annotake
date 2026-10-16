@@ -139,7 +139,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.contentCache = contentCache
 
         // 6. The pill.
-        let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel())
+        let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel(),
+                                           signup: signup)
         let cards = CardController()
         let filmstrip = FilmstripController()
         cards.onOpen = { [weak cards, weak filmstrip] capture, id in
@@ -196,6 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Permissions.logStatus()
         let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard, signup: signup)
         controller.onRecordingSaved = { [weak onboarding] in onboarding?.recordingSaved() }
+        controller.onOpenEmail = { [weak onboarding] in onboarding?.showForEmail() }
         onboarding.showIfNeeded()
         self.onboarding = onboarding
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)

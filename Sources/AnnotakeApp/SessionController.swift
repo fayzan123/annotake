@@ -39,6 +39,8 @@ final class SessionController: InputMonitorDelegate {
     let settingsStore: SettingsStore
     private let contentCache: ShareableContentCache
     private let pill: PillPanel
+    /// Until it holds an address, nothing starts recording (email list design §3.2).
+    private let signup: EmailSignup
     private let ax = AXClient()
     private let flags: WebAccessibilityFlagSetter
     private let context: ContextTracker
@@ -48,6 +50,8 @@ final class SessionController: InputMonitorDelegate {
     var cards: CardController?
     /// A recording was saved: its card is showing.
     var onRecordingSaved: (() -> Void)?
+    /// The pill's Open, while recording waits for an address: the email step.
+    var onOpenEmail: (() -> Void)?
 
     private var current: Recording?
     /// Between stopEngine and showCard, which names its capture.
@@ -60,16 +64,19 @@ final class SessionController: InputMonitorDelegate {
     /// The current recording's input sink, read on the input thread.
     nonisolated let bridge = Locked<InputBridge?>(nil)
 
-    init(settingsStore: SettingsStore, contentCache: ShareableContentCache, pill: PillPanel) {
+    init(settingsStore: SettingsStore, contentCache: ShareableContentCache, pill: PillPanel, signup: EmailSignup) {
         self.settingsStore = settingsStore
         self.contentCache = contentCache
         self.pill = pill
+        self.signup = signup
         flags = WebAccessibilityFlagSetter(ax: ax)
         context = ContextTracker(ax: ax, ownBundleID: Self.bundleID)
-        machine = SessionMachine(sounds: settingsStore.settings.sounds)
+        machine = SessionMachine(sounds: settingsStore.settings.sounds, emailNeeded: !signup.hasAddress)
+        pill.onOpenEmail = { [weak self] in self?.onOpenEmail?() }
     }
 
-    var isRecording: Bool { machine.state != .idle }
+    /// The menu offers Stop Recording while this is true. A refused hold records nothing, so the menu offers Start.
+    var isRecording: Bool { machine.state.isRecording }
 
     /// The Sounds setting, live.
     func setSounds(_ sounds: Bool) {
@@ -90,18 +97,19 @@ final class SessionController: InputMonitorDelegate {
 
     // MARK: - Inputs
 
-    /// The menu's Start/Stop Recording: a hands-free recording.
+    /// The menu's Start/Stop Recording: a hands-free recording. It goes by `isRecording`, as the menu's title does.
     func toggleFromMenu() {
-        if machine.state == .idle {
-            handle(.menuStart)
-            if machine.state != .idle { inputMonitor?.handsFreeStartedElsewhere() }
-        } else {
+        if isRecording {
             handle(.menuStop)
+        } else {
+            handle(.menuStart)
+            if isRecording { inputMonitor?.handsFreeStartedElsewhere() }
         }
     }
 
     func handle(_ input: SessionMachine.Input, at time: TimeInterval = ProcessInfo.processInfo.systemUptime) {
-        if case .idle = machine.state { machine.sounds = settingsStore.settings.sounds }
+        // Taken only while idle: an address saved or cleared changes what starts next, never a hold or a recording.
+        machine.prepare(sounds: settingsStore.settings.sounds, hasAddress: signup.hasAddress)
         for effect in machine.handle(input, at: time) {
             run(effect, at: time)
         }
@@ -343,13 +351,13 @@ final class SessionController: InputMonitorDelegate {
 
     private func showMessage(_ message: SessionMachine.PillMessage, at time: TimeInterval) {
         let text = PillText.message(message)
-        if case .note = message, machine.state != .idle {
+        if case .note = message, machine.state.isRecording {
             noteUntil = time + Self.noteDuration
             pill.place(on: current?.screen)
-            pill.showMessage(text, openSettings: false, hideAfter: nil)
+            pill.showMessage(text, button: nil, hideAfter: nil)
         } else {
             pill.place(on: current?.screen ?? Self.screen(containing: Self.cursorLocation()))
-            pill.showMessage(text, openSettings: message == .screenRecordingNeeded)
+            pill.showMessage(text, button: PillButton(for: message))
         }
     }
 
