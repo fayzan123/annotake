@@ -1,6 +1,8 @@
 # Annotake email list design: an email in the first run
 
-**Status:** approved 2026-10-15 in conversation; built through Task 10 on branch `email-list`, 2026-10-16 (§13 has what changed); Checkpoint 5 next · **Plan:** [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2 sign-in), §8 (privacy); [landing page design](2026-10-01-landing-page-design.md) §4.4 (CASL), §5.3 (the link function), §6 (robustness)
+**Status:** approved 2026-10-15 in conversation; built through Task 10 on branch `email-list`, 2026-10-16 (§13 has what changed); at Checkpoint 5, cut to collecting addresses only, for now (§13) · **Plan:** [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2 sign-in), §8 (privacy); [landing page design](2026-10-01-landing-page-design.md) §4.4 (CASL), §5.3 (the link function), §6 (robustness)
+
+**For now (decided 2026-10-16, §13):** the list only collects addresses, which count Annotake's users. Nothing is emailed to it yet, so there's no mailing address: the step has no box, the site sends no welcome email, and nothing is broadcast. The parts marked *parked* below come back, with the address, before the list's first email.
 
 ## 1. Goal
 
@@ -49,6 +51,8 @@ A new `OnboardingModel.Step.email`, right after `.welcome` in the `.firstRun` st
   From Fayzan Malik · [mailing address] · annotake.app · Privacy policy
                                         [ Continue ]
 ```
+
+*Parked* (§13): the box and the mailing address. For now the step shows the field, the notice, and "From Fayzan Malik · annotake.app · Privacy policy", and saves every address with `news: false`.
 
 - **The field:** the same rules as the site's `email.js`, on the address and on its lowercase key, as `/api/subscribe` applies them (`EmailConsent.isPlausible`): trimmed, at most 254 characters, no line breaks, a plain address pattern. Continue is greyed out until it matches, and Return presses it when it's enabled. The field has focus when the step opens.
 - **The editing keys** (⌘V, ⌘C, ⌘X, ⌘A, ⌘Z) work through a main menu that never shows (`EditMenu.swift`): a menu-bar app has none of its own.
@@ -146,6 +150,8 @@ Broadcasts get Resend's own unsubscribe link and preference page. The welcome em
 
 ### 5.1 The welcome email
 
+*Parked until the list has a mailing address* (§13): with no `MAILING_ADDRESS`, `/api/subscribe` adds the contact and sends no welcome.
+
 - **From** `Fayzan from Annotake <hello@annotake.app>`, on the domain Resend already sends for. **Reply-to** `Feedback.address`, Fayzan's personal Gmail (decided 2026-10-15: no Google Workspace, and no inbox at annotake.app). Reply-to is only a header, so sending stays on Resend and replies land in Gmail. Every recipient sees the Gmail address.
 - **Subject:** "Welcome to Annotake".
 - **Body,** as plain text and simple HTML like the link email:
@@ -160,6 +166,8 @@ Broadcasts get Resend's own unsubscribe link and preference page. The welcome em
 - **The wording** is pinned word for word in `site/tests/unit/welcome.test.js`, for Fayzan to accept at Checkpoint 5.
 
 ### 5.2 Broadcasts
+
+*Parked until the list's first email* (§13).
 
 Fayzan sends these from Resend's dashboard:
 - **Every broadcast goes to the one segment (§4.3) and picks one topic.** Security fixes and broken updates go to Important notices; feedback requests, surveys, and news go to Feedback and news. When in doubt, Feedback and news. Resend's broadcast editor asks for a segment, and offers no "all contacts".
@@ -189,6 +197,8 @@ Fayzan sends these from Resend's dashboard:
 - **The US (CAN-SPAM):** met by the same footer and unsubscribe.
 
 ### 6.3 Privacy policy and Terms
+
+*Changed at Checkpoint 5* (§13): for now /privacy says the address counts Annotake's users and gets important notices, with no welcome email and no Feedback and news. What follows is the list's full version, for when it sends.
 
 The privacy policy changes:
 - **The short version:** "We get your email address in the app, to send you important notices and, if you agree, feedback requests and news." Nothing you record leaves your Mac.
@@ -243,6 +253,8 @@ The Terms gain one line: using Annotake means getting important notices, and any
 
 ## 9. Fayzan's part (all at the end)
 
+*Cut at Checkpoint 5* (§13): the release that collects addresses needs only check 2's contact, with no welcome (Checkpoint 5's one real sign-up). The mailing address, the welcome, and checks 2–4's emails wait for the list's first email.
+
 The steps, in order, are Checkpoint 5 in [../checkpoints.md](../checkpoints.md#checkpoint-5-the-email-list).
 - **Get the mailing address** (a PO box or a virtual mailbox), and put it in the step (`EmailConsent.mailingAddress`), the welcome email (`MAILING_ADDRESS`), and the broadcast footer.
 - **In Resend,** before Vercel's settings:
@@ -264,8 +276,8 @@ The steps, in order, are Checkpoint 5 in [../checkpoints.md](../checkpoints.md#c
 
 ## 10. Open items
 
-- **The mailing address,** above.
-- **The open questions for Fayzan** in §13.
+- **The mailing address:** parked until the list's first email (§13).
+- **The open questions for Fayzan** in §13: 3 and 5 at Checkpoint 5's copy review, and the rest with the list.
 
 ## 11. Changes to other docs
 
@@ -442,3 +454,13 @@ Made in the build (Task 3 for the site, Task 10 for the rest):
 5. **The Change… sheet doesn't say the old address stays on the list;** only /privacy does. Leave it; or add a line to the sheet.
 6. **The step's notice names security fixes and important changes, not the welcome email** everyone gets, which /privacy discloses. Leave it; or name it in the step. That's cheap only before `consent-2026-10-15` ships: after that, any change to the wording needs a new id.
 7. **The rate-limit rule on `/api/*`** also limits mail apps' one-click `POST`s to `/api/unsubscribe`, at 10 per 600 s per IP. Fine at this scale, where the free plan caps welcomes near 100 a day; revisit with growth.
+
+**Decided at Checkpoint 5 (2026-10-16): the list collects addresses only, for now.** Fayzan isn't emailing the list yet, and until he does, the addresses count Annotake's users. CASL wants a mailing address beside a consent request and in every commercial email, so none is needed before the first email, and the parts that need one wait. Checkpoint 5's "Parked until the list's first email" has them in order.
+- The step has no box. Asking for Feedback and news is the consent request that needs the address, and ticks gathered without it might not count as consent later.
+- `consent-2026-10-15`, not yet shipped, was edited rather than replaced: no box, and the footer "From Fayzan Malik · annotake.app · Privacy policy". The box comes back in a new version with `{address}` in its footer, which `consent.test.js` requires of any version with a box.
+- The app saves every address with `news: false`. `EmailSignup`, the request, and `/api/subscribe` keep `news` for the box's return.
+- `EmailConsent.mailingAddress` and `make release`'s guard against the unset address are gone. They return with the box.
+- No `MAILING_ADDRESS` in Vercel, so `/api/subscribe` adds each contact and logs `subscribe: added welcome skipped no address`. With no welcome, nothing links to `/api/unsubscribe` yet; it's deployed anyway.
+- /privacy says the address counts Annotake's users and gets important notices, both on legitimate interest. It no longer mentions a welcome email, Feedback and news, or a "choice of emails".
+- Open questions 1, 2, 4, 6, and 7 are about the box, the welcome, or unsubscribing, so they wait with the list. Questions 3 and 5 stay for Checkpoint 5's copy review.
+- Copies that save an address now are never offered the box. When it returns, decide whether they're asked once, and whether the list's first email does the welcome's job for the contacts added without one.
