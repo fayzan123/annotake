@@ -117,10 +117,9 @@ final class OnboardingViewModel: ObservableObject {
     /// How many frames were dropped on the drop box, and the first few as thumbnails.
     @Published private(set) var droppedFrames = 0
     @Published private(set) var thumbnails: [NSImage] = []
-    /// What's typed in the email step, and its box. Never saved: the field starts empty and the box unticked each time
-    /// the step shows (email list design §3.1).
+    /// What's typed in the email step. Never saved: the field starts empty each time the step shows (email list design
+    /// §3.1).
     @Published var emailDraft = ""
-    @Published var newsDraft = false
     let trigger: TriggerKey
     /// Called when the Done button finishes the first run.
     var onFinish: (() -> Void)?
@@ -216,15 +215,15 @@ final class OnboardingViewModel: ObservableObject {
     /// Continue is enabled once what's typed is an address /api/subscribe takes.
     var canSubmitEmail: Bool { EmailConsent.isPlausible(emailDraft) }
 
-    /// Continue in the email step, or Return in its field: what's typed, with the box as it is, so the view can't send
-    /// any other choice.
-    func submitDraft() { submitEmail(address: emailDraft, news: newsDraft) }
+    /// Continue in the email step, or Return in its field: what's typed.
+    func submitDraft() { submitEmail(address: emailDraft) }
 
     /// Saves the address on the Mac, where EmailSignup sends it in the background, and moves straight on (email list
-    /// design §3.1). Only at the email step, and only for an address the site takes.
-    func submitEmail(address: String, news: Bool) {
+    /// design §3.1). Only at the email step, and only for an address the site takes. Never with Feedback and news: the
+    /// step has no box until the list has a mailing address (design §13).
+    func submitEmail(address: String) {
         guard let signup, model.step == .email, EmailConsent.isPlausible(address) else { return }
-        signup.save(address: address, news: news)
+        signup.save(address: address, news: false)
         change { $0.emailSaved() }
     }
 
@@ -243,10 +242,7 @@ final class OnboardingViewModel: ObservableObject {
 
     private var hasAddress: Bool { signup?.hasAddress ?? false }
 
-    private func clearEmailDraft() {
-        emailDraft = ""
-        newsDraft = false
-    }
+    private func clearEmailDraft() { emailDraft = "" }
 
     /// What landed on the drop box.
     func dropped(_ urls: [URL]) {
@@ -471,8 +467,8 @@ private struct DemoTile: View {
     }
 }
 
-/// The email step (email list design §3.1): the address, which Continue waits for; what it's for; the box for feedback
-/// and news, unticked; and the footer CASL asks for beside a consent request.
+/// The email step (email list design §3.1): the address, which Continue waits for; what it's for; and who's asking,
+/// with the privacy policy. No box for feedback and news until the list has a mailing address (design §13).
 private struct EmailStep: View {
     static let fieldWidth: CGFloat = 340
     @ObservedObject var viewModel: OnboardingViewModel
@@ -493,8 +489,6 @@ private struct EmailStep: View {
                 // Return: submitDraft turns away what Continue, greyed out, would.
                 .onSubmit { viewModel.submitDraft() }
             ForEach(paragraphs, id: \.self) { Paragraph(text: $0) }
-            Toggle(EmailConsent.box, isOn: $viewModel.newsDraft)
-                .toggleStyle(.checkbox)
             EmailFooter()
         }
         // The field has focus when the step opens: defaultFocus as the window first shows, onAppear when the step
@@ -504,8 +498,7 @@ private struct EmailStep: View {
     }
 }
 
-/// Who's asking, a mailing address, and a contact, then the privacy policy. On one line when it fits; a longer
-/// mailing address puts the link below.
+/// Who's asking and the site, then the privacy policy: on one line when it fits, or with the link below.
 private struct EmailFooter: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {

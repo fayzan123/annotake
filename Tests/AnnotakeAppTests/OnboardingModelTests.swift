@@ -596,8 +596,9 @@ struct OnboardingViewModelTests {
         }
     }
 
-    /// Continue (and Return, which calls the same) saves the cleaned address and the box's choice on the Mac, then
-    /// moves straight on: the post goes in the background (design §3.1). The log names the step, never the address.
+    /// Continue (and Return, which calls the same) saves the cleaned address on the Mac, with no Feedback and news since
+    /// the step has no box (design §13), then moves straight on: the post goes in the background (design §3.1). The
+    /// log names the step, never the address.
     @Test func continueSavesTheAddressThenMovesOnWithoutWaiting() async {
         let harness = SignupHarness()
         let signup = harness.makeSignup()
@@ -606,10 +607,9 @@ struct OnboardingViewModelTests {
                                        status: Self.accessibilityOnly, report: { lines.append($0) })
         harness.answers = [.sent]
         viewModel.emailDraft = "  Sam@Example.COM "
-        viewModel.newsDraft = true
         viewModel.submitDraft()
 
-        #expect(harness.stored == EmailRecord(address: "Sam@Example.COM", news: true, consent: EmailConsent.id,
+        #expect(harness.stored == EmailRecord(address: "Sam@Example.COM", news: false, consent: EmailConsent.id,
                                               savedAt: harness.now, sent: false))
         #expect(harness.requests.isEmpty, "the first run doesn't wait for the post")
         #expect(viewModel.model.step == .permission(.inputMonitoring))
@@ -622,31 +622,17 @@ struct OnboardingViewModelTests {
         #expect(!(lines + harness.logged).contains { $0.localizedCaseInsensitiveContains("sam@example.com") })
     }
 
-    /// The box left unticked sends news: false: Continue and Return send the box as it is, never a choice of their own
-    /// (no pre-ticked consent, design §2).
-    @Test func anUntickedBoxSavesNoNews() async {
-        let harness = SignupHarness()
-        let signup = harness.makeSignup()
-        let viewModel = Self.viewModel(OnboardingModel.emailOnly(), signup: signup)
-        harness.answers = [.sent]
-        viewModel.emailDraft = "sam@example.com"
-        viewModel.submitDraft()
-        #expect(harness.stored?.news == false)
-        await signup.settle()
-        #expect(harness.requests.count == 1)
-    }
-
     /// Continue does nothing for an address the site wouldn't take, without a signup (the UI snapshots), or away from
     /// the email step.
     @Test func continueSavesNothingItShouldnt() async {
         let harness = SignupHarness()
         let signup = harness.makeSignup()
         let implausible = Self.viewModel(.init(step: .email), signup: signup)
-        implausible.submitEmail(address: "sam@example", news: true)
+        implausible.submitEmail(address: "sam@example")
         #expect(implausible.model.step == .email)
 
         let welcome = Self.viewModel(.init(), signup: signup)
-        welcome.submitEmail(address: "sam@example.com", news: true)
+        welcome.submitEmail(address: "sam@example.com")
         #expect(welcome.model.step == .welcome)
 
         await signup.settle()
@@ -654,34 +640,29 @@ struct OnboardingViewModelTests {
         #expect(harness.requests.isEmpty)
 
         let noSignup = Self.viewModel(.init(step: .email), signup: nil)
-        noSignup.submitEmail(address: "sam@example.com", news: true)
+        noSignup.submitEmail(address: "sam@example.com")
         #expect(noSignup.model.step == .email)
     }
 
-    /// The box starts unticked each time the step shows (design §3.1), and the field empty: what's typed is a draft,
-    /// never saved, and gone once the window closes. The pill's Open with the step already showing keeps it.
+    /// The field starts empty each time the step shows (design §3.1): what's typed is a draft, never saved, and gone
+    /// once the window closes. The pill's Open with the step already showing keeps it.
     @Test func theDraftStartsEmptyEachTimeTheStepShows() throws {
         let harness = SignupHarness()
         let viewModel = Self.viewModel(.init(step: .practice), signup: harness.makeSignup(), defaults: harness.defaults,
                                        status: Self.all)
         // Left from an earlier showing of the step, before its address was cleared.
         viewModel.emailDraft = "sam@example.com"
-        viewModel.newsDraft = true
         viewModel.openedForEmail()
         #expect(viewModel.model.step == .email)
         #expect(viewModel.emailDraft.isEmpty)
-        #expect(!viewModel.newsDraft)
 
         viewModel.emailDraft = "sam@example.com"
-        viewModel.newsDraft = true
         viewModel.openedForEmail()
         #expect(viewModel.emailDraft == "sam@example.com")
-        #expect(viewModel.newsDraft)
 
         viewModel.closed()
         #expect(viewModel.model.showsAtLaunch)
         #expect(viewModel.emailDraft.isEmpty)
-        #expect(!viewModel.newsDraft)
 
         let data = try #require(harness.defaults.data(forKey: OnboardingModel.storeKey))
         let fields = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -776,9 +757,8 @@ struct OnboardingViewModelTests {
     @Test func theEmailStepFitsTheWindow() {
         for persisted in [OnboardingModel.Persisted(step: .email), OnboardingModel.emailOnly()] {
             let viewModel = Self.viewModel(persisted, signup: nil)
-            for (draft, news) in [("", false), ("sam.example-person@subdomain.example.com", true)] {
+            for draft in ["", "sam.example-person@subdomain.example.com"] {
                 viewModel.emailDraft = draft
-                viewModel.newsDraft = news
                 let view = NSHostingView(rootView: OnboardingView(viewModel: viewModel, fitsContent: true))
                 let natural = view.fittingSize
                 #expect(natural.width == OnboardingView.width)

@@ -10,13 +10,9 @@ enum EmailConsent {
     static let title = "Stay in the loop"
     static let notice = "We'll email you about security fixes and important changes to Annotake. "
         + "Every email has an unsubscribe link."
-    static let box = "Also email me feedback requests and news"
-    /// The CASL mailing address in the step's footer. make release greps for this declaration while it holds the
-    /// sentinel, so it stays on one line, spelled as it is.
-    static let mailingAddress = "[mailing address]"  // Fayzan replaces this at the checkpoint
-    static let unsetMailingAddress = "[mailing address]"
-    /// The step's footer, which the Privacy policy link follows.
-    static var footer: String { "From Fayzan Malik · \(mailingAddress) · annotake.app ·" }
+    /// The step's footer, which the Privacy policy link follows. No box and no mailing address yet: CASL wants the
+    /// address beside a consent request, so until the list has one, the step asks for no consent (design §13).
+    static let footer = "From Fayzan Malik · annotake.app ·"
     static let privacyURL = URL(string: "https://annotake.app/privacy")!
 
     // MARK: - The address check: the site's email.js, as /api/subscribe applies it
