@@ -590,9 +590,10 @@ test('what isn’t the app’s request answers 422, and an address the site won�
     ['appVersion null', good({ appVersion: null }), 'invalid request'],
     ['an empty appVersion', good({ appVersion: '' }), 'invalid request'],
     ['an appVersion over 32 characters', good({ appVersion: 'x'.repeat(MAX_APP_VERSION_LENGTH + 1) }), 'invalid request'],
-    ['no email', post(without('email')), 'invalid address'],
-    ['an email that isn’t text', good({ email: ['sam@example.com'] }), 'invalid address'],
-    ['email null', good({ email: null }), 'invalid address'],
+    // An address that isn't text is a request the app didn't build, and a 400 would clear the app's saved address.
+    ['no email', post(without('email')), 'invalid request'],
+    ['an email that isn’t text', good({ email: ['sam@example.com'] }), 'invalid request'],
+    ['email null', good({ email: null }), 'invalid request'],
     ['an empty email', good({ email: '' }), 'invalid address'],
     ['no dot in the domain', good({ email: 'privatesam@example' }), 'invalid address'],
     ['a space', good({ email: 'privatesam@exa mple.com' }), 'invalid address'],
