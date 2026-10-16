@@ -116,3 +116,73 @@ Steps from the landing page plan's Task 15, for connecting annotake.app. Session
     Result: not done yet.
 12. **Before the first public post:** move to Vercel Pro.
     Result: not done yet.
+
+## Checkpoint 5 (the email list)
+
+Steps from the email list plan's Task 11, with what the build found ([email list design §13](plans/2026-10-15-email-list-design.md#13-changes-from-planning-and-building) has why). The build, on branch `email-list`, did none of this: it never deployed, touched Resend or Vercel, or sent an email. Fill in each result.
+
+1. **The mailing address:**
+   - rent a PO box or a virtual mailbox, never your home address;
+   - set `EmailConsent.mailingAddress` in `Sources/AnnotakeApp/EmailConsent.swift`, keeping the declaration on one line (`make release` greps for it), and commit `app: the CASL mailing address`;
+   - `MAILING_ADDRESS` goes into Vercel in step 3.
+
+   Until it's set, `make release` stops, and so does `make release DRY_RUN=1`.
+   Result: not done yet.
+2. **In Resend,** all before Vercel's settings: until the four properties exist, every new contact answers 502 (`subscribe: failed rejected`), and the app's retries soon slow to every 6 hours.
+   - the topics `Important notices` (default: opt in) and `Feedback and news` (default: opt out); note both ids;
+   - the string contact properties `consent_at`, `consent_wording`, `consent_source`, and `app_version`;
+   - one segment, such as "Annotake users"; note its id;
+   - a full-access key;
+   - a saved broadcast footer: `Fayzan Malik · <address> · annotake.app` and the unsubscribe placeholder;
+   - open and click tracking off for annotake.app: /privacy mentions no tracking.
+
+   Result: not done yet.
+3. **In Vercel (Production, Secret):** `RESEND_CONTACTS_KEY`, `RESEND_SEGMENT`, `RESEND_TOPIC_NOTICES`, `RESEND_TOPIC_NEWS`, `UNSUBSCRIBE_SECRET`, and `MAILING_ADDRESS`.
+   - `UNSUBSCRIBE_SECRET`: make it with `openssl rand -hex 32`, and save it in the password manager before pasting it in; Vercel never shows a Secret again. Never make a new one: every welcome email's unsubscribe link depends on it. Carry the same value to a Pro team.
+   - Change the firewall rule's path from `/api/link` to `/api/*`.
+   - Preview gets none of these, so there `/api/unsubscribe` answers 502 (`unsubscribe: failed not configured`). That's expected.
+
+   Result: not done yet.
+4. **Deploy:** merge `email-list` into `main` and push, or redeploy if it's there already, so the functions get step 3's settings. Push the branch whole: Vercel builds the last commit, and Task 1's commit alone fails its build.
+   - Vercel shows the pushed commit as Ready on Production, not Canceled.
+   - If a later push that leaves `site/` alone still builds, check that Vercel exposes system environment variables: the ignore step reads `VERCEL_GIT_PREVIOUS_SHA`, and without it every push builds, which is safe.
+
+   Result: not done yet.
+5. **The smoke check:** `make site-smoke URL=https://annotake.app` passes every check except annotake.com's redirect. That one fails, and so does the command, until Checkpoint 4's step 4 registers the domain. Besides Checkpoint 4's checks, it reads `/api/subscribe` (405), `/api/unsubscribe` with nothing to check (400; it fails until `UNSUBSCRIBE_SECRET` is set), and `/api/_lib/consent.json` (404). It also posts the invalid address `smoke@example` under the current consent id: 400 means the deployment has the app's wording, and 422 that it doesn't yet. The gate is that consent check, "POST /api/subscribe has the app's consent id": it must read PASS (400). It comes before any sign-up below, and before the release.
+   Result: not done yet.
+6. **Read and accept the copy,** after a fresh `make ui-snapshots`: `build/ui/settings-general-no-email.png` predates Add….
+   - the email step (`build/ui/onboarding-email-filled.png`);
+   - the welcome email (`site/api/_lib/welcome.js`, or as it arrives in step 8);
+   - the "Change your email" sheet and its Privacy policy link (`settings-email-change.png`), and Not set with Add… (`settings-general-no-email.png`);
+   - `/privacy` and `/terms`, /privacy's Unsubscribing paragraph included. Both say "Last updated: October 15, 2026": move it to the release day if you like. /privacy's Changes section says big changes are noted on the home page: decide whether the email list is one;
+   - [design §13](plans/2026-10-15-email-list-design.md#13-changes-from-planning-and-building)'s open questions, the window title among them. Answer the step's notice question first: once `consent-2026-10-15` ships, any change to the step's wording needs a new id.
+
+   Result: not done yet.
+7. **The app in a real window,** with a build of `main` (`make install`):
+   - **The email step:** with Annotake quit, run `defaults delete com.fayzanmalik.annotake email.v1` only, leaving the first run finished, then open it. Expect the email step alone, with the field focused. ⌘V pastes an address, and ⌘A, ⌘X, and ⌘Z work. Return with `sam@example` does nothing.
+   - **Recording waits:** close the window. Hold Right ⌘: nothing records, and at the reveal the pill says "Add your email to start recording" with Open. A quick Right ⌘ shortcut (⌘C) shows nothing, and works. The menu offers Start Recording throughout, and Start shows the message. Held past 5 s, the message goes while the key is still down. Open brings the email step forward.
+   - **Saving:** Return with a new Gmail `+alias` submits once and shows You're set, and the next hold records.
+   - **Settings:** the Email row shows the address with Change…, which opens "Change your email": the field focused with the address selected; ⌘V pastes, Return saves, and Esc cancels. With Annotake quit and `email.v1` deleted again, the row shows Not set with Add…, which opens the email step.
+
+   Result: not done yet.
+8. **Design §9's checks 2–4,** in order:
+   - **The list:** a fresh first run. With Annotake quit, run `defaults delete com.fayzanmalik.annotake email.v1`, then the same for `email.sentKeys.v1` and `onboarding.v1`; open it, and sign up with a new Gmail `+alias`, with the box ticked so it gets both test broadcasts below. Resend keeps the welcome's Idempotency-Key for 24 hours after that welcome, so an address that got one in the last 24 hours gets no second one, even after you delete its contact in Resend, though the log says `subscribe: added` (or `subscribe: added welcome already sent`, if the box changed). One whose contact is still there gets no welcome either: the log says `subscribe: kept`, `subscribe: kept unsubscribed`, or `subscribe: news added`. In Resend, the contact is in the segment, with both topics and all four properties. The welcome email arrives in the inbox with `dkim=pass`, `spf=pass`, and `dmarc=pass`, and Gmail shows its Unsubscribe link.
+   - **Replies:** a reply to the welcome email from another address lands in `fayzanm786@gmail.com`.
+   - **Unsubscribing,** in this order:
+     - a test broadcast to each topic, sent to the segment with Reply-To set to the Gmail address, reaches the alias: its unsubscribe link opens Resend's topic page, its raw headers (Gmail's Show original) carry `List-Unsubscribe` and `List-Unsubscribe-Post`, and a reply from another address lands in Gmail;
+     - then Gmail's one-click unsubscribe on the welcome email marks the contact unsubscribed in Resend;
+     - after that, the next broadcast doesn't reach the alias. Check its To: address: every alias lands in the same inbox, and step 7's still gets broadcasts;
+     - typing the address again in a fresh first run, with the three keys cleared, sends no second welcome.
+
+   A Change… to an address this Mac has sent before saves it as sent and posts nothing, even if its contact was deleted in Resend since: use a new alias for Change… tests, or clear the three keys first.
+   Result: not done yet.
+9. **Release:** `make release DRY_RUN=1 NOTES="…"`, then `make release NOTES="…"`, only once every step above passes (design §9 holds the release until its checks 2–4 pass). Existing copies get the email step after their next Sparkle update.
+   Result: not done yet.
+
+**For any later change to the step's wording:** add a new version to `site/api/_lib/consent.json` and move its `current`, deploy it, and see `make site-smoke URL=https://annotake.app`'s consent check pass (400, not 422). Only then release the app that sends the new id: until the site has it, it answers that id 422, and every new copy's address waits on the app's backoff.
+
+**Recorded, not debugged** (found during the build; each was there before it):
+- `InputBridgeTests.tabStartsNewLookup()` fails about 1 run in 40. Start: its two unstructured Tasks race for `FakeLabels`' fields.
+- Tests that use a throwaway `UserDefaults` suite leave an empty `annotake-tests-*.plist` in `~/Library/Preferences` each (3,550 on this Mac by 2026-10-16): `SettingsTests` and `SettingsWindowTests`, and now `Tests/AnnotakeAppTests/Support/SignupHarness.swift`. Start: `removePersistentDomain(forName:)` empties a suite but leaves its file.
+- `link.js`'s no-JavaScript failure page ("We couldn't send it right now.") is wider than a 320 px screen: by 18 px in Chrome and 27 px in WebKit (Firefox breaks the link after "https://"). A `<wbr>` after "annotake.app/" in `link.js` would fix it.
+- With an address saved, the menu's Start clicked just as a Right ⌘ hold begins starts a hands-free recording while `InputMonitor` still holds the hold, so a double-tap can't stop it; the menu's Stop or the 5-minute limit does. Start: `SessionController.toggleFromMenu()` and `InputMonitor.handsFreeStartedElsewhere()`.

@@ -1,6 +1,6 @@
 # Annotake landing page design: annotake.app
 
-**Status:** approved 2026-10-01, in Session 9; built in Session 10, 2026-10-01 (§12 has what changed); Checkpoint 4 next · **Plan:** [2026-10-01-landing-page-build.md](2026-10-01-landing-page-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2), §8 (privacy), §9 (risks)
+**Status:** approved 2026-10-01, in Session 9; built in Session 10, 2026-10-01 (§12 has what changed); Checkpoint 4 next. The [email list design](2026-10-15-email-list-design.md) (2026-10-15) adds a list and two functions, and §1, §2, §4.2, §4.4, §5, §6, and §9 point to it · **Plan:** [2026-10-01-landing-page-build.md](2026-10-01-landing-page-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2), §8 (privacy), §9 (risks)
 
 Worked out with the brainstorming companion. The mockups (`visual-style`, `graphic`, `hero-steps`, `page-v1`, `footer`) are kept in the git-ignored `.superpowers/brainstorm/32148-1790882887/content/`; this doc is the record. The page is pulled ahead of the rest of Stage 2, as a side project while the friends round runs. Sign-in, the daily counts, and the founding-member checkout keep their own design session.
 
@@ -16,7 +16,7 @@ Worked out with the brainstorming companion. The mockups (`visual-style`, `graph
 - **Principles:**
   - **As simple as the product.** One idea per section. No section the visitor doesn't need.
   - **Ease of use first.** One click to the disk image. No login, no waitlist.
-  - **The site keeps the app's promise.** No cookies, no trackers, no third-party scripts, and no stored email addresses.
+  - **The site keeps the app's promise.** No cookies, no trackers, no third-party scripts, and no stored email addresses. (Since the [email list design](2026-10-15-email-list-design.md), Resend keeps the addresses the app sends, as the email list; the link email still keeps none.)
   - **Robust at any traffic.** Every part keeps working under load, and degrades instead of breaking when something fails (§6).
   - **Inspired by Wispr Flow, not a copy.** Big type, few words, one button, one picture that shows the transformation, an animated footer logo. Their look (a serif on cream) and their squiggle were tried and dropped.
 
@@ -32,8 +32,8 @@ Worked out with the brainstorming companion. The mockups (`visual-style`, `graph
 | How it works is a vertical strip of three captioned frames | It uses the app's first-run words and its caption format, so the explanation looks like an Annotake recording of itself. Each step plays as it scrolls into view; the page isn't pinned |
 | No trigger key in the hero; step 1 cycles ⌘, ⌥, fn | Right ⌘ is only the default. The app offers three keys, so the page never says "any key" |
 | The footer logo animates: the tripod opens into the A | Fayzan's idea. Wispr's footer logo moves too; this one is ours |
-| Phones and other computers get "Email me the link", with no news tick box | A requested email is exempt from CASL's consent rules. A news list would need a mailing address on the form and in every email. News consent can come through Stage 2's sign-in |
-| Plain HTML, CSS, and JavaScript in `site/`, with one Vercel function | The mockups become the code. No framework, no build step, no runtime packages. Sessions keep this repo's memory and docs. Revisit (Astro, say) when Stage 3 adds pricing, a changelog, and an FAQ |
+| Phones and other computers get "Email me the link", with no news tick box | A requested email is exempt from CASL's consent rules. A news list would need a mailing address on the form and in every email. News consent can come through Stage 2's sign-in (since the [email list design](2026-10-15-email-list-design.md), the app's email step asks for it) |
+| Plain HTML, CSS, and JavaScript in `site/`, with one Vercel function (three since the [email list design](2026-10-15-email-list-design.md)) | The mockups become the code. No framework, no build step, no runtime packages. Sessions keep this repo's memory and docs. Revisit (Astro, say) when Stage 3 adds pricing, a changelog, and an FAQ |
 | Resend sends the link email; annotake.app receives no mail | Its free plan fits the beta and upgrades without code changes. No address at annotake.app is published, so nothing needs forwarding (§12) |
 | Vercel Web Analytics | Cookieless, so there's no banner. Referrers show which post brought people |
 | No cookies, self-hosted fonts, no third-party scripts | No cookie banner is needed, and a strict content security policy (CSP) is possible |
@@ -203,24 +203,24 @@ Not legal advice. This covers the usual ground for free beta software. Before St
 
 ### 4.2 The privacy policy (`/privacy`)
 
-Plain language. It opens with a "Last updated" date, and old versions stay in git.
+Plain language. It opens with a "Last updated" date, and old versions stay in git. Since the [email list design](2026-10-15-email-list-design.md) (§6.3 there), it also covers the app's email list, which changed items 2, 3, 5, 6, and 7 below.
 
 1. **Who:** Annotake is made by Fayzan Malik, an individual in Ontario, Canada, who is the person responsible for privacy. The policy gives no email address (§12).
-2. **The short version:** nothing you record leaves your Mac. The site uses no cookies. We get your email only if you ask for the link, and only to send it.
+2. **The short version:** nothing you record leaves your Mac. The site uses no cookies. We get your email only if you ask for the link, and only to send it. (Since the email list: we also get the address the app asks for, for important notices and, if you agree, feedback requests and news.)
 3. **The app:**
    - **What stays on your Mac:** frames, captions, `steps.md`, window titles, button names, keys, and file paths. They're saved in `~/Pictures/Annotake` and cleared after 30 days by default.
    - **The three permissions,** and why each is needed. They're used only on the Mac.
-   - **What goes over the network:** a daily update check, which sends the app's version to GitHub, and the update downloads. GitHub sees your IP address, as with any download.
+   - **What goes over the network:** a daily update check, which sends the app's version to GitHub, and the update downloads. GitHub sees your IP address, as with any download. (Since the email list: also the address, the box's choice, and the app's version, sent to annotake.app once, and again only after a change of address in Settings.)
    - **Send Feedback:** it opens a draft in your mail app with the app and macOS versions, the permission states, the recent log, and the latest crash report. You see it and choose whether to send it. The log never holds button names, window titles, or keys.
    - **Coming later:** Stage 2 adds sign-in and daily counts. This policy is updated before that version ships, and the app asks before anything new is sent.
 4. **The website:**
    - **Hosting:** Vercel. Like any host, it processes IP addresses and browser details to deliver pages and stop abuse.
    - **Analytics:** Vercel Web Analytics counts visits and referrers without cookies, and doesn't identify you.
    - **Downloads** come from GitHub (`fayzan123/annotake-releases`), under GitHub's privacy statement.
-5. **The link email:** your address is used to send that one email through Resend. We keep no list. Resend keeps its sending logs for 30 days.
-6. **Who else sees data:** only the services above: Vercel, Resend, and GitHub. They're in the US. Nothing is sold.
+5. **The link email:** your address is used to send that one email through Resend. We keep no list of these: the app's email list is separate ([email list design](2026-10-15-email-list-design.md)), and asking for the link doesn't add you to it. Resend keeps its sending logs for 30 days.
+6. **Who else sees data:** only the services above: Vercel, Resend, and GitHub. They're in the US. Nothing is sold. (Since the email list: Google too, as Gmail, where replies and Send Feedback arrive.)
 7. **Your rights:**
-   - To see, correct, or delete your data. With no accounts and no list, there's none held on our side.
+   - To see, correct, or delete your data. With no accounts and no list, there's none held on our side. (Since the email list: Resend holds the list for us, and a request goes by replying to any email from it, or with Send Feedback.)
    - Complaints go to the Office of the Privacy Commissioner of Canada.
    - EU and UK visitors also have GDPR rights. The legal basis is your request for the link, and legitimate interest for site security.
 8. **Children:** the site isn't for children under 13, or under 16 in the EU.
@@ -244,8 +244,8 @@ Plain language. It opens with a "Last updated" date, and old versions stay in gi
 
 - **The link email doesn't need a consent box.** CASL's regulations exempt a message "sent in response to a request, inquiry or complaint or is otherwise solicited by the person to whom the message is sent" ([SOR/2013-221, s. 3(b)](https://laws-lois.justice.gc.ca/eng/regulations/SOR-2013-221/FullText.html)).
   - It still names the sender, and it says it's the only email.
-  - That exemption doesn't cover later messages, so no list is kept.
-- **A news list, if one comes in Stage 2 or later, needs all of this:**
+  - That exemption doesn't cover later messages, so the link email keeps no list. The app's email list came later, with its own consent: [email list design](2026-10-15-email-list-design.md) §6.1.
+- **A news list needs all of this,** and the [email list design](2026-10-15-email-list-design.md)'s §6.1 meets each:
   - an unticked box;
   - the sender's name, a mailing address, and a contact on the form, plus a statement that consent can be withdrawn;
   - in every message: the name, the mailing address, a contact, and an unsubscribe link that works for 60 days and is honoured within 10 business days;
@@ -276,6 +276,8 @@ site/
   index.html, privacy.html, terms.html, 404.html, robots.txt, sitemap.xml
   vercel.json, .vercelignore, package.json   ({"private": true, "type": "module"}: no dependencies)
   api/link.js                 the email function (Node, no packages)
+  api/subscribe.js, api/unsubscribe.js, api/_lib/
+                              since the email list design: its two functions and their shared code
   licenses/sparkle.txt, licenses/jost-ofl.txt
   assets/
     site.css
@@ -296,7 +298,7 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
 - **The brand comes from one source.** `BrandMark.swift` and `Wordmark.swift` stay the only source of the logo. `scripts/make-site-brand.swift` compiles them, the same way `make-icon.swift` does, and writes SVG path data and the leg numbers into `brand.js`.
   - A test fails if the committed file is out of date.
   - `make site-brand` regenerates it.
-- **Make targets:** `make site-dev` serves the site locally, with `/api/link` in dry-run mode, and `make site-test` runs every site test (`make site-unit` just the unit tests). `make site-brand` and `make site-og` regenerate the brand files and the preview image, and `make site-smoke` and `make site-burst` check a deployment (Checkpoint 4).
+- **Make targets:** `make site-dev` serves the site locally, with the functions in dry-run mode, and `make site-test` runs every site test (`make site-unit` just the unit tests). `make site-brand` and `make site-og` regenerate the brand files and the preview image, and `make site-smoke` and `make site-burst` check a deployment (Checkpoints 4 and 5).
 - **CSP rules for the code:** no inline scripts, and no `style="…"` attributes in markup, because both are blocked by the CSP. Code sets positions through `element.style` instead.
 
 ### 5.2 Routes (`vercel.json`)
@@ -307,8 +309,8 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
   - If hosting moves, only this line changes.
 - **Domains:** `www.annotake.app`, `annotake.com`, and `www.annotake.com` redirect (308) to `https://annotake.app`, set in Vercel's domain settings.
 - **Caching:** `/assets/fonts/*` and `/assets/img/*` are served `public, max-age=31536000, immutable`. Their names carry a version (`.v1`), which changes whenever the file does. Everything else uses Vercel's default, which re-checks on each visit.
-- **The function:** `api/link.js`, with a 10 s maximum duration.
-- **Vercel project:** the root directory is `site`. The "Ignored Build Step" is `git diff --quiet HEAD^ HEAD -- .`, so commits to the app don't redeploy the site.
+- **The functions:** `api/link.js`, and since the [email list design](2026-10-15-email-list-design.md) `api/subscribe.js` and `api/unsubscribe.js`, each with a 10 s maximum duration.
+- **Vercel project:** the root directory is `site`. The "Ignored Build Step" (`ignoreCommand` in `vercel.json`) skips a build only when `site/` is unchanged since the last successful deployment (`git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- .`). It builds when there's no earlier deployment, when the commit is the one deployed (a redeploy), and when the clone doesn't have the earlier commit. So commits to the app don't redeploy the site, and a push whose last commit leaves `site/` alone still deploys the site changes before it. Until the email list build it was `git diff --quiet HEAD^ HEAD -- .`, which compared only a push's last commit with its parent.
 
 ### 5.3 The link function
 
@@ -402,8 +404,8 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
 | Analytics | Hobby counts 50,000 events a month | Counting pauses; the site is unaffected |
 | Without JavaScript | A plain link and a plain form | Still downloads, and still sends the link |
 
-- **No database.** Nothing is stored on our side, so there's nothing to scale, back up, migrate, or leak.
-- **Secrets:** the Resend key lives only in Vercel's Production settings. There are no runtime packages to update or be attacked through.
+- **No database.** Nothing is stored on our side, so there's nothing to scale, back up, migrate, or leak. (The email list, added later, lives in Resend: [email list design](2026-10-15-email-list-design.md).)
+- **Secrets:** the Resend key lives only in Vercel's Production settings, and so, since the email list, do its key, ids, and unsubscribe secret. There are no runtime packages to update or be attacked through.
 - **Deploys:** every change gets a preview link before production.
 - **Monitoring:**
   - a free uptime monitor (UptimeRobot, say) checks `/` and `/download` every 5 minutes and emails Fayzan;
@@ -470,7 +472,7 @@ Real per-user server load arrives with Stage 2: Supabase sign-in and the daily c
 - **The 20-second video.** When it exists, it goes in a section after How it works: self-hosted MP4 and WebM, muted and looping while in view, with a poster frame. It also goes on X and Reddit.
 - **The app's Send Feedback address** stays Fayzan's Gmail: annotake.app receives no mail. If it ever does, the switch is one line (`Feedback.address`).
 - **Sparkle's MIT notice** goes into the app bundle in the next app release.
-- **Stage 2:** news consent at sign-in, if wanted, under §4.4's rules. The privacy policy is updated before sign-in ships.
+- **Stage 2:** news consent at sign-in, if wanted, under §4.4's rules. Done ahead of Stage 2: the [email list design](2026-10-15-email-list-design.md)'s email step asks for it, in the app. The privacy policy is updated before sign-in ships.
 - **Stage 3:** pricing, the FAQ, a changelog, the feed move, and maybe Astro.
 
 ## 10. Changes to other docs

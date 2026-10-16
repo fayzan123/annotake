@@ -188,7 +188,7 @@ After that, a 15-minute chat with each: what they used it for, what confused the
   - two waves of invites a week apart, so support keeps up;
   - posting on X, a habit that starts now: the demo first, then what the beta teaches.
 - **What gets built,** with its own design and plan, during the friends round:
-  - sign-in with Google, GitHub, or Apple on Supabase, in the first run's slot;
+  - sign-in with Google, GitHub, or Apple on Supabase, in the first run's slot. Since the [email list design](2026-10-15-email-list-design.md) (2026-10-15), that slot holds an email step, and sign-in takes its place, matched to the Resend contact by email;
   - the daily counts in §8;
   - the landing page with its privacy policy and Terms, pulled ahead into its own [design](2026-10-01-landing-page-design.md);
   - the founding-member checkout ($36 a year) through Polar, matched to the account by email.
@@ -246,6 +246,7 @@ After that, a 15-minute chat with each: what they used it for, what confused the
 - **What the server stores, from Stage 2:**
   - an email, a plan, and referral credits;
   - per day: recordings started, saved, and discarded; frames kept; screen or window; whether a card was dragged somewhere; the app and macOS versions; which permissions are granted.
+- **Ahead of Stage 2,** the [email list design](2026-10-15-email-list-design.md) (2026-10-15) has the app send an email address, the choice of feedback and news, the consent id, and its version, and Resend keeps them as the email list, with a consent record. There's still no database of our own.
 - **Never sent:** frames, captions, `steps.md`, window titles, app names, button names, keys, typed text, and file paths.
 - **The log stays local.** It reaches Fayzan only through Send Feedback, when the user sends it.
 - **A plain-language privacy policy** is published before the beta.

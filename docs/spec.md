@@ -1,6 +1,6 @@
 # Annotake: v1 spec
 
-**Status:** approved design, 2026-09-23; updated with M0 findings and the M2–M4 design 2026-09-24, and with the distribution design 2026-09-30 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
+**Status:** approved design, 2026-09-23; updated with M0 findings and the M2–M4 design 2026-09-24, with the distribution design 2026-09-30, and with the email list 2026-10-16 · **Owner:** Fayzan Malik · **Platform:** macOS 15 and later
 
 **Name:** Annotake, called Flipbook until 2026-09-30 ([distribution design §3](plans/2026-09-30-distribution-design.md#3-the-name-annotake))
 
@@ -10,6 +10,7 @@ Companion docs:
 - [spikes/findings.md](spikes/findings.md): what the M0 spikes measured, and the decisions taken from them.
 - [plans/2026-09-24-m2-m4-design.md](plans/2026-09-24-m2-m4-design.md): how M2–M4 build the app (capture, input, export, UI), and the two checkpoints.
 - [plans/2026-09-30-distribution-design.md](plans/2026-09-30-distribution-design.md): how the app reaches other developers and makes money: the stages, the free plan and Pro, accounts, and the rename to Annotake.
+- [plans/2026-10-15-email-list-design.md](plans/2026-10-15-email-list-design.md): the email address the first run asks for, the list in Resend, and its unsubscribe.
 
 ## 1. Summary
 
@@ -22,7 +23,11 @@ It exists because reproducing a Jira bug for a coding agent meant screenshotting
 - **Ease of use first.** The flow is: press the key, reproduce the bug, drag the card. Nothing may add a step, a confirmation, or a wait to it. Defaults work with no setup, and failures degrade instead of blocking a recording.
 - **Built for Fayzan's own workflow first, and now for other developers too.** Setup must be as easy as Wispr Flow or Loom: download, grant the permissions, start ([distribution design](plans/2026-09-30-distribution-design.md)). Competitors don't drive product decisions; pricing and positioning look at them.
 - **No AI in the product.** No LLMs, no ML models, no API keys, no bills. Frames are picked by pixel comparison, and "what you clicked" comes from macOS Accessibility.
-- **Nothing you record leaves your Mac.** Frames, captions, `steps.md`, window titles, button names, and keys never leave it, which keeps it acceptable on a work Mac. The app's only network call is a daily update check (Sparkle, §6.2), which sends only the app's version and never a system profile. The [distribution design](plans/2026-09-30-distribution-design.md) adds sign-in, the plan, and daily counts in Stage 2. A recording never waits on the network.
+- **Nothing you record leaves your Mac.** Frames, captions, `steps.md`, window titles, button names, and keys never leave it, which keeps it acceptable on a work Mac. The app makes two network calls:
+  - a daily update check (Sparkle, §6.2), which sends only the app's version and never a system profile;
+  - the email sign-up (§3.7), which sends the address, the box's choice, the consent id, and the app's version to `annotake.app/api/subscribe`: after Continue, then at each launch (last, after the update check) and on a backoff until the site takes or refuses it, and again only on a Change… to a new address ([email list design](plans/2026-10-15-email-list-design.md) §3.4).
+
+  The [distribution design](plans/2026-09-30-distribution-design.md) adds sign-in, the plan, and daily counts in Stage 2. A recording never waits on the network.
 - **Agent-agnostic.** The output is plain PNGs plus a text log, with no integration into any specific agent.
 - **Bare-bones v1.** Anything the core loop doesn't need goes to the backlog.
 - **Native Swift, macOS 15 and later** (§6). It must work on Fayzan's personal Mac (15.7) and his work Mac (26).
@@ -60,9 +65,14 @@ Rules:
   - Hold mode: `● 0:04 · 3 frames · release ⌘ to stop`
   - Hands-free mode: `● 0:12 · 5 frames · double-tap ⌘ to stop · ⌘Esc cancels`
   - The key glyph follows the trigger key. Past Max frames the count reads `best 20 of 27`: it never promises more than the card will hold, and the growing total shows recording goes on (the best frames are picked at the end, §5.5).
-  - The pill sits over the app being recorded, so it ignores clicks while recording. It only takes clicks when it shows a message with a button, such as Open Settings.
+  - The pill sits over the app being recorded, so it ignores clicks while recording. It only takes clicks when it shows a message with a button, such as Open Settings or Open.
 - **Sounds.** Soft start and stop sounds, controlled by a Settings toggle that is on by default. In hold mode the start sound plays at the reveal. No sound plays when a recording is discarded or cancelled.
 - **Time limit.** Hands-free recordings stop and save automatically at **5 minutes**. Hold recordings end when the key is released.
+- **No address, no recording.** Until the email step has saved an address (§3.7), nothing records:
+  - a hold shows "Add your email to start recording", with Open, at its reveal, so a quick shortcut shows nothing;
+  - a double-tap or the menu's Start shows it at once, and the menu keeps offering Start Recording;
+  - Open brings the email step forward;
+  - a recording under way is never cut off.
 - **Accidental recordings are discarded silently:**
   - a hold released before the reveal: if the pill never appeared, nothing was recorded;
   - a hands-free recording shorter than **0.5 s**.
@@ -118,6 +128,7 @@ Rules:
   - Check for Updates… (Sparkle checks now and shows the result)
   - Quit
 - There is no Dock icon.
+- **A main menu that never shows** (`EditMenu.swift`). Annotake is menu-bar-only, so a text field, such as the email step's, gets ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z only through it. AppKit adds its hidden AutoFill, Start Dictation…, and Emoji & Symbols items with it, so ⌃⌘Space opens Emoji & Symbols while an Annotake window is key.
 
 ### 3.6 Settings
 
@@ -126,6 +137,7 @@ Rules:
 | General | Trigger key: Right ⌘ / Right ⌥ / fn | Right ⌘ |
 | | Sounds | On |
 | | Launch at login | On |
+| | Email: the address with Change…, or Not set with Add… | Asked in the first run (§3.7) |
 | Record | Entire screen (the cursor's, or a specific one) or Window | Screen with the cursor |
 | Output | Max frames (2–50) | 20 |
 | | Frame size (long edge): 1920 px, or 1568 px compact | 1920 px |
@@ -145,6 +157,8 @@ Every tab ends in a footer bar: the Annotake logo on the left and the version on
 
 Each tab with settings (all but Permissions) has a **Restore Defaults** button at its bottom right (Checkpoint 2: a slider is hard to put back exactly). It resets only that tab's settings, and is greyed out while they're already the defaults.
 
+**The email** isn't a setting, and Restore Defaults never touches it. Its row is last in General. Change… opens a sheet titled "Change your email": the field, a Privacy policy link, Cancel, and Save, with no box, since the new address keeps the earlier choice. Add… opens the email step ([email list design](plans/2026-10-15-email-list-design.md) §3.3).
+
 Choosing fn shows a note with three warnings:
 - macOS's "Press 🌐 key to" setting must be "Do Nothing".
 - Dictation apps (Wispr Flow, Handy) often use fn already.
@@ -154,21 +168,23 @@ Choosing fn shows a note with three warnings:
 
 The first run is one window, "Welcome to Annotake" (560 pt wide), showing one step at a time, like Wispr Flow's ([distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build)). Every key name follows the trigger key (Right ⌘ below).
 1. **Welcome:** the Annotake logo (§6), "Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). Get Started.
-2. **The three permissions, one at a time,** in this order, because Accessibility applies without a relaunch:
+2. **Stay in the loop:** an email field, focused, then "We'll email you about security fixes and important changes to Annotake. Every email has an unsubscribe link.", an unticked box, "Also email me feedback requests and news", and the footer "From Fayzan Malik · <mailing address> · annotake.app · Privacy policy". Continue waits for an address the site will take, saves it on the Mac, and moves straight on; the send runs in the background (§2, [email list design](plans/2026-10-15-email-list-design.md) §3).
+3. **The three permissions, one at a time,** in this order, because Accessibility applies without a relaunch:
    - **Accessibility:** "So Annotake can name the buttons you click, and keep ⌘ out of your clicks while you hold the key."
    - **Input Monitoring:** "So Annotake can notice Right ⌘, and your clicks and keys while you record. It never records what you type."
    - **Screen Recording:** "So Annotake can capture your screen while you record."
 
    Each one shows its reason, then "Annotake sees your screen only while you record. Nothing you record leaves your Mac.", a picture of the row to turn on in System Settings (the app's icon and name, and its switch, ringed), the path to it, and a ✓ for each permission already granted. Allow… shows macOS's prompt; after that, Open System Settings deep-links to the pane, and Continue moves on without waiting for the grant to show. A grant made anywhere, in any order, moves the step on, and a permission that's already granted is never asked for.
-3. **Reopen,** only when Input Monitoring or Screen Recording was requested and isn't granted yet, because those apply only after a relaunch. Quit & Reopen saves where the window is, relaunches, and the window comes back at the next step.
-4. **A practice run:** double-tap Right ⌘, click through something in another app, and double-tap again. Annotake keeps its own windows out of recordings, so the practice happens elsewhere (Checkpoint 3: an Open button and a Remember me box in the first run's own window never appeared in the frames). Once the recording is saved, the window comes back in front with the drop box. A recording saved earlier in the first run skips this step.
-5. **A drop box:** "Now drag the card here." A dropped card shows how many frames it held and the first three, then "Next time, drag it into Claude Code, Cursor, or ChatGPT." Skip or Continue.
-6. **You're set:** hold the key for quick recordings, Right ⌘ + Esc cancels, and everything else is in the menu-bar icon.
+4. **Reopen,** only when Input Monitoring or Screen Recording was requested and isn't granted yet, because those apply only after a relaunch. Quit & Reopen saves where the window is, relaunches, and the window comes back at the next step.
+5. **A practice run:** double-tap Right ⌘, click through something in another app, and double-tap again. Annotake keeps its own windows out of recordings, so the practice happens elsewhere (Checkpoint 3: an Open button and a Remember me box in the first run's own window never appeared in the frames). Once the recording is saved, the window comes back in front with the drop box. A recording saved earlier in the first run skips this step.
+6. **A drop box:** "Now drag the card here." A dropped card shows how many frames it held and the first three, then "Next time, drag it into Claude Code, Cursor, or ChatGPT." Skip or Continue.
+7. **You're set:** hold the key for quick recordings, Right ⌘ + Esc cancels, and everything else is in the menu-bar icon.
 
 - **Nothing is asked for before its step.** Listing screens makes macOS ask for Screen Recording, and creating the key's event tap makes it ask for Input Monitoring, so until each is granted Annotake does neither at launch; neither works before then anyway (M0). A grant noticed by the once-a-second check brings the window back in front of System Settings at the next step (Checkpoint 3).
-- **Where it is** is saved after every change (`onboarding.v1`), and the window shows at each launch until it's done. Closing it on a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
-- **Fix permissions…** in the menu shows the first run where it is, or once it's done, a pass over the missing permissions alone. Closing that pass finishes it.
-- **In Stage 2,** a sign-in step goes after the welcome.
+- **Where it is** is saved after every change (`onboarding.v1`), and the window shows at each launch until it's done. Closing it on the email step or a permission step brings it back at the next launch; closing it on the practice run, the drop box, or You're set finishes it. Permissions are re-checked every second while it's open.
+- **Fix permissions…** in the menu shows the first run where it is, or once it's done, a pass over the missing permissions alone. Closing that pass finishes it. It starts its own pass even over a pending email-only pass, which comes back with the pill's Open or at the next launch.
+- **The email-only pass** (`.emailOnly`): the email step, then You're set. A copy whose first run is done but has no saved address, from before the email step or because the site refused the address, gets it at launch. A first run that an update reaches past where the email step now goes moves back to it; one left at You're set gets the email-only pass instead. The pill's Open and Settings' Add… bring the email step forward the same way ([email list design](plans/2026-10-15-email-list-design.md) §3.2).
+- **In Stage 2,** sign-in takes the email step's place.
 - Annotake works without Accessibility, in a degraded mode (§7).
 
 Confirmed by M0:
@@ -354,7 +370,7 @@ Sources/
   AnnotakeExport/   caption strips, click markers, PNGs + steps.md, capture folders,
                     filmstrip trims, retention cleanup
   AnnotakeApp/      the app, as a library: SessionController, recording pipeline, menu bar, pill,
-                    card, filmstrip, Settings, the first run, Send Feedback,
+                    card, filmstrip, Settings, the first run, the email sign-up, Send Feedback,
                     the move to Applications, self-test (§8), the brand mark and logo
   Annotake/         the executable: main.swift, and SparkleUpdater.swift (Sparkle is linked only here)
   annotake-replay/  CLI: runs a saved raw session through AnnotakeCore and prints its decisions
@@ -365,7 +381,7 @@ Tests/
   AnnotakeCaptureTests/, AnnotakeInputTests/, AnnotakeExportTests/, AnnotakeReleaseTests/, AnnotakeAppTests/
 ```
 
-The app is a library plus a small executable so its tests can import it the normal way. `AnnotakeApp` defines an `Updater` protocol, and the executable injects a Sparkle-backed one, so the libraries and their tests link no network code. `--selftest` and `--render-ui` never create the updater.
+The app is a library plus a small executable so its tests can import it the normal way. `AnnotakeApp` defines an `Updater` protocol, and the executable injects a Sparkle-backed one, so Sparkle stays out of the libraries. The libraries' one network call is `EmailSignup.post`, the email sign-up, which only the app itself makes. Tests and `--render-ui` give their signups a post that never sends, and `--selftest` and `--render-ui` never create the updater, so the tests and those two modes make no network calls.
 
 **Why Core has no macOS code:** it is the part the golden tests pin down. It is also the part a future Windows version would reuse, or port against the same tests.
 
@@ -420,6 +436,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 | Input Monitoring missing | The key doesn't work, but the menu bar Start/Stop still does. Settings shows the fix. Detected with `CGPreflightListenEventAccess()`, not by tap creation. |
 | Accessibility missing | Still records. Hold-mode clicks keep the trigger's modifier (⌘), and captions say `Clicked at (x, y)`. |
 | Any permission missing | The menu shows "Fix permissions…", which opens the first run's permission steps (§3.7). |
+| No email address saved | Nothing records. The pill says "Add your email to start recording", with Open, which brings the email step forward (§3.2). |
 | Accessibility revoked while click cleanup runs | macOS can block all clicks until reboot if an active tap outlives its permission. Annotake checks trust every 2 s and removes the active tap immediately. |
 | macOS disables the event tap (timeout or user input) | Re-enabled automatically. |
 | An app reacts to the Accessibility flags | Cursor shows "Screen reader usage detected…" once the flag is set. Flags are set only while recording and cleared at stop, unless VoiceOver is running. Checkpoint 1 verifies that apps behave normally after the flags are cleared. |
@@ -463,7 +480,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 
   Event taps, the stream, AX calls, and the UI are covered by the self-test and the checkpoints.
 - **Self-test:** `make selftest` opens a test window of Annotake's own with a scripted scene. It records the window through the real ScreenCaptureKit → picker → export path, with no permission needed, and reports the architecture, frames, timings, and picked captions in `selftest.json`. `make selftest-intel` runs the Intel half through Rosetta, where the signature-time limit is twice as loose, because it measures translation rather than a Mac. The test window opens on the sharpest screen: on a 1× external monitor the drawn pointer covers fewer tiles, and the picker keeps an extra frame (Checkpoint 3). `make ui-snapshots` renders every panel and window to PNGs the same way. Implementation sessions run both unattended.
-- **Log:** `~/Library/Logs/Annotake.log` records gestures, state changes, timings, and errors. It never records labels, window titles, or keys.
+- **Log:** `~/Library/Logs/Annotake.log` records gestures, state changes, timings, and errors. It never records labels, window titles, keys, or email addresses: the sign-up logs only `email: sent`, `email: invalid`, or `email: retry later`.
 - **Send Feedback…** prepares a draft to Fayzan's Gmail for now, and to `feedback@annotake.app` once that receives mail (defined once, as `Feedback.address`); the user sends it. The report is the version, the macOS version and Mac model, the three permissions' states, the last 400 lines of the log, and the newest `Annotake-*.ips` crash report from the last 7 days, capped at 200,000 bytes. It's written to a temporary `Annotake-report-<date>.txt`:
   - When Mail can take an attachment, its compose window opens with "What happened?", the three fact lines, and the report attached.
   - Otherwise (Gmail in a browser, say, or no account set up) a mailto draft opens with the same text, its body capped at 1,500 characters, and Finder shows the report to attach.
@@ -493,7 +510,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   - `make run` builds it and opens it.
   - `make install` copies it into `/Applications`, removing any older copy in `~/Applications`.
   - `make zip` produces a zip for the work Mac, without resource forks, extended attributes, or ACLs (`ditto --norsrc --noextattr --noacl`), so iCloud's tags and the provenance attribute stay out.
-  - `make release NOTES="…"` makes a release (below); `make release DRY_RUN=1 NOTES="…"` runs the same pipeline locally, without credentials, and publishes nothing.
+  - `make release NOTES="…"` makes a release (below); `make release DRY_RUN=1 NOTES="…"` runs the same pipeline locally, without credentials, and publishes nothing. Both stop while `EmailConsent.mailingAddress` is still the sentinel `[mailing address]`, so a dry run needs the mailing address set first ([email list design](plans/2026-10-15-email-list-design.md) §13).
   - `make dmg-background` redraws the disk image's background (`scripts/make-dmg-background.swift`, 600 × 400 at 1× and 2×, combined with `tiffutil`); `Resources/dmg-background.tiff` is committed. `make dmg-venv` puts dmgbuild 1.6.5 in a Python virtual environment in `.build/dmgbuild-venv`.
   - `make selftest` runs the self-test, `make selftest-intel` runs it as Intel through Rosetta, and `make ui-snapshots` renders the UI to PNGs (§8); it fails if a first-run step would be clipped.
   - Bundling assembles and signs the app in a temporary folder, then copies it to `build/`: iCloud Drive syncs `~/Documents` and tags bundle folders with Finder information faster than it can be stripped, and `codesign` rejects that.
@@ -508,6 +525,8 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
   5. publishes last, so a failure leaves everything public untouched: a GitHub release `v<version>-<build>` in the public, releases-only repo `fayzan123/annotake-releases` with the zip and the disk image, then that repo's `appcast.xml` (written by `annotake-appcast`), `install.sh`, and `README.md` (from `scripts/releases-README.md`).
 
   The work is done in a temporary folder outside iCloud Drive; the zip, the disk image, and a dry run's feed end up in `build/release`.
+
+  A release whose app sends a new consent id waits for the site: deploy its `site/api/_lib/consent.json` and see `make site-smoke URL=https://annotake.app`'s consent check pass (400, not 422) first. Until then the site answers the new id 422, and every new copy's address waits on the app's backoff ([email list design](plans/2026-10-15-email-list-design.md) §3.1).
 
   Apple took 49 minutes over the first notarization (Checkpoint 3), so a release survives a slow one. The script uploads, then waits up to `NOTARY_TIMEOUT` (30 minutes by default). If Apple isn't done by then, it stops before publishing. Running the same command again picks up where it left off: the signed app, the disk image, and Apple's submission ids stay in a work folder for that version and build until it's published, and anything Apple has notarized by then just gets its ticket stapled.
 - **Installing:** the disk image at `https://github.com/fayzan123/annotake-releases/releases/latest/download/Annotake.dmg`, or `curl -fsSL https://raw.githubusercontent.com/fayzan123/annotake-releases/main/install.sh | sh`. The command checks for macOS 15 or later, downloads the latest zip, verifies its signature, quits a running Annotake, installs to `/Applications` (or `~/Applications` without admin rights), removes a copy left in the other Applications folder, and opens Annotake. It finds Annotake by its bundle id, never by name alone, so an app that shares the name is never touched. Files `curl` downloads get no quarantine flag.
@@ -546,7 +565,7 @@ Right ⌘ ─▶ Input thread (taps + GestureRecognizer) ─gesture─▶ Sessio
 - Caps Lock and mouse-button triggers
 - Windows
 - Any AI
-- Network access beyond what the distribution design adds (update checks, sign-in, the plan, counts)
+- Network access beyond what the distribution and email list designs add (update checks, the email sign-up, sign-in, the plan, counts)
 - Agent-specific integrations (MCP, auto-paste)
 
 Details for each are in [v2-backlog.md](v2-backlog.md).
@@ -600,3 +619,4 @@ Details for each are in [v2-backlog.md](v2-backlog.md).
 | Updates through Sparkle 2, linked only into the executable (2026-09-30, Session 8) | Fixes reach everyone fast, and the libraries and their tests keep no network code |
 | One app for Intel and Apple silicon (2026-09-30, Session 8) | Friends and coworkers may have Intel Macs, and one download fits everyone |
 | Builds signed without a Developer ID opt out of library validation (2026-09-30, Session 8) | The self-signed identity has no team, so the hardened runtime wouldn't load the app's own Sparkle. Developer ID builds share one team and don't need it |
+| The first run asks for an email address, with feedback and news only through an unticked box, and recording waits for one (2026-10-15) | Every copy leaves a way to reach its user about security fixes and broken updates, which CASL exempts from consent; feedback and news need it. [Email list design](plans/2026-10-15-email-list-design.md) |

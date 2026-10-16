@@ -247,7 +247,7 @@ https://annotake.app · Privacy: https://annotake.app/privacy
   - `"framework": null`
   - `"cleanUrls": true`
   - `"trailingSlash": false`
-  - `"ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."`
+  - `"ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."`. The email list build changed it to skip only when `site/` is unchanged since the last successful deployment (`VERCEL_GIT_PREVIOUS_SHA`), since this one skipped any push whose last commit left `site/` alone ([design §5.2](2026-10-01-landing-page-design.md#52-routes-verceljson)).
   - `"functions": {"api/link.js": {"maxDuration": 10}}`
   - `"redirects": [{"source": "/download", "destination": "<the GitHub URL>", "statusCode": 302}]`
   - `"headers"`: `/(.*)` gets the CSP and the five headers, and `/assets/fonts/(.*)` and `/assets/img/(.*)` get the immutable `Cache-Control`.

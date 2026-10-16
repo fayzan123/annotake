@@ -16,6 +16,8 @@
 >
 > **Nothing outward-facing before Task 11:** never deploy, never touch Resend's or Vercel's dashboards, never send a real email, and never launch the full app (`make ui-snapshots` is the only app launch allowed, in Task 8).
 
+**Built** on branch `email-list` through Task 10, 2026-10-16. [Design §13](2026-10-15-email-list-design.md#13-changes-from-planning-and-building) has what changed and why. This plan's lines about the segment, the 422 answer, the no-address log line, Resend's retries, `clean()`'s NFC, and /privacy's unsubscribing sentence are corrected to match the code; the rest stays as planned. Task 11's steps, refined, are [Checkpoint 5](../checkpoints.md#checkpoint-5-the-email-list).
+
 **Goal:** Every copy of Annotake asks for an email once, in the first run or after an update, and adds it to a Resend list with topics, a consent record, a welcome email, and a working one-click unsubscribe.
 
 **Architecture:**
@@ -35,7 +37,7 @@
 2. **The contact's consent properties must exist in Resend first** (`POST /contact-properties`, type `string`). Creating them is a checkpoint step (Task 11), not code.
 3. **The mailing address is the `MAILING_ADDRESS` environment variable on the site, and `EmailConsent.mailingAddress` in the app.**
    - The app constant starts as the sentinel `"[mailing address]"`, and `make release` refuses to build while it's still there.
-   - Without `MAILING_ADDRESS`, the site function adds the contact but skips the welcome email, logging `subscribe: welcome skipped no address`.
+   - Without `MAILING_ADDRESS`, the site function adds the contact but skips the welcome email, logging `subscribe: added welcome skipped no address`.
 4. **A hold refused for a missing email shows its message only at the reveal (800 ms),** so a Right ⌘ shortcut never flashes it.
 
 **Global Constraints** (every task inherits these):
@@ -52,9 +54,9 @@
 - **An unsubscribe is never undone by code.** `subscribe.js` never sets `unsubscribed: false` and never opts a contact out of a topic.
 - **The email check** is the site's `isPlausibleEmail` (`site/assets/email.js`): trimmed, NFC, 3–254 characters, no whitespace or control characters, exactly one `@`, a local part of 1–64 characters, and a domain with a dot that neither starts nor ends with a dot and has no `..`. The Swift port must give the same answer for every case in `site/tests/unit/email.test.js`.
 - **Resend** (as of 2026-10-15): base `https://api.resend.com`, `Authorization: Bearer <key>`, and a `User-Agent` header (Resend gives a 403 without one).
-  - `GET /contacts/{email}`, `POST /contacts` `{email, unsubscribed:false, properties, topics:[{id, subscription:"opt_in"|"opt_out"}]}`, `PATCH /contacts/{email}` `{properties}` or `{unsubscribed:true}`, `PATCH /contacts/{email}/topics` with a body of `[{id, subscription}]`, and `POST /emails` with `headers`.
+  - `GET /contacts/{email}`, `POST /contacts` `{email, properties, segments:[{id}], topics:[{id, subscription:"opt_in"|"opt_out"}]}` (no `unsubscribed`), `GET /contacts/{email}/topics`, `PATCH /contacts/{email}` `{properties}` or `{unsubscribed:true}`, `PATCH /contacts/{email}/topics` with a body of `[{id, subscription}]`, and `POST /emails` with `headers`.
   - Every attempt times out after 4 s, and there are at most two attempts, so each call stays inside Vercel's 10 s.
-- **Environment:** `RESEND_CONTACTS_KEY`, `RESEND_TOPIC_NOTICES`, `RESEND_TOPIC_NEWS`, `UNSUBSCRIBE_SECRET`, `MAILING_ADDRESS`, and `EMAIL_DRY_RUN=1` (Preview and the local server). `link.js` keeps its own `RESEND_API_KEY`.
+- **Environment:** `RESEND_CONTACTS_KEY`, `RESEND_SEGMENT`, `RESEND_TOPIC_NOTICES`, `RESEND_TOPIC_NEWS`, `UNSUBSCRIBE_SECRET`, `MAILING_ADDRESS`, and `EMAIL_DRY_RUN=1` (Preview and the local server). `link.js` keeps its own `RESEND_API_KEY`.
 
 **Review Focus** (inputs the tests below must pin; each has its test in the named task):
 1. **Someone reinstalls and types an address that already unsubscribed:** nothing changes, no welcome is sent, and the answer is 200 (Task 2).
@@ -105,7 +107,7 @@
   ```js
   export const RESEND_BASE = 'https://api.resend.com';
   export const ATTEMPT_TIMEOUT_MS = 4000, RETRY_PAUSE_MS = 300, MAX_RATE_WAIT_MS = 1000;
-  // One call, retried once after a network error, a timeout, a 5xx, or a plain 429. Never throws.
+  // One call, retried once after a network error, a timeout, a 5xx, a plain 429, or a 409 resource_locked. Never throws.
   // Resolves to { ok: true, status, json } | { ok: false, status, reason: 'network'|'timeout'|'quota'|'rate'|'server'|'rejected'|'notfound', name }
   export async function resend({ fetch, sleep, key, method, path, body, headers, timeoutMs, idempotencyKey })
   ```
@@ -179,7 +181,7 @@
 - Produces, from `_lib/welcome.js`: `welcomeEmail({ news, address, unsubscribe })` returns `{ subject, text, html }`.
 - Produces: `POST /api/subscribe`.
   - Request: JSON `{ email: string, news: boolean, consent: string, appVersion: string }`.
-  - Answers: `200 {ok:true}`, `400 {ok:false, reason:"invalid"}`, `429 {ok:false, reason:"busy"}`, `502 {ok:false, reason:"send"}`. `GET` answers 405.
+  - Answers: `200 {ok:true}`, `400 {ok:false, reason:"invalid"}` (an address the site won't take), `422 {ok:false, reason:"request"}` (a request it can't read), `429 {ok:false, reason:"busy"}`, `502 {ok:false, reason:"send"}`. `GET` answers 405.
 - Consumes: `resend()` from `_lib/resend.js`, `unsubscribeUrl()` from `_lib/unsubscribe-token.js` (Task 1), and `cleanEmail`, `emailKey`, `isPlausibleEmail` from `site/assets/email.js`.
 
 - [ ] **Step 1: Write the failing tests.**
@@ -194,10 +196,10 @@
     - with `news: true` it says `important notices, plus feedback requests and news`, and with `news: false`, `important notices`;
     - the HTML holds the same links, HTML-escaped, and the address is escaped.
   - `subscribe.test.js`, with a fake `fetch` that records calls and answers by method and path:
-    - **Invalid input** answers 400 with no fetch: not JSON, form-encoded, over 2 KB, a missing `email`, a non-boolean `news`, an unknown `consent`, a non-string `appVersion` or one over 32 characters, and an implausible address.
+    - **A request it can't read** answers 422 with no fetch: not JSON, form-encoded, over 2 KB, a missing or non-string `email`, a non-boolean `news`, an unknown `consent`, and an empty or non-string `appVersion` or one over 32 characters. **An implausible address** answers 400. (Planned as 400 for all of these; the integration review moved all but the address to 422, which the app retries.)
     - **New contact, `news:false`:**
       - `GET /contacts/sam%40example.com` gives `notfound`;
-      - then `POST /contacts` with `email: "sam@example.com"` (from `  Sam@Example.COM `, lowercased), `unsubscribed: false`, `topics: [{id: NOTICES, subscription: "opt_in"}, {id: NEWS, subscription: "opt_out"}]`, and `properties: {consent_at: <ISO UTC from the injected clock>, consent_wording: "consent-2026-10-15", consent_source: "app", app_version: "0.3.0 (120)"}`;
+      - then `POST /contacts` with `email: "sam@example.com"` (from `  Sam@Example.COM `, lowercased), `segments: [{id: SEGMENT}]` and no `unsubscribed`, `topics: [{id: NOTICES, subscription: "opt_in"}, {id: NEWS, subscription: "opt_out"}]`, and `properties: {consent_at: <ISO UTC from the injected clock>, consent_wording: "consent-2026-10-15", consent_source: "app", app_version: "0.3.0 (120)"}`;
       - then `POST /emails` with `from: "Fayzan from Annotake <hello@annotake.app>"`, `reply_to: "fayzanm786@gmail.com"`, subject `Welcome to Annotake`, and `headers` with `List-Unsubscribe: <url>` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, where the URL verifies for the address, and `Idempotency-Key: welcome-<sha256 of the lowercased address>`;
       - answers 200.
     - **New contact, `news:true`:** NEWS is `opt_in`, and the welcome says so.
@@ -211,7 +213,7 @@
     - **The welcome fails** (`quota`, then separately `server`): still 200, logging `subscribe: added welcome failed <reason>`.
     - **No `MAILING_ADDRESS`:** the contact is created, no `/emails` call, logging `subscribe: added welcome skipped no address`.
     - **The contact `GET` or `POST` fails:** `quota` and `rate` answer 429; `server`, `network`, and `timeout` answer 502; `rejected` answers 502.
-    - **A missing key, topic id, or secret** answers 502, logging `subscribe: failed not configured`.
+    - **A missing key, segment, topic id, or secret** answers 502, logging `subscribe: failed not configured`.
     - **`EMAIL_DRY_RUN=1`:** no fetch, 200.
     - **Addresses never appear in a log line** (the final check across every test).
 - [ ] **Step 2:** `make site-unit`. The tests fail.
@@ -233,7 +235,7 @@
   - A new `<h2>Email from Annotake</h2>` section says:
     - what's stored: `your email address, which emails you chose, when and how you agreed, and the app version`;
     - that it's stored with Resend in the United States;
-    - `You can unsubscribe from any email with one click`;
+    - `You can unsubscribe from any email with one click` (since the integration review, `with its unsubscribe link, or with your mail app’s Unsubscribe button where it shows one`);
     - the retention sentence from design §6.3;
     - the legal bases: legitimate interest for important notices, consent for feedback requests and news.
   - "The link email" section no longer says `We keep no list`, and says `Asking for the link doesn’t add you to any list.`
@@ -263,7 +265,7 @@
       static let unsetMailingAddress = "[mailing address]"
       static var footer: String { "From Fayzan Malik · \(mailingAddress) · annotake.app ·" }  // then the Privacy policy link
       static let privacyURL = URL(string: "https://annotake.app/privacy")!
-      static func clean(_ input: String) -> String          // trimmed, precomposedStringWithCanonicalMapping (NFC)
+      static func clean(_ input: String) -> String          // trimmed, then NFC as ICU composes it (Any-NFC), as JavaScript does
       static func isPlausible(_ input: String) -> Bool       // the Global Constraints' rule, on clean(input)
   }
   ```
@@ -428,7 +430,7 @@
 - Create: `site/tests/pages/subscribe.spec.js`
 
 - [ ] **Step 1:** write Playwright `request` tests against the local server, which runs in dry run:
-  - `POST /api/subscribe` with a valid body answers `200 {ok:true}`; with `news: "yes"` it answers 400;
+  - `POST /api/subscribe` with a valid body answers `200 {ok:true}`; with `news: "yes"` it answers 422;
   - `GET /api/subscribe` answers 405;
   - `GET /api/unsubscribe` with a signature made by `signEmail` under the server's test secret answers 200 HTML with the confirm form, and with a bad signature, 400;
   - `GET /api/_lib/consent.json` answers 404.
@@ -457,7 +459,7 @@
 
 ### Task 11: Checkpoint 5 (Fayzan, with a session to help)
 
-Not code; these steps are written into `docs/checkpoints.md` by Task 10. Each one needs Fayzan's logins or decisions.
+Not code; these steps are written into `docs/checkpoints.md` by Task 10. Each one needs Fayzan's logins or decisions. Follow [Checkpoint 5](../checkpoints.md#checkpoint-5-the-email-list) there, which refines them with what the build found.
 
 - [ ] **The mailing address:**
   - rent a PO box or a virtual mailbox;

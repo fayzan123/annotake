@@ -41,6 +41,9 @@ Rules for every session:
 16. **2026-10-11, inline (no session prompt): fixes from Fayzan's own use, released the same day.** Dragging a card with 17 or more frames quit Annotake (9bfed66). The filmstrip got its keys: ← → move a ring between frames, ⌫ removes or restores, Return applies, and the card shows "Saving…" while a trim re-renders. A click on a frame, or Space, shows it full screen, where the same keys work (spec §3.4). Frame sensitivity and `steps.md` in the drag were parked in [../v2-backlog.md](../v2-backlog.md). For later plans:
     - AppKit lays out a drag of 17 or more items on worker threads, which read the source view's `isFlipped`, and its ancestors'. In Swift 6 a main-actor override traps there, so a drag source's `isFlipped` must be `nonisolated`. The filmstrip drags one frame at a time, so its views don't need it yet.
     - `make app` failed until `.build/*/release/ModuleCache` was deleted: its precompiled headers still pointed at `flipbook/`.
+17. **2026-10-15: the email list design and plan.** Every copy asks for an email once, in the first run or after its update, and joins a list in Resend, with topics, a consent record, a welcome email, and an unsubscribe. The design is [2026-10-15-email-list-design.md](2026-10-15-email-list-design.md), and the plan is [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md).
+18. **The email list build. Done 2026-10-16,** unattended, on branch `email-list`, which isn't on `main` yet. The app has the email step and its email-only pass, recording that waits for an address, and the Email row in Settings; the site has `/api/subscribe`, `/api/unsubscribe`, and the policies' email sections. What it decided is in the design's §13, and what it found is under "The email list build" below.
+19. **Next: Checkpoint 5,** which connects the list to Resend and Vercel, then releases it: the list is in [../checkpoints.md](../checkpoints.md#checkpoint-5-the-email-list).
 
 ## Session 1: M0 spikes (done)
 
@@ -367,3 +370,36 @@ Prompt:
 ```
 In ~/Documents/GitHub/annotake, run Session 10: execute Tasks 1–15 of docs/plans/2026-10-01-landing-page-build.md, test-first as its header says. Read docs/plans/2026-10-01-landing-page-design.md, the mockups in docs/plans/mockups/2026-10-01-landing-page/, and the plan before starting. Don't use any superpowers skills. Run the app's tests only with `make test` (never plain `swift test`) and the site's with `make site-test` and `make site-unit`, and commit after each task. Never launch the full app, never deploy, never create accounts or touch DNS, and never send a real email. I'm not here, so never stop to ask me anything: follow the plan header's "No stops until the end" rules, deciding or skipping, recording it, and carrying on. When Task 15 passes, push main and give me the Checkpoint 4 list with your Decisions and Skipped lists first.
 ```
+
+## The email list build
+
+Plan: [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md), Tasks 1–10. Design: [2026-10-15-email-list-design.md](2026-10-15-email-list-design.md).
+
+1. The unsubscribe link and function
+2. The consent wording, the welcome email, and the subscribe function
+3. The privacy policy and the Terms
+4. `EmailConsent`: the wording, the address check, and the release guard
+5. `EmailSignup`: saving, sending, and the backoff
+6. The email step in the first run, and `.emailOnly`
+7. Recording waits for an email
+8. Settings, wiring, and the UI snapshots
+9. End to end against the local server
+10. Docs
+
+Each task had its own review. After Task 9, an integration review checked the app against the site and the promises against the behaviour, and its fixes went in before Task 10.
+
+Your part is Checkpoint 5, the plan's Task 11: the mailing address, Resend's topics, properties, and segment, Vercel's settings, the deploy and the smoke check, the copy and the design's open questions, the app in a real window, a real sign-up with replies and unsubscribing, and the release.
+
+**Decisions:** in the design's [§13](2026-10-15-email-list-design.md#13-changes-from-planning-and-building), by task, with the open questions for you.
+
+**Skipped:** nothing.
+
+**For later plans:**
+- `make test` runs 536 tests in 65 suites (402 before the build). `make site-unit` runs 162 `node:test` tests, and `make site-test` then 363 page tests in Chrome, WebKit, and Firefox, with 6 Chrome-only ones skipped in the others.
+- Foundation's `precomposedStringWithCanonicalMapping` isn't JavaScript's NFC: its tables get Hangul and some Tibetan wrong. To match the site, compose with ICU (`applyingTransform(StringTransform("Any-NFC"), reverse: false)`), and lowercase with `Any-Lower`.
+- A menu-bar app (`.accessory`) has no main menu, so its text fields get no ⌘V, ⌘C, ⌘X, ⌘A, or ⌘Z until one is installed: `EditMenu.swift`.
+- A `@MainActor` class's statics are main-actor-isolated too, so one used as a default closure argument needs `nonisolated`.
+- Wiring that a test can't build safely (a real `SessionController` could start a capture) is pinned by tests that read the Swift source.
+- Resend, as of 2026-10-15: every request needs a `User-Agent`; a broadcast goes to a segment, and a contact made through the API is in none; Retrieve Contact returns no topics, but `GET /contacts/{id}/topics` does; a 409 `resource_locked` asks for a retry; an Idempotency-Key lasts 24 hours.
+- Vercel: a file under a `_` folder in `api/` is never a function. `VERCEL_GIT_PREVIOUS_SHA` reaches the ignore step only when one is set. A function `vercel.json` lists must exist, so a branch whose first commit lists functions it adds later deploys only whole.
+- The older glitches found on the way are under Checkpoint 5 in [../checkpoints.md](../checkpoints.md#checkpoint-5-the-email-list).
