@@ -114,7 +114,7 @@ struct EmailConsentTests {
     @Test func keyMakesOneKeyPerAddressWhateverTheCapitalsOrTheAccentsEncoding() {
         #expect(EmailConsent.key("  Sam@Example.COM ") == "sam@example.com")
         #expect(scalars(EmailConsent.key("J\u{DC}RGEN@M\u{DC}LLER.DE"))
-                == scalars(EmailConsent.key("j\u{FC}rgen@m\u{FC}ller.de")))
+                == scalars(EmailConsent.key("ju\u{308}rgen@mu\u{308}ller.de")))
     }
 
     @Test(arguments: [
