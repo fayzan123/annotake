@@ -61,11 +61,9 @@ dmg-venv:
 	/usr/bin/python3 -m venv $(DMG_VENV)
 	$(DMG_VENV)/bin/pip install -q dmgbuild==1.6.5
 # A release: make release NOTES="what changed" [DRY_RUN=1] (scripts/release.sh). DRY_RUN=1 runs it all
-# locally, without credentials, and publishes nothing. It stops while EmailConsent.mailingAddress is the
-# sentinel: grep's 1 (no match) is the only answer that goes on, so a moved file stops it too.
+# locally, without credentials, and publishes nothing.
 export NOTES DRY_RUN
 release:
-	@grep -q 'mailingAddress = "\[mailing address\]"' Sources/AnnotakeApp/EmailConsent.swift; test $$? -eq 1 || (echo "Set EmailConsent.mailingAddress before a release" && exit 1)
 	scripts/release.sh
 # The Developer ID Application certificate: the request to upload to Apple, then the certificate it issues.
 devid-csr:

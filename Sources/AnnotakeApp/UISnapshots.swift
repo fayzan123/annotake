@@ -131,7 +131,6 @@ enum UISnapshots {
         onboarding("onboarding-email.png", .init(step: .email), status: none)
         onboarding("onboarding-email-filled.png", .init(step: .email), status: none) {
             $0.emailDraft = "sam@example.com"
-            $0.newsDraft = true
         }
         // An existing copy's one pass after its update (email list design §3.2).
         onboarding("onboarding-email-only.png", OnboardingModel.emailOnly(), status: all)

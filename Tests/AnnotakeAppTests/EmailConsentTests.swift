@@ -6,9 +6,13 @@ import Testing
 /// site's email.js (site/tests/unit/email.test.js). The app must accept exactly what /api/subscribe accepts: an address
 /// the site turns away would be cleared, asked for again, and turned away again.
 struct EmailConsentTests {
-    /// site/api/_lib/consent.json: the consent id in use, and each version's wording.
+    /// site/api/_lib/consent.json: the consent id in use, and each version's wording. Only a version that asks for
+    /// consent has a box.
     struct SiteConsent: Decodable {
-        struct Version: Decodable { var title, notice, box, footer: String }
+        struct Version: Decodable {
+            var title, notice, footer: String
+            var box: String?
+        }
         var current: String
         var versions: [String: Version]
     }
@@ -31,27 +35,11 @@ struct EmailConsentTests {
         func straight(_ text: String) -> String { text.replacingOccurrences(of: "’", with: "'") }
         #expect(straight(version.title) == EmailConsent.title)
         #expect(straight(version.notice) == EmailConsent.notice)
-        #expect(straight(version.box) == EmailConsent.box)
+        // The step has no box: until the list has a mailing address, it asks for no consent (design §13).
+        #expect(version.box == nil)
         // The site's footer ends with the link's words; the app shows them as a Link after its footer.
-        #expect(version.footer.replacingOccurrences(of: "{address}", with: EmailConsent.mailingAddress)
-                == EmailConsent.footer + " Privacy policy")
+        #expect(version.footer == EmailConsent.footer + " Privacy policy")
         #expect(EmailConsent.privacyURL.absoluteString == "https://annotake.app/privacy")
-    }
-
-    /// make release refuses to build while the mailing address is the sentinel, by grepping EmailConsent.swift for its
-    /// declaration. Spelled any other way, the declaration would slip past the grep, so the two are pinned together.
-    /// Only grep's 1 (the file read, no sentinel) lets the release go on; a moved file's 2 stops it too.
-    @Test func releaseRefusesTheSentinelAddress() throws {
-        let root = try Self.repositoryRoot()
-        let makefile = try String(contentsOf: root.appending(path: "Makefile"), encoding: .utf8)
-        let guardLine = #"@grep -q 'mailingAddress = "\[mailing address\]"' Sources/AnnotakeApp/EmailConsent.swift;"#
-            + #" test $$? -eq 1 || (echo "Set EmailConsent.mailingAddress before a release" && exit 1)"#
-        #expect(makefile.contains("\nrelease:\n\t\(guardLine)\n"), "the guard is release's first command")
-        let source = try String(contentsOf: root.appending(path: "Sources/AnnotakeApp/EmailConsent.swift"),
-                                encoding: .utf8)
-        #expect(EmailConsent.unsetMailingAddress == "[mailing address]")
-        #expect(source.contains(#"mailingAddress = "[mailing address]""#)
-                == (EmailConsent.mailingAddress == EmailConsent.unsetMailingAddress))
     }
 
     // MARK: - The address check, case for case from site/tests/unit/email.test.js
