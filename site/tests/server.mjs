@@ -3,7 +3,8 @@
 // which get a web Request as on Vercel. Files .vercelignore lists, dotfiles, and anything above the root aren't served.
 // As on Vercel, nothing under a `_` or `.` name in api/ is a function: api/_lib holds the functions' shared code.
 // The functions run in dry-run mode (EMAIL_DRY_RUN=1) unless `env` says otherwise, so they never send an email or
-// change a contact.
+// change a contact. They check unsubscribe links against UNSUBSCRIBE_SECRET=test-secret, which the page tests sign
+// with, unless `env` gives another.
 //
 //   node site/tests/server.mjs [--port 4173] [--root site]
 import http from 'node:http';
@@ -53,6 +54,7 @@ export function createServer({ root, env = {} }) {
   const ignored = ignoredPaths(root);
   // Vercel gives functions their environment through process.env.
   process.env.EMAIL_DRY_RUN = env.EMAIL_DRY_RUN ?? '1';
+  process.env.UNSUBSCRIBE_SECRET = env.UNSUBSCRIBE_SECRET ?? 'test-secret';
   for (const [key, value] of Object.entries(env)) process.env[key] = value;
 
   function configHeaders(pathname) {

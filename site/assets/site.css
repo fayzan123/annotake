@@ -996,7 +996,10 @@ body::before {
 .message h1 { font-weight: 600; font-size: clamp(34px, 4.2vw, 56px); line-height: 1.05; letter-spacing: -0.03em; }
 .notfound p,
 .message p { margin-top: 22px; font-size: 18px; color: var(--ink-2); }
-.message-link { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); user-select: all; -webkit-user-select: all; }
+/* An address has nowhere to break a line, and the unsubscribe page's can be wider than a phone. */
+.message p { overflow-wrap: anywhere; }
+/* The download link keeps to one line: broken anywhere, it would leave its last letter alone on a 360 px phone. */
+.message-link { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); user-select: all; -webkit-user-select: all; overflow-wrap: normal; }
 
 /* ---------- Narrow screens ---------- */
 

@@ -1,6 +1,10 @@
 // The email check, shared by the page (linkform.js) and the functions in api/. It accepts every real address,
 // plus addressing and non-ASCII included, and rejects what can't be one, line breaks above all, which could inject
 // headers. It never decides deliverability; the email does that.
+//
+// Sources/AnnotakeApp/EmailConsent.swift mirrors this check in the app, with JavaScript's whitespace set, UTF-16
+// lengths, code points, and ICU's lowercasing and NFC, and EmailConsentTests ports email.test.js's cases. So a change
+// to either file changes both, and both test files.
 
 /** The address as the visitor meant it: trimmed, with accents in one composed form. */
 export function cleanEmail(input) {
