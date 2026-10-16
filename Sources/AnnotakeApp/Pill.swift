@@ -27,9 +27,34 @@ enum PillText {
     static func message(_ message: SessionMachine.PillMessage) -> String {
         switch message {
         case .screenRecordingNeeded: "Screen Recording permission needed"
+        case .emailNeeded: "Add your email to start recording"
         case .couldNotStart: "Couldn't start recording — try again"
         case .cannotSave: "Can't save to the captures folder — check the save location"
         case .note(let text): text
+        }
+    }
+}
+
+/// A button after a message's text. While one shows, the pill takes clicks.
+enum PillButton {
+    /// System Settings, at Screen Recording.
+    case openSettings
+    /// The email step (email list design §3.2).
+    case openEmail
+
+    /// The button a message offers, if any.
+    init?(for message: SessionMachine.PillMessage) {
+        switch message {
+        case .screenRecordingNeeded: self = .openSettings
+        case .emailNeeded: self = .openEmail
+        case .couldNotStart, .cannotSave, .note: return nil
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .openSettings: "Open Settings"
+        case .openEmail: "Open"
         }
     }
 }
@@ -124,6 +149,8 @@ final class PillPanel {
 
     let panel: NSPanel
     let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: PillView.height))
+    /// The Open button's action: the email step.
+    var onOpenEmail: (() -> Void)?
     private var screen: NSScreen?
     private var hideTimer: Timer?
     private let buttonTarget = ButtonTarget()
@@ -156,16 +183,16 @@ final class PillPanel {
         show(text)
     }
 
-    /// A message; with `openSettings`, it offers a button and takes clicks.
-    func showMessage(_ text: String, openSettings: Bool, hideAfter: TimeInterval? = messageDuration) {
+    /// A message; with a button, it takes clicks. A click runs the button's action and leaves the message to its timer.
+    func showMessage(_ text: String, button: PillButton?, hideAfter: TimeInterval? = messageDuration) {
         hideTimer?.invalidate()
-        if openSettings {
-            buttonTarget.action = { NSWorkspace.shared.open(PermissionPane.screenRecording) }
-            view.setButton(title: "Open Settings", action: #selector(ButtonTarget.run), target: buttonTarget)
+        if let button {
+            buttonTarget.action = { [weak self] in self?.press(button) }
+            view.setButton(title: button.title, action: #selector(ButtonTarget.run), target: buttonTarget)
         } else {
             view.setButton(title: nil, action: nil, target: nil)
         }
-        panel.ignoresMouseEvents = !openSettings
+        panel.ignoresMouseEvents = button == nil
         show(text)
         if let hideAfter {
             hideTimer = Timer.onMainRunLoop(interval: hideAfter, repeats: false) { [weak self] _ in
@@ -188,6 +215,14 @@ final class PillPanel {
     }
 
     var isShowingMessage: Bool { hideTimer != nil || view.button != nil }
+
+    /// A click on the message's button. Not private, so a test can press Open on a pill that never shows.
+    func press(_ button: PillButton) {
+        switch button {
+        case .openSettings: NSWorkspace.shared.open(PermissionPane.screenRecording)
+        case .openEmail: onOpenEmail?()
+        }
+    }
 
     private func show(_ text: String) {
         view.text = text
