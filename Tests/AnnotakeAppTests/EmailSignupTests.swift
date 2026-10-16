@@ -672,8 +672,8 @@ struct EmailSignupTests {
                 + #""news":true}"#)
     }
 
-    /// The site answers 400 for an appVersion over 32 UTF-16 code units, and a 400 clears the address, so a longer
-    /// version is cut to fit, never through a code point.
+    /// The site can't read a request with an appVersion over 32 UTF-16 code units, so it would never take the address:
+    /// a longer version is cut to fit, never through a code point.
     @Test func aVersionTooLongForTheSiteIsCut() throws {
         let long = "1.0.0-beta.2 (" + String(repeating: "9", count: 40) + ")"
         let request = EmailSignup.request(for: Self.sam, appVersion: long)
@@ -696,11 +696,13 @@ struct EmailSignupTests {
         #expect(source.contains("export const MAX_APP_VERSION_LENGTH = \(EmailSignup.maxAppVersionLength);"))
     }
 
-    /// 200 is sent and 400 invalid. Anything else (the site's 429 and 502, Vercel's 504, or no answer) is retry later.
+    /// 200 is sent, and 400, the site's answer to an address it won't take, invalid. Anything else is retry later: the
+    /// site's 422 for a request it can't read (a consent id from an app newer than the deployment), its 429 and 502,
+    /// Vercel's 504, or no answer.
     @Test func theOutcomeFollowsTheStatus() {
         #expect(EmailSignup.outcome(status: 200) == .sent)
         #expect(EmailSignup.outcome(status: 400) == .invalid)
-        for status in [nil, 201, 204, 301, 403, 404, 405, 429, 500, 502, 503, 504] as [Int?] {
+        for status in [nil, 201, 204, 301, 403, 404, 405, 422, 429, 500, 502, 503, 504] as [Int?] {
             #expect(EmailSignup.outcome(status: status) == .retryLater, "\(String(describing: status))")
         }
     }

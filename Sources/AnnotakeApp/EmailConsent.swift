@@ -2,7 +2,9 @@ import Foundation
 
 /// The email step's wording, the consent id sent with every address, and the address check (design §3.1). The site
 /// keeps the same wording under the same id in site/api/_lib/consent.json, and EmailConsentTests checks the two match.
-/// A wording change adds a new id there and moves `id` here; a shipped version is never edited.
+/// A wording change adds a new id there and moves `id` here; a shipped version is never edited. Deploy the new
+/// consent.json to Production, and check it's live (`make site-smoke URL=https://annotake.app`), before releasing an
+/// app that sends the new id: until then the site answers it 422, and every new address waits on the app's backoff.
 enum EmailConsent {
     static let id = "consent-2026-10-15"
     static let title = "Stay in the loop"

@@ -40,9 +40,15 @@ const SETTINGS = [
 /** Resend's answers to a welcome whose Idempotency-Key it has seen: it's on its way, or one went in the last 24 hours. */
 const ALREADY_SENT = ['invalid_idempotent_request', 'concurrent_idempotent_requests'];
 
+/**
+ * The answers. The app clears its saved address on a 400 alone, so 400 is for an address the function won't take, and
+ * a request it can't read is 422, which the app retries. So a newer app's request, under a consent id this deployment
+ * doesn't have yet, goes through once the site is deployed, rather than clearing every new address.
+ */
 const RESULTS = {
   success: { status: 200, json: { ok: true } },
   invalid: { status: 400, json: { ok: false, reason: 'invalid' } },
+  request: { status: 422, json: { ok: false, reason: 'request' } },
   busy: { status: 429, json: { ok: false, reason: 'busy' } },
   send: { status: 502, json: { ok: false, reason: 'send' } },
 };
@@ -187,7 +193,7 @@ export function createHandler({ fetch, env, log, sleep, now, timeoutMs = ATTEMPT
     const type = (request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
     const text = type === 'application/json' ? await readBody(request) : null;
     const fields = text === null ? null : readFields(text);
-    if (!fields) return { result: 'invalid', line: 'invalid request' };
+    if (!fields) return { result: 'request', line: 'invalid request' };
     const { email } = fields;
     // JSON can carry half a surrogate pair, which no app sends and no URL can encode. And the unsubscribe link carries
     // the address's key, which can be longer than the address (İ lowercases to i and a dot), and unsubscribe.js turns
