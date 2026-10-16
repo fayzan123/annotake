@@ -166,7 +166,7 @@ Choosing fn shows a note with three warnings:
 
 ### 3.7 First launch
 
-The first run is one window, "Welcome to Annotake" (560 pt wide), showing one step at a time, like Wispr Flow's ([distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build)). Every key name follows the trigger key (Right ⌘ below).
+The first run is one window, "Welcome to Annotake" (560 pt wide; "Annotake" for the email step alone, which an existing copy gets once after its update), showing one step at a time, like Wispr Flow's ([distribution design §5.2](plans/2026-09-30-distribution-design.md#52-the-stage-1-build)). Every key name follows the trigger key (Right ⌘ below).
 1. **Welcome:** the Annotake logo (§6), "Show your coding agent exactly what happened.", one paragraph on what it does, and a demo of three tiles lit in turn every 1.6 s ("Double-tap Right ⌘", "Click through it", "Drag the card into your agent"). Get Started.
 2. **Stay in the loop:** an email field, focused, then "We'll email you about security fixes and important changes to Annotake. Every email has an unsubscribe link.", and the footer "From Fayzan Malik · annotake.app · Privacy policy". For now there's no box for feedback and news: it comes back with the list's mailing address ([email list design](plans/2026-10-15-email-list-design.md) §13). Continue waits for an address the site will take, saves it on the Mac, and moves straight on; the send runs in the background (§2, [email list design](plans/2026-10-15-email-list-design.md) §3).
 3. **The three permissions, one at a time,** in this order, because Accessibility applies without a relaunch:

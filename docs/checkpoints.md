@@ -135,7 +135,13 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - `/privacy` and `/terms`. Both say "Last updated: October 15, 2026": move it to the deploy day if you like. /privacy's Changes section says big changes are noted on the home page: decide whether the email list is one;
    - design §13's open questions 3 (the window title) and 5 (the Change… sheet and the old address). The rest wait with the list.
 
-   Result: not done yet.
+   Result: **done** (Fayzan, 2026-10-16), with no wording changes asked for, and four answers:
+   - the `.emailOnly` pass's window is titled "Annotake" (open question 3); a first run and Fix permissions… keep "Welcome to Annotake";
+   - the email list is a big change, so the home page notes it beside the footer's Privacy link: "Privacy policy updated: the app now asks for your email.", until the policy changes again;
+   - both pages' "Last updated" becomes the deploy day, set in step 5;
+   - the Change… sheet stays as it is (open question 5).
+
+   Built in bdf6e48 (the title) and b49a97d (the note). `make test`: 535 tests. `make site-test`: 162 unit and 366 page tests (6 skipped).
 3. **In Resend,** all before Vercel's settings: until the four properties exist, every new contact answers 502 (`subscribe: failed rejected`), and the app's retries soon slow to every 6 hours.
    - the topics `Important notices` (Defaults to: Opt-in; Visibility: Public) and `Feedback and news` (Defaults to: Opt-out; Visibility: Private, so only the app's box, which records consent, adds anyone to it). A topic's default can't be changed later. Note both ids;
    - the string contact properties `consent_at`, `consent_wording`, `consent_source`, and `app_version`;
@@ -149,7 +155,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - Preview gets none of these, so there `/api/unsubscribe` answers 502 (`unsubscribe: failed not configured`). That's expected.
 
    Result: not done yet.
-5. **Deploy:** merge `email-list` into `main` and push, or redeploy if it's there already, so the functions get step 4's settings. Push the branch whole: Vercel builds the last commit, and Task 1's commit alone fails its build.
+5. **Deploy:** first, set both policy pages' "Last updated" to the deploy day, and `UPDATED` in `site/tests/pages/legal.spec.js` to match (step 2). Then merge `email-list` into `main` and push, or redeploy if it's there already, so the functions get step 4's settings. Push the branch whole: Vercel builds the last commit, and Task 1's commit alone fails its build.
    - Vercel shows the pushed commit as Ready on Production, not Canceled.
    - If a later push that leaves `site/` alone still builds, check that Vercel exposes system environment variables: the ignore step reads `VERCEL_GIT_PREVIOUS_SHA`, and without it every push builds, which is safe.
 
