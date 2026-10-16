@@ -156,7 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 7. The menus: the main menu, which never shows but gives text fields such as the email step's ⌘X, ⌘C, ⌘V,
         //    ⌘A, and ⌘Z (EditMenu); then the status menu, and the Settings window it opens, whose General tab shows the
-        //    email address and changes it.
+        //    email address and changes it, or adds a first one through the email step (step 9).
         NSApp.mainMenu = EditMenu.make()
         let settingsModel = SettingsModel(store: settingsStore)
         settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
@@ -195,11 +195,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.start()
         self.monitor = monitor
 
-        // 9. The first run, until it's done, then the email step once while there's no address, and the login item.
+        // 9. The first run, until it's done, then the email step once while there's no address, which the pill's Open
+        //    and Settings' Add… bring back; and the login item.
         Permissions.logStatus()
         let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard, signup: signup)
         controller.onRecordingSaved = { [weak onboarding] in onboarding?.recordingSaved() }
         controller.onOpenEmail = { [weak onboarding] in onboarding?.showForEmail() }
+        settingsWindow.onAddEmail = { [weak onboarding] in onboarding?.showForEmail() }
         onboarding.showIfNeeded()
         self.onboarding = onboarding
         LoginItem.registerOnFirstLaunch(enabled: settings.launchAtLogin, defaults: .standard)

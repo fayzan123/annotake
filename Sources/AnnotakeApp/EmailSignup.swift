@@ -74,16 +74,16 @@ final class EmailSignup: ObservableObject {
     }
 
     /// Change… in Settings: a new address, sent with the choice already made and the id of the wording it was made
-    /// under (design §3.3). The site can't tell a stored choice sent again from a fresh tick of the box, so it must
-    /// never get one for an address it has: it would opt someone who has since dropped feedback and news back in. So
-    /// the same address, in any capitals or padding, changes nothing, and one the site has taken from this Mac before,
-    /// as when someone changes back, is saved as sent and never posted.
+    /// under (design §3.3). With no address saved, there's no choice to keep, so it changes nothing: a first address
+    /// comes from the email step, with its notice and box, so its consent record names wording the person read. The
+    /// site can't tell a stored choice sent again from a fresh tick of the box, so it must never get one for an
+    /// address it has: it would opt someone who has since dropped feedback and news back in. So the same address, in
+    /// any capitals or padding, changes nothing, and one the site has taken from this Mac before, as when someone
+    /// changes back, is saved as sent and never posted.
     func change(address: String) {
-        let current = stored
-        if let current, EmailConsent.key(current.address) == EmailConsent.key(address) { return }
-        replace(with: EmailRecord(address: EmailConsent.clean(address), news: current?.news ?? false,
-                                  consent: current?.consent ?? EmailConsent.id, savedAt: now(),
-                                  sent: sentHashes.contains(Self.sentHash(address))))
+        guard let current = stored, EmailConsent.key(current.address) != EmailConsent.key(address) else { return }
+        replace(with: EmailRecord(address: EmailConsent.clean(address), news: current.news, consent: current.consent,
+                                  savedAt: now(), sent: sentHashes.contains(Self.sentHash(address))))
     }
 
     /// At launch: sends a saved address the site doesn't have yet.

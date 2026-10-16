@@ -32,8 +32,9 @@ enum SettingsText {
         return url.path.hasPrefix(home) ? "~" + url.path.dropFirst(home.count) : url.path
     }
 
-    /// General's Email row (email list design §3.3), and the title of the sheet its button opens.
+    /// General's Email row (email list design §3.3), its button, and the title of the sheet Change… opens.
     static let emailRow = "Email"
+    static let addEmail = "Add…"
     static let changeEmail = "Change…"
     static let noEmail = "Not set"
     static let changeEmailTitle = "Change your email"
@@ -194,18 +195,47 @@ private struct SettingsForm<Content: View>: View {
     }
 }
 
+/// The Email row's button. With no address saved, Add… opens the email step, so a first address always comes with the
+/// notice, the box, and the footer, and its consent record names wording the person read. With one, Change… opens the
+/// sheet, which keeps the choice made there (design §3.3).
+enum EmailRowButton: Equatable {
+    case add, change
+
+    init(record: EmailRecord?) {
+        self = record == nil ? .add : .change
+    }
+
+    var title: String {
+        switch self {
+        case .add: SettingsText.addEmail
+        case .change: SettingsText.changeEmail
+        }
+    }
+}
+
 struct GeneralTab: View {
     @ObservedObject var model: SettingsModel
     /// Observed, so the Email row follows the saved address while the window is open, even one a 400 clears.
     @ObservedObject var signup: EmailSignup
+    /// Add…: the email step, through the onboarding.
+    var addEmail: () -> Void
     var loginItem: () -> LoginItem.Availability
     @State private var changingEmail = false
 
-    init(model: SettingsModel, signup: EmailSignup,
+    init(model: SettingsModel, signup: EmailSignup, addEmail: @escaping () -> Void,
          loginItem: @escaping () -> LoginItem.Availability = { LoginItem.availability }) {
         self.model = model
         self.signup = signup
+        self.addEmail = addEmail
         self.loginItem = loginItem
+    }
+
+    /// Add… or Change…, by the address saved when it's pressed.
+    func pressEmailButton() {
+        switch EmailRowButton(record: signup.record) {
+        case .add: addEmail()
+        case .change: changingEmail = true
+        }
     }
 
     var body: some View {
@@ -248,7 +278,7 @@ struct GeneralTab: View {
                         Text(SettingsText.email(signup.record))
                             .lineLimit(1)
                             .truncationMode(.middle)
-                        Button(SettingsText.changeEmail) { changingEmail = true }
+                        Button(EmailRowButton(record: signup.record).title, action: pressEmailButton)
                     }
                 }
             }
@@ -270,8 +300,9 @@ struct EmailChange {
     var canSave: Bool { EmailConsent.isPlausible(draft) }
 
     /// Saves the cleaned address, which EmailSignup sends in the background: the same address changes nothing, and one
-    /// the site already has from this Mac is saved as sent. Returns whether the sheet closes: not for an address the
-    /// site wouldn't take, which Return in the field can send while Save is greyed out.
+    /// the site already has from this Mac is saved as sent. Nor does any address once a 400 has cleared the one saved
+    /// while the sheet was open, since a first address comes from the email step. Returns whether the sheet closes:
+    /// not for an address the site wouldn't take, which Return in the field can send while Save is greyed out.
     @MainActor func save(to signup: EmailSignup) -> Bool {
         guard canSave else { return false }
         signup.change(address: EmailConsent.clean(draft))
@@ -519,6 +550,8 @@ struct SettingsFooter: View {
 /// menu-bar-only while it's open.
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
+    /// General's Add…, with no address saved: AppDelegate points it at the email step once the onboarding exists.
+    var onAddEmail: (() -> Void)?
     private let model: SettingsModel
     private let picker: RecordPickerModel
     private let signup: EmailSignup
@@ -539,8 +572,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private func makeWindow() -> NSWindow {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
+        // Read when Add… is pressed, whenever AppDelegate set it.
+        let addEmail: () -> Void = { [weak self] in self?.onAddEmail?() }
         for tab in SettingsTab.allCases {
-            let item = NSTabViewItem(viewController: Self.hosting(tab, model: model, picker: picker, signup: signup))
+            let item = NSTabViewItem(viewController: Self.hosting(tab, model: model, picker: picker, signup: signup,
+                                                                  addEmail: addEmail))
             item.label = tab.title
             item.image = NSImage(systemSymbolName: tab.symbol, accessibilityDescription: tab.title)
             tabs.addTabViewItem(item)
@@ -554,10 +590,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         return window
     }
 
-    static func hosting(_ tab: SettingsTab, model: SettingsModel, picker: RecordPickerModel,
-                        signup: EmailSignup) -> NSViewController {
+    static func hosting(_ tab: SettingsTab, model: SettingsModel, picker: RecordPickerModel, signup: EmailSignup,
+                        addEmail: @escaping () -> Void) -> NSViewController {
         let controller = switch tab {
-        case .general: host(GeneralTab(model: model, signup: signup))
+        case .general: host(GeneralTab(model: model, signup: signup, addEmail: addEmail))
         case .record: host(RecordTab(model: model, picker: picker))
         case .output: host(OutputTab(model: model))
         case .permissions: host(PermissionsTab())

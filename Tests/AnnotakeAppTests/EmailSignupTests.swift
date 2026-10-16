@@ -248,24 +248,23 @@ struct EmailSignupTests {
         #expect(harness.logged == ["email: sent"])
     }
 
-    /// With nothing saved, a change saves the address without feedback and news: nobody ticked the box.
-    @Test func changeWithNothingSavedSavesTheAddressWithoutNews() async throws {
+    /// With nothing saved, a change changes nothing: no store, no post, no onChange. There's no choice to keep, and a
+    /// first address comes from the email step, with its notice and box, so its consent record names wording the person
+    /// read. Settings offers Add… then, which opens the email step.
+    @Test func changeWithNothingSavedChangesNothing() async {
         let harness = SignupHarness()
         let signup = harness.makeSignup()
         var changes = 0
         signup.onChange = { changes += 1 }
-        harness.answers = [.sent]
 
         signup.change(address: "kim@example.org")
-
-        #expect(harness.stored == EmailRecord(address: "kim@example.org", news: false, consent: EmailConsent.id,
-                                              savedAt: harness.now, sent: false))
-        #expect(changes == 1)
         await signup.settle()
-        try #require(harness.requests.count == 1)
-        #expect(try Self.body(of: harness.requests[0]).news == false)
-        #expect(harness.stored?.sent == true)
-        #expect(harness.logged == ["email: sent"])
+
+        #expect(harness.stored == nil)
+        #expect(!signup.hasAddress)
+        #expect(changes == 0)
+        #expect(harness.requests.isEmpty)
+        #expect(harness.logged.isEmpty)
     }
 
     /// The same address, in any capitals or padding, changes nothing: no store, no post, no onChange. The site keys a
