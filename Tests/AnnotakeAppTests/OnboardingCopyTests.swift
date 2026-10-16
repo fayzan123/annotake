@@ -35,10 +35,38 @@ struct OnboardingCopyTests {
 
     @Test func titlesMatchTheSteps() {
         #expect(OnboardingCopy.title(.welcome) == "Annotake")
+        #expect(OnboardingCopy.title(.email) == "Stay in the loop")
         #expect(OnboardingCopy.title(.permission(.inputMonitoring)) == "Allow Input Monitoring")
         #expect(OnboardingCopy.title(.reopen) == "Reopen Annotake")
         #expect(OnboardingCopy.title(.dropCard) == "Now drag the card here")
         #expect(OnboardingCopy.title(.done) == "You're set")
+    }
+
+    /// The email step's words are the consent wording itself (email list design §3.1), which EmailConsentTests matches
+    /// to the site's copy, whatever the key.
+    @Test func theEmailStepIsTheConsentWording() {
+        #expect(OnboardingCopy.title(.email) == EmailConsent.title)
+        for trigger in TriggerKey.allCases {
+            #expect(OnboardingCopy.paragraphs(.email, trigger: trigger) == [EmailConsent.notice])
+        }
+        #expect(OnboardingCopy.emailPlaceholder == "you@example.com")
+    }
+
+    /// The .emailOnly pass ends at the first run's You're set: for someone who already records, a reminder of the key.
+    @Test func youreSetReadsRightForAnExistingCopy() {
+        #expect(OnboardingCopy.paragraphs(.done, trigger: .rightCommand) == [
+            "Hold Right ⌘ for quick recordings, and let go to stop.", "Right ⌘ + Esc cancels.",
+            "Everything else is in the menu-bar icon.",
+        ])
+    }
+
+    /// The log names each step and nothing typed: the email step is "email", never the address.
+    @MainActor @Test func theLogNamesEveryStep() {
+        #expect(OnboardingViewModel.logName(.email) == "email")
+        #expect(OnboardingModel.steps(for: .firstRun).map(OnboardingViewModel.logName) == [
+            "welcome", "email", "accessibility", "inputMonitoring", "screenRecording", "reopen", "practice",
+            "drop the card", "done",
+        ])
     }
 
     @Test func dropKeepsPNGsInNameOrder() {
