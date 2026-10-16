@@ -3,7 +3,7 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
+  "ignoreCommand": "p=\"$VERCEL_GIT_PREVIOUS_SHA\"; [ -n \"$p\" ] && [ \"$p\" != \"$(git rev-parse HEAD)\" ] && git cat-file -e \"$p^{commit}\" 2>/dev/null && git diff --quiet \"$p\" HEAD -- . || exit 1",
   "functions": {
     "api/link.js": { "maxDuration": 10 },
     "api/subscribe.js": { "maxDuration": 10 },
