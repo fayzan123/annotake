@@ -2,6 +2,9 @@
 // unsubscribe an address they weren't sent a link for. Links never expire, well past CASL's 60 days, so every link
 // already sent depends on this scheme: the address's key (emailKey: trimmed, lowercased, in NFC), signed, in lowercase
 // hex. A link carries the key, and the check keys it again, so a key must be its own key (email.test.js pins that).
+// Every link already sent depends on the secret too, so UNSUBSCRIBE_SECRET is set once and never replaced: keep a copy
+// (Vercel never shows a Secret again), and carry the same value to a new project or team. If it ever must change, keep
+// accepting the old one beside the new, and sign with the new, rather than replace it.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { emailKey } from '../../assets/email.js';
 
