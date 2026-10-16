@@ -74,9 +74,9 @@ async function readBody(request) {
 }
 
 /**
- * { email, news, wording, appVersion } when the body is what the app sends, or null. The address is checked after:
- * `news` a boolean, `consent` the id of a wording in consent.json, and `appVersion` the app's "0.3.0 (120)", which is
- * never empty.
+ * { email, news, wording, appVersion } when the body is what the app sends, or null: `email` text, `news` a boolean,
+ * `consent` the id of a wording in consent.json, and `appVersion` the app's "0.3.0 (120)", which is never empty. The
+ * address itself is checked after.
  */
 function readFields(text) {
   let data;
@@ -87,6 +87,7 @@ function readFields(text) {
   }
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const { email, news, consent: wording, appVersion } = data;
+  if (typeof email !== 'string') return null;
   if (typeof news !== 'boolean') return null;
   if (typeof wording !== 'string' || !Object.hasOwn(consent.versions, wording)) return null;
   if (typeof appVersion !== 'string' || appVersion === '' || appVersion.length > MAX_APP_VERSION_LENGTH) return null;
@@ -198,8 +199,7 @@ export function createHandler({ fetch, env, log, sleep, now, timeoutMs = ATTEMPT
     // JSON can carry half a surrogate pair, which no app sends and no URL can encode. And the unsubscribe link carries
     // the address's key, which can be longer than the address (İ lowercases to i and a dot), and unsubscribe.js turns
     // away a key that isn't a plausible address: no contact without a working link.
-    const plausible = typeof email === 'string' && email.isWellFormed() && isPlausibleEmail(email)
-      && isPlausibleEmail(emailKey(email));
+    const plausible = email.isWellFormed() && isPlausibleEmail(email) && isPlausibleEmail(emailKey(email));
     if (!plausible) return { result: 'invalid', line: 'invalid address' };
     if (env.EMAIL_DRY_RUN === '1') return { result: 'success', line: 'dry run' };
     if (!SETTINGS.every(name => env[name])) return { result: 'send', line: 'failed not configured' };
