@@ -334,6 +334,27 @@ test('the consent record names the version the app showed, which needn’t be th
   assert.deepEqual(Object.keys(consent.versions), versions);
 });
 
+test('a newer app’s consent id answers 422 until the deployment has it, and the app’s retry is taken then', async () => {
+  // An app released before Production served its new wording. A 400 would clear every new address it saved, and keep
+  // it from recording; the app retries a 422, and the retry after the site's deploy goes through.
+  const next = 'consent-test-newer-app';
+  assert.ok(!Object.hasOwn(consent.versions, next));
+  const { handler, calls, logs } = harness();
+  const early = await answer(await handler.POST(good({ consent: next })));
+  assert.equal(early.status, 422);
+  assert.deepEqual(early.json, { ok: false, reason: 'request' });
+  assert.equal(calls.length, 0);
+  // The same module object subscribe.js imported, changed only for this test: the deploy.
+  consent.versions[next] = { ...consent.versions[consent.current] };
+  try {
+    assert.equal((await handler.POST(good({ consent: next }))).status, 200);
+  } finally {
+    delete consent.versions[next];
+  }
+  assert.deepEqual(calls[1].body.properties, { ...PROPERTIES, consent_wording: next });
+  assert.deepEqual(logs, ['subscribe: invalid request', 'subscribe: added']);
+});
+
 test('a contact that exists never gets an opt_out, a change to Important notices, or unsubscribed: false', async () => {
   // Nor a change to its segments, which are Fayzan's: a contact this function made is in the segment from the start,
   // and he may take one out.
@@ -508,7 +529,16 @@ test('an address whose key is longer than the address is refused, so every conta
   }
 });
 
-test('what isn’t the app’s request answers 400, with no fetch', async () => {
+/**
+ * How a request is turned away. The app clears its saved address on a 400 alone, so only an address the function won't
+ * take is 400; a request it can't read is 422, which the app retries.
+ */
+const REFUSED = {
+  'invalid request': { status: 422, json: { ok: false, reason: 'request' } },
+  'invalid address': { status: 400, json: { ok: false, reason: 'invalid' } },
+};
+
+test('what isn’t the app’s request answers 422, and an address the site won’t take 400, with no fetch', async () => {
   const json = JSON.stringify(FIELDS);
   const bytes = new TextEncoder().encode(json);
   const without = name => { const fields = { ...FIELDS }; delete fields[name]; return fields; };
@@ -555,9 +585,9 @@ test('what isn’t the app’s request answers 400, with no fetch', async () => 
   ]) {
     const { handler, calls, logs } = harness();
     const response = await answer(await handler.POST(request));
-    assert.equal(response.status, 400, why);
+    assert.equal(response.status, REFUSED[line].status, why);
     assert.equal(response.type, 'application/json', why);
-    assert.deepEqual(response.json, { ok: false, reason: 'invalid' }, why);
+    assert.deepEqual(response.json, REFUSED[line].json, why);
     assert.equal(calls.length, 0, why);
     assert.deepEqual(logs, [`subscribe: ${line}`], why);
   }
@@ -588,7 +618,7 @@ test('dry run checks the request and calls nothing, even without Resend’s sett
     assert.equal(response.status, 200);
     assert.deepEqual(response.json, { ok: true });
     assert.equal((await handler.POST(good({ news: true }))).status, 200);
-    assert.equal((await handler.POST(good({ news: 'yes' }))).status, 400, 'the checks still run');
+    assert.equal((await handler.POST(good({ news: 'yes' }))).status, 422, 'the checks still run');
     assert.equal((await handler.POST(good({ email: 'privatesam@example' }))).status, 400, 'the checks still run');
     assert.equal((await handler.POST(post(halfPair))).status, 400, 'half a surrogate pair');
     assert.equal(calls.length, 0);
@@ -616,9 +646,9 @@ test('a missing key, segment id, topic id, or secret answers 502 and says why in
     }
   }
   assert.deepEqual(Object.keys(ENV).filter(name => name !== 'MAILING_ADDRESS').sort(), names.toSorted());
-  // An invalid request is still invalid.
+  // A request it can't read is still turned away first.
   const { handler } = harness({ env: {} });
-  assert.equal((await handler.POST(good({ news: 'yes' }))).status, 400);
+  assert.equal((await handler.POST(good({ news: 'yes' }))).status, 422);
 });
 
 test('each Resend attempt gets ATTEMPT_TIMEOUT_MS as deployed, or the handler’s timeoutMs', async () => {

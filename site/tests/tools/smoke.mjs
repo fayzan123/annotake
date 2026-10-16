@@ -1,8 +1,9 @@
 // Checkpoint 4's smoke test against a deployment: `make site-smoke URL=https://annotake.app`. Prints PASS, FAIL, or
-// SKIP for each check, and exits 1 if anything fails. It only reads: no form is sent and nothing is downloaded beyond the
-// disk image's headers. Against a local server (an http base) it doesn't follow redirects off the site, so the checks
-// that need GitHub or the real domains say SKIP.
+// SKIP for each check, and exits 1 if anything fails. It changes nothing: no form is sent, its one POST is turned away
+// before /api/subscribe calls Resend, and nothing is downloaded beyond the disk image's headers. Against a local server
+// (an http base) it doesn't follow redirects off the site, so the checks that need GitHub or the real domains say SKIP.
 import { fileURLToPath } from 'node:url';
+import consent from '../../api/_lib/consent.json' with { type: 'json' };
 import { CSP, DMG_URL, SECURITY_HEADERS } from '../expected.js';
 
 const EXPECTED = { 'content-security-policy': CSP, ...SECURITY_HEADERS };
@@ -59,6 +60,17 @@ export function checks(base) {
       const response = await fetch(url('/api/link'));
       await response.body?.cancel();
       return response.status === 405 ? pass('405') : fail(`${response.status}`);
+    }],
+    // The function reads the request before the address, so an address it won't take answers 400 only once the
+    // deployment has the consent id the app sends: release an app with new wording only after this passes.
+    [`POST /api/subscribe has the app’s consent id, ${consent.current}`, async () => {
+      const request = { email: 'smoke@example', news: false, consent: consent.current, appVersion: 'smoke' };
+      const response = await fetch(url('/api/subscribe'), {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(request),
+      });
+      await response.body?.cancel();
+      if (response.status === 422) return fail('422: this deployment doesn’t have it yet');
+      return response.status === 400 ? pass('400 for an address it won’t take') : fail(`${response.status}`);
     }],
     ['the font is cached as immutable', async () => {
       const response = await fetch(url('/assets/fonts/jost-latin.v1.woff2'));

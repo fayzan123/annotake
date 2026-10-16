@@ -24,9 +24,13 @@ test('POST /api/subscribe takes what the app sends, and turns away a news that i
   const added = await request.post('/api/subscribe', { data: SIGNUP });
   expect(added.status()).toBe(200);
   expect(await added.json()).toEqual({ ok: true });
+  // 422, which the app retries: only an address the site won't take is 400, which clears it.
   const refused = await request.post('/api/subscribe', { data: { ...SIGNUP, news: 'yes' } });
-  expect(refused.status()).toBe(400);
-  expect(await refused.json()).toEqual({ ok: false, reason: 'invalid' });
+  expect(refused.status()).toBe(422);
+  expect(await refused.json()).toEqual({ ok: false, reason: 'request' });
+  const address = await request.post('/api/subscribe', { data: { ...SIGNUP, email: 'sam@example' } });
+  expect(address.status()).toBe(400);
+  expect(await address.json()).toEqual({ ok: false, reason: 'invalid' });
 });
 
 test('GET /api/subscribe answers 405', async ({ request }) => {

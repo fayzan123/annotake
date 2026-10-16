@@ -27,8 +27,8 @@ final class EmailSignup: ObservableObject {
     nonisolated static let endpoint = URL(string: "https://annotake.app/api/subscribe")!
     /// The waits after the 1st, 2nd, 3rd, and 4th failure in a row. Every later one waits the last.
     static let backoff: [TimeInterval] = [60, 300, 1800, 21_600]
-    /// subscribe.js's MAX_APP_VERSION_LENGTH, in UTF-16 code units. The site answers 400 for a longer version, and a
-    /// 400 clears the address, so the request cuts it to fit.
+    /// subscribe.js's MAX_APP_VERSION_LENGTH, in UTF-16 code units. The site can't read a request with a longer
+    /// version, so it would never take the address: the request cuts it to fit.
     nonisolated static let maxAppVersionLength = 32
     /// Where the addresses the site has taken from this Mac are kept, each as its key's SHA-256 in lowercase hex.
     static let sentStoreKey = "email.sentKeys.v1"
@@ -248,7 +248,9 @@ final class EmailSignup: ObservableObject {
         }
     }
 
-    /// 200 is sent and 400 invalid. Anything else (the site's 429 and 502, Vercel's 504, or no status) is retry later.
+    /// 200 is sent, and 400, the site's answer to an address it won't take, invalid. Anything else is retry later: the
+    /// site's 422 for a request it can't read (a consent id from an app newer than the deployment), its 429 and 502,
+    /// Vercel's 504, or no status.
     nonisolated static func outcome(status: Int?) -> EmailSendOutcome {
         switch status {
         case 200: .sent
