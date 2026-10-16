@@ -64,31 +64,30 @@ async function sections(tab) {
 // paragraphs and list items the email list changed.
 const SHORT_VERSION = [
   'Nothing you record leaves your Mac. Annotake has no server that sees your recordings.',
-  'We get your email address in the app, to send you important notices and, if you agree, feedback requests and news.',
+  'We get your email address in the app, to count how many people use Annotake and to send you important notices.',
   'This website doesn’t use cookies, and it counts visits without identifying you.',
   'If you ask us to email you the download link, we use your address only to send that one email.',
 ];
 
 const EMAIL_SECTION = [
-  'Annotake asks for your email address, and won’t start a recording until it has one. We use it to send you ' +
-    'important notices, such as security fixes, and, if you agree, feedback requests and news. A new address gets ' +
-    'one welcome email.',
-  'What we keep is your email address, which emails you chose, when and how you agreed, and the app version. Resend ' +
-    'stores it for us, in the United States, and keeps its sending logs for 30 days.',
+  // No welcome email and no Feedback and news until the list has a mailing address (design §13).
+  'Annotake asks for your email address, and won’t start a recording until it has one. We use it to count how many ' +
+    'people use Annotake, and to send you important notices, such as security fixes.',
+  'What we keep is your email address, when you gave it, what the app said when it asked, and the app version. ' +
+    'Resend stores it for us, in the United States, and keeps its sending logs for 30 days.',
   // Not "one click": the welcome's link asks first, so a link scanner can't unsubscribe anyone, and a broadcast's opens
   // Resend's page. Only a mail app's own Unsubscribe button, where it shows one, is a single click.
   'Unsubscribing. You can unsubscribe from any email with its unsubscribe link, or with your mail app’s Unsubscribe ' +
-    'button where it shows one. To stop only feedback requests and news, use the unsubscribe link in one of them.',
+    'button where it shows one.',
   // Settings' Change… adds the new address and leaves the old one as it is (design §3.3, §12).
   'How long. We keep your address until you ask us to delete it, even after you unsubscribe: it stays, marked ' +
     'unsubscribed, as proof and so the list never emails it again. Changing your address in Settings doesn’t remove ' +
     'the old one: it stays on the list, and gets our emails until you unsubscribe it or ask us to delete it.',
   'Logs. Our own logs never record your address. Vercel’s request logs, kept for up to 30 days, can include it ' +
     'when the app sends it or you use an unsubscribe link.',
-  // Every use of the address above has its basis, the welcome email included.
-  'Legal bases. In the EU and the UK, the welcome email and important notices rest on our legitimate interest in ' +
-    'confirming your sign-up and telling you about security fixes and important changes. Feedback requests and news ' +
-    'rest on your consent, which you can withdraw at any time by unsubscribing.',
+  // Both uses of the address above have their basis.
+  'Legal bases. In the EU and the UK, both uses rest on our legitimate interest: knowing how many people use ' +
+    'Annotake, and telling you about security fixes and important changes.',
 ];
 
 const CHANGED = {
@@ -99,9 +98,9 @@ const CHANGED = {
       'and you choose whether to send it. The log never holds button names, window titles, or keys.',
     'What goes over the network. Once a day, Annotake checks for updates by fetching its update feed from GitHub, ' +
       'which sees the app’s version and your IP address, as with any download. Updates download from GitHub too. ' +
-      'The check sends no other information about your Mac. Annotake also sends your email address, your choice ' +
-      'of emails, and its version to annotake.app once, for the email list below, and again only if you change ' +
-      'the address in Settings. Like GitHub, annotake.app sees your IP address. Nothing you record is ever sent.',
+      'The check sends no other information about your Mac. Annotake also sends your email address and its ' +
+      'version to annotake.app once, for the email list below, and again only if you change the address in ' +
+      'Settings. Like GitHub, annotake.app sees your IP address. Nothing you record is ever sent.',
     // Stage 2's sign-in takes the required email step's place (design §9), so the policy doesn't promise it's optional.
     'Coming later. A later version will add sign-in and daily counts of how much Annotake is used. This policy will ' +
       'be updated before that version ships, and the app will ask you before it sends anything new.',
@@ -124,8 +123,7 @@ const CHANGED = {
       'this policy says.',
     'In the EU or the UK, you also have rights under the GDPR, including access, correction, deletion, and ' +
       'objection, and you can complain to your data protection authority. The legal basis for the link email is ' +
-      'your request for it; for the welcome email, important notices, and keeping this website secure, our ' +
-      'legitimate interest; and for feedback requests and news, your consent.',
+      'your request for it; for the email list and keeping this website secure, our legitimate interest.',
   ],
 };
 
