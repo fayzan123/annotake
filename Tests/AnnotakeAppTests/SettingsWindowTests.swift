@@ -128,9 +128,10 @@ struct SettingsWindowTests {
     static let sam = EmailRecord(address: "Sam@Example.com", news: true, consent: EmailConsent.id,
                                  savedAt: Date(timeIntervalSinceReferenceDate: 813_456_789), sent: true)
 
-    /// The row's words, as the plan has them, and the Change… sheet's title.
+    /// The row's words, as the plan has them, Add… for a first address, and the Change… sheet's title.
     @Test func theEmailRowsWords() {
         #expect(SettingsText.emailRow == "Email")
+        #expect(SettingsText.addEmail == "Add…")
         #expect(SettingsText.changeEmail == "Change…")
         #expect(SettingsText.noEmail == "Not set")
         #expect(SettingsText.changeEmailTitle == "Change your email")
@@ -140,6 +141,29 @@ struct SettingsWindowTests {
     @Test func theEmailRowShowsTheSavedAddressOrNotSet() {
         #expect(SettingsText.email(Self.sam) == "Sam@Example.com")
         #expect(SettingsText.email(nil) == "Not set")
+    }
+
+    /// With no address saved, the row's button is Add…, which opens the email step, so a first address always comes
+    /// with the notice, the box, and the footer. With one, it's Change…, which opens the sheet.
+    @Test func theEmailRowsButtonAddsAFirstAddressAndChangesOne() {
+        #expect(EmailRowButton(record: nil) == .add)
+        #expect(EmailRowButton(record: nil).title == "Add…")
+        #expect(EmailRowButton(record: Self.sam) == .change)
+        #expect(EmailRowButton(record: Self.sam).title == "Change…")
+    }
+
+    /// Add… runs the action General was given, which AppDelegate points at the email step; Change… opens its sheet
+    /// instead. Each goes by the address saved when it's pressed.
+    @MainActor @Test func addRunsItsAction() throws {
+        let harness = SignupHarness()
+        let model = SettingsModel(store: SettingsStore(defaults: harness.defaults))
+        var added = 0
+        GeneralTab(model: model, signup: harness.makeSignup(), addEmail: { added += 1 }).pressEmailButton()
+        #expect(added == 1)
+
+        try harness.store(Self.sam)
+        GeneralTab(model: model, signup: harness.makeSignup(), addEmail: { added += 1 }).pressEmailButton()
+        #expect(added == 1, "Change… opens the sheet")
     }
 
     /// The row reads the signup's record, which GeneralTab observes and the signup publishes, so it follows the signup
@@ -167,7 +191,7 @@ struct SettingsWindowTests {
     @MainActor @Test func generalObservesTheSignup() {
         let harness = SignupHarness()
         let tab = GeneralTab(model: SettingsModel(store: SettingsStore(defaults: harness.defaults)),
-                             signup: harness.makeSignup())
+                             signup: harness.makeSignup(), addEmail: {})
         let wrappers = Mirror(reflecting: tab).children.map { String(describing: type(of: $0.value)) }
         #expect(wrappers.contains("ObservedObject<EmailSignup>"), "\(wrappers)")
     }
@@ -284,23 +308,29 @@ struct SettingsWindowTests {
         #expect(harness.logged == ["email: sent", "email: sent"])
     }
 
-    /// With no address saved, Save sets one without feedback and news, under today's wording: nobody ticked the box.
-    @MainActor @Test func saveWithNoAddressSetsOneWithoutNews() async throws {
+    /// The sheet opens only with an address saved, but a 400 can clear it while the sheet is open. Save then saves
+    /// nothing, and the sheet closes, leaving Not set and Add…: a first address comes from the email step, with its
+    /// notice and box, never from here under wording the person didn't see.
+    @MainActor @Test func saveAfterTheAddressWasClearedSavesNothing() async throws {
         let harness = SignupHarness()
         let signup = harness.makeSignup()
-        harness.answers = [.sent]
+        harness.answers = [.invalid]
+        signup.save(address: "sam@example.com", news: true)
         var change = EmailChange(record: signup.record)
-        change.draft = "kim@example.org"
-
-        #expect(change.save(to: signup))
-
-        #expect(harness.stored == EmailRecord(address: "kim@example.org", news: false, consent: EmailConsent.id,
-                                              savedAt: harness.now, sent: false))
-        #expect(SettingsText.email(signup.record) == "kim@example.org")
         await signup.settle()
-        try #require(harness.requests.count == 1)
-        #expect(try EmailSignupTests.body(of: harness.requests[0]).news == false)
-        #expect(harness.stored?.sent == true)
+        #expect(!signup.hasAddress, "the site refused it")
+        var changes = 0
+        signup.onChange = { changes += 1 }
+
+        change.draft = "kim@example.org"
+        #expect(change.save(to: signup), "the sheet closes")
+        await signup.settle()
+
+        #expect(harness.stored == nil)
+        #expect(SettingsText.email(signup.record) == "Not set")
+        #expect(changes == 0)
+        #expect(try EmailSignupTests.emails(harness.requests) == ["sam@example.com"])
+        #expect(harness.logged == ["email: invalid"])
     }
 
     /// The email isn't a setting: a saved address doesn't count against Restore Defaults, and restoring every tab's
@@ -370,6 +400,34 @@ struct SettingsWindowTests {
         let end = try #require(kept, "AppDelegate keeps the Settings window")
         let given = lines[call..<end].contains("signup: signup)")
         #expect(given, "AppDelegate gives the Settings window the app's signup")
+    }
+
+    /// Only the Settings window passes its onAddEmail on to General's Add…, and no test opens the window. It's read
+    /// when Add… is pressed, since AppDelegate sets it once the onboarding exists, after the window controller. Without
+    /// these lines, Add… would do nothing, and every other test would still pass.
+    @Test func theSettingsWindowPassesAddOn() throws {
+        let lines = try PillTextTests.sourceLines("Sources/AnnotakeApp/SettingsWindow.swift")
+        let make = lines.firstIndex { $0.hasPrefix("private func makeWindow() -> NSWindow") }
+        let start = try #require(make, "SettingsWindowController makes its window")
+        let made = lines[start...].contains("let addEmail: () -> Void = { [weak self] in self?.onAddEmail?() }")
+        let passed = lines[start...].contains("addEmail: addEmail))")
+        let general = "case .general: host(GeneralTab(model: model, signup: signup, addEmail: addEmail))"
+        #expect(made, "the window reads onAddEmail when Add… is pressed")
+        #expect(passed, "the window gives each tab's page that action")
+        #expect(lines.contains(general), "General gets it")
+    }
+
+    /// Only AppDelegate's line points General's Add… at the email step, and no test launches the app. Without it, Add…
+    /// would do nothing, and every other test would still pass.
+    @Test func theAppPointsAddAtTheEmailStep() throws {
+        let lines = try PillTextTests.sourceLines("Sources/AnnotakeApp/AppMain.swift")
+        let delegate = lines.firstIndex { $0.hasPrefix("final class AppDelegate") }
+        let start = try #require(delegate, "AppMain.swift declares AppDelegate")
+        let made = lines[start...].firstIndex { $0.hasPrefix("let onboarding = OnboardingController(") }
+        let onboarding = try #require(made, "AppDelegate makes the onboarding")
+        let wired = lines[onboarding...].contains(
+            "settingsWindow.onAddEmail = { [weak onboarding] in onboarding?.showForEmail() }")
+        #expect(wired, "AppDelegate points Add… at the email step, once the onboarding exists")
     }
 
     /// Only AppDelegate's line sends, at launch, an address saved but not yet sent, as after an offline Continue and a

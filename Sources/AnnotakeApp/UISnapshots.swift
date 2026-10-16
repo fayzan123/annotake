@@ -67,11 +67,13 @@ enum UISnapshots {
                          to: directory, as: name)
         }
 
-        tab(GeneralTab(model: model, signup: signup, loginItem: { .available }), as: "settings-general.png")
-        tab(GeneralTab(model: model, signup: noAddress, loginItem: { .available }), as: "settings-general-no-email.png")
+        tab(GeneralTab(model: model, signup: signup, addEmail: {}, loginItem: { .available }),
+            as: "settings-general.png")
+        tab(GeneralTab(model: model, signup: noAddress, addEmail: {}, loginItem: { .available }),
+            as: "settings-general-no-email.png")
         sheet(signup, as: "settings-email-change.png")
         sheet(noAddress, as: "settings-email-change-empty.png")
-        tab(GeneralTab(model: model, signup: signup, loginItem: { .notInApplications }),
+        tab(GeneralTab(model: model, signup: signup, addEmail: {}, loginItem: { .notInApplications }),
             as: "settings-general-not-in-applications.png")
         let picker = samplePicker()
         tab(RecordTab(model: model, picker: picker), as: "settings-record.png")
@@ -84,7 +86,8 @@ enum UISnapshots {
         }), as: "settings-permissions.png")
         tab(AdvancedTab(model: model), as: "settings-advanced.png")
         model.update { $0.triggerKey = .fn }
-        tab(GeneralTab(model: model, signup: signup, loginItem: { .available }), as: "settings-general-fn.png")
+        tab(GeneralTab(model: model, signup: signup, addEmail: {}, loginItem: { .available }),
+            as: "settings-general-fn.png")
 
         renderOnboarding(to: directory, problems: &problems)
     }
