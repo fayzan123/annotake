@@ -113,24 +113,30 @@ struct SessionMachine {
     }
 
     /// Without an address nothing starts. A hold stays silent, its message waiting for the reveal, so a Right ⌘
-    /// shortcut shows nothing. A double-tap or the menu's Start shows it at once and resets the gestures, ending what
-    /// InputMonitor began.
+    /// shortcut shows nothing. A double-tap or the menu's Start shows it at once. A double-tap resets the gestures,
+    /// ending the hands-free recording InputMonitor began; the menu's Start resets them only to end a refused hold.
+    /// From idle there's nothing to end, and a hold InputMonitor began just before, whose startHold is still on its
+    /// way, would lose its stopHold to a reset and leave the machine in a refused hold.
     private mutating func refuseStart(_ input: Input) -> [Effect] {
         switch input {
         case .gesture(.startHold):
             state = .refusedHold
             return []
-        case .gesture(.startHandsFree), .menuStart:
+        case .gesture(.startHandsFree):
             state = .idle
             return [.showMessage(.emailNeeded), .resetGestures]
+        case .menuStart:
+            let endsRefusedHold = state == .refusedHold
+            state = .idle
+            return [.showMessage(.emailNeeded)] + (endsRefusedHold ? [.resetGestures] : [])
         default:
             return []
         }
     }
 
     /// A refused hold ends as a hold does, and letting go hides nothing: the message stays its own time, for its Open.
-    /// The menu offers Start, since nothing records, and Start is refused as when idle, ending the refused hold. So is
-    /// a double-tap, which a hold never sends.
+    /// The menu offers Start, since nothing records, and Start is refused, ending the refused hold with the gestures
+    /// reset. So is a double-tap, which a hold never sends.
     private mutating func whileRefusingHold(_ input: Input) -> [Effect] {
         switch input {
         case .gesture(.revealHold):
