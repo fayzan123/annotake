@@ -1,6 +1,7 @@
 // The email list's functions through the local server, which runs them in dry-run mode and checks unsubscribe links
 // against its test secret (server.mjs): what the app's sign-up gets back, and the welcome email's unsubscribe link.
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 import { unsubscribeUrl } from '../../api/_lib/unsubscribe-token.js';
 import { CSP } from '../expected.js';
 import { expect, test, watchErrors } from './support.js';
@@ -8,8 +9,9 @@ import { expect, test, watchErrors } from './support.js';
 /** server.mjs's UNSUBSCRIBE_SECRET. */
 const SECRET = 'test-secret';
 
-/** What the app sends (EmailSignup.request). */
-const SIGNUP = { email: 'sam@example.com', news: false, consent: 'consent-2026-10-15', appVersion: '0.3.0 (120)' };
+/** What the app sends (EmailSignup.request), word for word: EmailSignupTests checks the app sends this text. */
+const APP_REQUEST = JSON.parse(readFileSync(new URL('../subscribe-request.json', import.meta.url), 'utf8')).body;
+const SIGNUP = JSON.parse(APP_REQUEST);
 
 /** The longest address /api/subscribe takes, with nowhere to break a line: 254 characters, 64 of them before the @. */
 const LONGEST = `${'a'.repeat(64)}@${'b'.repeat(185)}.com`;
@@ -21,7 +23,9 @@ function link(address, secret = SECRET) {
 }
 
 test('POST /api/subscribe takes what the app sends, and turns away a news that isn’t true or false', async ({ request }) => {
-  const added = await request.post('/api/subscribe', { data: SIGNUP });
+  const added = await request.post('/api/subscribe', {
+    data: APP_REQUEST, headers: { 'content-type': 'application/json' },
+  });
   expect(added.status()).toBe(200);
   expect(await added.json()).toEqual({ ok: true });
   // 422, which the app retries: only an address the site won't take is 400, which clears it.
