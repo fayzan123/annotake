@@ -89,6 +89,11 @@ enum UISnapshots {
         model.update { $0.triggerKey = .fn }
         tab(GeneralTab(model: model, signup: signup, addEmail: {}, loginItem: { .available }),
             as: "settings-general-fn.png")
+        // A saved address with a typo: Change… opens with "Did you mean …?" below it (EmailTypo).
+        let typo = EmailRecord(address: "sam@gmial.com", news: true, consent: EmailConsent.id,
+                               savedAt: record.savedAt, sent: true)
+        if let data = try? JSONEncoder().encode(typo) { defaults.set(data, forKey: EmailRecord.storeKey) }
+        sheet(emailSignup(defaults), as: "settings-email-change-typo.png")
 
         renderOnboarding(to: directory, problems: &problems)
     }
@@ -131,6 +136,10 @@ enum UISnapshots {
         onboarding("onboarding-email.png", .init(step: .email), status: none)
         onboarding("onboarding-email-filled.png", .init(step: .email), status: none) {
             $0.emailDraft = "sam@example.com"
+        }
+        // "Did you mean …?" below the field (EmailTypo).
+        onboarding("onboarding-email-typo.png", .init(step: .email), status: none) {
+            $0.emailDraft = "sam@gmial.com"
         }
         // An existing copy's one pass after its update (email list design §3.2).
         onboarding("onboarding-email-only.png", OnboardingModel.emailOnly(), status: all)

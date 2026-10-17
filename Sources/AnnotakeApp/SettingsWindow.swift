@@ -326,14 +326,16 @@ struct EmailChangeSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(SettingsText.changeEmailTitle).font(.headline)
-            TextField("Email address", text: $change.draft, prompt: Text(OnboardingCopy.emailPlaceholder))
-                .labelsHidden()
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.emailAddress)
-                .autocorrectionDisabled()
-                .focused($fieldFocused)
-                // Return: save() turns away what Save, greyed out, would.
-                .onSubmit(save)
+            SuggestingEmailField(draft: $change.draft) {
+                TextField("Email address", text: $change.draft, prompt: Text(OnboardingCopy.emailPlaceholder))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .focused($fieldFocused)
+                    // Return: save() turns away what Save, greyed out, would.
+                    .onSubmit(save)
+            }
             HStack {
                 Link("Privacy policy", destination: EmailConsent.privacyURL)
                 Spacer()
