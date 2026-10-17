@@ -296,14 +296,14 @@ test('the email says what the plan says, word for word', () => {
     '',
     'This is the only email we’ll send you.',
     '',
-    'Annotake, made by Fayzan Malik in Ontario, Canada',
+    'Annotake, made in Ontario, Canada',
     'https://annotake.app · Privacy: https://annotake.app/privacy',
   ].join('\n'));
   assert.match(EMAIL_HTML, /<a href="https:\/\/annotake\.app\/download"[^>]*>Download Annotake for Mac<\/a>/);
   for (const phrase of [
     'Here’s the Annotake download link you asked for:',
     'Open it on your Mac (macOS 15 or later). Then open the disk image and drag Annotake to Applications.',
-    'This is the only email we’ll send you.', 'Annotake, made by Fayzan Malik in Ontario, Canada',
+    'This is the only email we’ll send you.', 'Annotake, made in Ontario, Canada',
     'https://annotake.app/privacy',
   ]) {
     assert.ok(EMAIL_HTML.includes(phrase), phrase);

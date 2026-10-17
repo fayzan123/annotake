@@ -36,7 +36,7 @@ for (const [path, page] of Object.entries(PAGES)) {
     const text = (await tab.locator('main').textContent()).replace(/\s+/g, ' ');
     for (const phrase of page.phrases) expect(text, phrase).toContain(phrase);
     await expect(tab.locator('header a[href="/"]')).toBeVisible();
-    await expect(tab.locator('footer .legal')).toContainText('© 2026 Fayzan Malik · Made in Ontario, Canada');
+    await expect(tab.locator('footer .legal')).toContainText('Made in Ontario, Canada');
     await expect(tab.locator('footer .giant svg use')).toHaveAttribute('href', '/assets/img/brand.svg#logo');
   });
 }

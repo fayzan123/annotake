@@ -57,7 +57,6 @@ test('the JSON-LD describes the app', async ({ page }) => {
     url: 'https://annotake.app',
     downloadUrl: 'https://annotake.app/download',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    author: { '@type': 'Person', name: 'Fayzan Malik' },
   });
 });
 
