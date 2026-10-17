@@ -1,4 +1,5 @@
 // The "Email me the link" form, on an iPhone. /api/link is routed, so nothing here reaches the function.
+import { createHandler } from '../../api/link.js';
 import { PHONE } from '../expected.js';
 import { expect, pauseClock, test } from './support.js';
 
@@ -190,4 +191,27 @@ test('the keyboard: Enter opens the form, Tab reaches the field and the button, 
   await page.keyboard.press('Enter');
   await expect(page.locator('section.hero .linkform-sent')).toBeVisible();
   expect(bodies).toHaveLength(1);
+});
+
+/**
+ * What a form post without scripts gets when the send fails, from the function itself with every fetch failing: the
+ * link, which never breaks mid-word, fits a 320 px screen by breaking after "annotake.app/".
+ */
+test('without scripts, the failure page fits a 320 px screen', async ({ page }) => {
+  const { POST } = createHandler({
+    fetch: async () => { throw new TypeError('fetch failed'); },
+    env: { RESEND_API_KEY: 're_test' }, log: () => {}, sleep: async () => {}, today: () => '2026-10-17', timeoutMs: 50,
+  });
+  const failed = await POST(new Request('https://annotake.app/api/link', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ email: 'sam@example.com' }).toString(),
+  }));
+  expect(failed.status).toBe(502);
+  const html = await failed.text();
+  await page.route('**/link-failed', route => route.fulfill({ contentType: 'text/html', body: html }));
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto('/link-failed');
+  await expect(page.locator('.message-link')).toHaveText(LINK);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
