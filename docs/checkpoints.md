@@ -168,9 +168,9 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - **Saving:** Return with a new Gmail `+alias` submits once and shows You're set, and the next hold records.
    - **Settings:** the Email row shows the address with Change…, which opens "Change your email": the field focused with the address selected; ⌘V pastes, Return saves, and Esc cancels. With Annotake quit and `email.v1` deleted again, the row shows Not set with Add…, which opens the email step.
 
-   Result: not done yet.
+   Result: in progress (2026-10-17). Claude installed a build of `main` (0.2.0, 167, Developer ID, so permissions carried over). `email.v1` wasn't set, so it opened on the email step alone. There Fayzan had "Every email has an unsubscribe link." taken out of the notice: up front it's beside the point, the step asks for no consent, and /privacy, linked from its footer, says how to unsubscribe. `consent-2026-10-15` was on Production, so the new wording is a new version, `consent-2026-10-17`. Production needs it before an address is saved under it: push `main`, see the smoke check's consent check pass under the new id, then reinstall and run step 7 again from the top. Claude's shell can't reach Annotake's settings with `defaults` (Recorded, not debugged, below), so run this checkpoint's `defaults` commands in Terminal.
 8. **One real sign-up:** a fresh first run. With Annotake quit, run `defaults delete com.fayzanmalik.annotake email.v1`, then the same for `email.sentKeys.v1` and `onboarding.v1`; open it, and sign up with a new Gmail `+alias`.
-   - In Resend, the contact is in the segment, on Important notices and not on Feedback and news, with all four properties: `consent_wording` is `consent-2026-10-15`, and `consent_source` is `app`.
+   - In Resend, the contact is in the segment, on Important notices and not on Feedback and news, with all four properties: `consent_wording` is `consent-2026-10-17`, and `consent_source` is `app`.
    - Vercel's log for the request says `subscribe: added welcome skipped no address`, and no email arrives.
 
    Result: not done yet.
@@ -179,7 +179,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
 
 **Parked until the list's first email,** even a security notice, in this order:
 1. **The mailing address:** rent a PO box or a virtual mailbox, never your home address (design §6.1). CASL wants it valid for 60 days after each email.
-2. **The box comes back with it,** in a new consent version (below), with `{address}` in its footer: `consent.test.js` holds every version with a box to one. In the app, `EmailConsent` gets the box and the address back, the step its checkbox, and `make release` a guard against an unset address again (e6b7888 removed the last one). Copies that saved an address under `consent-2026-10-15` were never offered the box: decide whether they're asked once.
+2. **The box comes back with it,** in a new consent version (below), with `{address}` in its footer: `consent.test.js` holds every version with a box to one. Its notice says again that consent can be withdrawn, as CASL wants of a consent request: "Every email has an unsubscribe link.", which `consent-2026-10-17` dropped. In the app, `EmailConsent` gets the box and the address back, the step its checkbox, and `make release` a guard against an unset address again (e6b7888 removed the last one). Copies that saved an address under `consent-2026-10-15` or `consent-2026-10-17` were never offered the box: decide whether they're asked once.
 3. **`MAILING_ADDRESS` in Vercel,** which turns on the welcome email for new contacts. Contacts added before then never got one: decide whether the list's first email does its job.
 4. **In Resend:**
    - the broadcast footer, `Fayzan Malik · <address> · annotake.app`, with the unsubscribe link (the editor's Unsubscribe footer block, or `{{{RESEND_UNSUBSCRIBE_URL}}}`). Resend has no saved footer, so keep it in a draft broadcast to copy, or paste it each time;
@@ -200,6 +200,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
 **For any later change to the step's wording:** add a new version to `site/api/_lib/consent.json` and move its `current`, deploy it, and see `make site-smoke URL=https://annotake.app`'s consent check pass (400, not 422). Only then release the app that sends the new id: until the site has it, it answers that id 422, and every new copy's address waits on the app's backoff.
 
 **Recorded, not debugged** (found during the build; each was there before it):
+- From Claude's shell, `defaults` answers `Domain com.fayzanmalik.annotake does not exist` to reads and deletes alike, sandbox or not, though `~/Library/Preferences/com.fayzanmalik.annotake.plist` is there, Python reads it, and `defaults domains` lists it. Its plists carry `com.apple.macl`. Start: whether cfprefsd withholds such a domain from other processes. Meanwhile, run the checkpoints' `defaults` commands in Terminal.
 - `InputBridgeTests.tabStartsNewLookup()` fails about 1 run in 40. Start: its two unstructured Tasks race for `FakeLabels`' fields.
 - Tests that use a throwaway `UserDefaults` suite leave an empty `annotake-tests-*.plist` in `~/Library/Preferences` each (3,550 on this Mac by 2026-10-16): `SettingsTests` and `SettingsWindowTests`, and now `Tests/AnnotakeAppTests/Support/SignupHarness.swift`. Start: `removePersistentDomain(forName:)` empties a suite but leaves its file.
 - `link.js`'s no-JavaScript failure page ("We couldn't send it right now.") is wider than a 320 px screen: by 18 px in Chrome and 27 px in WebKit (Firefox breaks the link after "https://"). A `<wbr>` after "annotake.app/" in `link.js` would fix it.

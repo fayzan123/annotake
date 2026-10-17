@@ -52,14 +52,14 @@ A new `OnboardingModel.Step.email`, right after `.welcome` in the `.firstRun` st
                                         [ Continue ]
 ```
 
-*Parked* (§13): the box and the mailing address. For now the step shows the field, the notice, and "From Fayzan Malik · annotake.app · Privacy policy", and saves every address with `news: false`.
+*Parked* (§13): the box and the mailing address. For now the step shows the field, the notice's first sentence alone (`consent-2026-10-17`, §13), and "From Fayzan Malik · annotake.app · Privacy policy", and saves every address with `news: false`.
 
 - **The field:** the same rules as the site's `email.js`, on the address and on its lowercase key, as `/api/subscribe` applies them (`EmailConsent.isPlausible`): trimmed, at most 254 characters, no line breaks, a plain address pattern. Continue is greyed out until it matches, and Return presses it when it's enabled. The field has focus when the step opens.
 - **The editing keys** (⌘V, ⌘C, ⌘X, ⌘A, ⌘Z) work through a main menu that never shows (`EditMenu.swift`): a menu-bar app has none of its own.
 - **The box** starts unticked, every time.
 - **The footer line** is what CASL wants on a consent request: who's asking, a mailing address, and a contact (the web address counts). The policy link opens `annotake.app/privacy`.
 - **Continue** saves the address on the Mac (§3.4) and moves straight on to the permissions. The send happens in the background.
-- **The wording is versioned:** the step's text and the box's label are one constant with an id, `consent-2026-10-15` (`EmailConsent` in the app). The id goes with the address, and the same text lives in `site/api/_lib/consent.json`, so the consent record names exactly what the person read. A test checks the app's and the site's copies match.
+- **The wording is versioned:** the step's text and the box's label are one constant with an id, now `consent-2026-10-17` (`EmailConsent` in the app). The id goes with the address, and the same text lives in `site/api/_lib/consent.json`, so the consent record names exactly what the person read. A test checks the app's and the site's copies match.
 - **A wording change** adds a new version to `consent.json` and moves its `current`; a shipped version is never edited. Deploy it to Production and see `make site-smoke URL=https://annotake.app`'s consent check pass (400, not 422) before releasing the app that sends the new id. Until then the site answers that id 422, and every new copy's address waits on the app's backoff (§3.4).
 
 ### 3.2 Existing copies
@@ -183,7 +183,7 @@ Fayzan sends these from Resend's dashboard:
 | CASL needs | Where it's met |
 |---|---|
 | Consent asked separately, never pre-ticked | The unticked box, only for Feedback and news (§3.1) |
-| Who's asking, a mailing address, a contact, and that consent can be withdrawn | The step's footer line and "Every email has an unsubscribe link" |
+| Who's asking, a mailing address, a contact, and that consent can be withdrawn | The step's footer line and "Every email has an unsubscribe link". *Parked* with the box: until then the step asks for no consent, and /privacy, linked from it, and the Terms say how to unsubscribe |
 | In every email: the name, the mailing address, a contact, and an unsubscribe link | The welcome email's footer (§5.1) and the broadcast footer (§5.2) |
 | Unsubscribe works for 60 days, honoured within 10 business days | Links that never expire; Resend applies an unsubscribe at once |
 | Proof of consent | The contact's consent properties, plus the wording kept in `site/api/_lib/consent.json` under its id |
@@ -458,6 +458,7 @@ Made in the build (Task 3 for the site, Task 10 for the rest):
 **Decided at Checkpoint 5 (2026-10-16): the list collects addresses only, for now.** Fayzan isn't emailing the list yet, and until he does, the addresses count Annotake's users. CASL wants a mailing address beside a consent request and in every commercial email, so none is needed before the first email, and the parts that need one wait. Checkpoint 5's "Parked until the list's first email" has them in order.
 - The step has no box. Asking for Feedback and news is the consent request that needs the address, and ticks gathered without it might not count as consent later.
 - `consent-2026-10-15`, not yet shipped, was edited rather than replaced: no box, and the footer "From Fayzan Malik · annotake.app · Privacy policy". The box comes back in a new version with `{address}` in its footer, which `consent.test.js` requires of any version with a box.
+- `consent-2026-10-17` (2026-10-17, at the checkpoint's step 7) drops "Every email has an unsubscribe link.": up front it's beside the point, the step asks for no consent, and /privacy and the Terms say how to unsubscribe. `consent-2026-10-15` had reached Production, so it was replaced, not edited, and stays in `consent.json`. The box's version brings the line back.
 - The app saves every address with `news: false`. `EmailSignup`, the request, and `/api/subscribe` keep `news` for the box's return.
 - `EmailConsent.mailingAddress` and `make release`'s guard against the unset address are gone. They return with the box.
 - No `MAILING_ADDRESS` in Vercel, so `/api/subscribe` adds each contact and logs `subscribe: added welcome skipped no address`. With no welcome, nothing links to `/api/unsubscribe` yet; it's deployed anyway.
