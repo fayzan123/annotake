@@ -10,7 +10,7 @@ const STRINGS = ['footer', 'notice', 'title'];
 
 test('current names a version that exists', () => {
   assert.deepEqual(Object.keys(consent).sort(), ['current', 'versions']);
-  assert.equal(consent.current, 'consent-2026-10-15');
+  assert.equal(consent.current, 'consent-2026-10-17');
   assert.ok(Object.hasOwn(consent.versions, consent.current));
 });
 
@@ -39,15 +39,26 @@ test('apostrophes are ’, as everywhere on the site', () => {
   for (const [id, version] of Object.entries(consent.versions)) {
     for (const [name, text] of Object.entries(version)) assert.doesNotMatch(text, /'/, `${id} ${name}`);
   }
-  assert.ok(consent.versions['consent-2026-10-15'].notice.startsWith('We’ll'));
+  assert.ok(consent.versions[consent.current].notice.startsWith('We’ll'));
 });
 
 test('consent-2026-10-15 says what the plan says, word for word', () => {
   // No box and no mailing address: until the list has an address, the step asks for no consent (design §13, Checkpoint
-  // 5). Changed before it shipped; the box comes back under a new version, with the address.
+  // 5). Changed before it shipped; the box comes back under a new version, with the address. It reached Production on
+  // 2026-10-17, so it stays as it was: a contact may name it.
   assert.deepEqual(consent.versions['consent-2026-10-15'], {
     title: 'Stay in the loop',
     notice: 'We’ll email you about security fixes and important changes to Annotake. Every email has an unsubscribe link.',
+    footer: 'From Fayzan Malik · annotake.app · Privacy policy',
+  });
+});
+
+test('consent-2026-10-17 is consent-2026-10-15 without the unsubscribe line, word for word', () => {
+  // The step asks for no consent, and /privacy, linked from its footer, says how to unsubscribe. The box's version brings
+  // the line back: CASL wants a consent request to say that consent can be withdrawn (Checkpoint 5's parked list).
+  assert.deepEqual(consent.versions['consent-2026-10-17'], {
+    title: 'Stay in the loop',
+    notice: 'We’ll email you about security fixes and important changes to Annotake.',
     footer: 'From Fayzan Malik · annotake.app · Privacy policy',
   });
 });
