@@ -10,7 +10,7 @@ const STRINGS = ['footer', 'notice', 'title'];
 
 test('current names a version that exists', () => {
   assert.deepEqual(Object.keys(consent).sort(), ['current', 'versions']);
-  assert.equal(consent.current, 'consent-2026-10-17');
+  assert.equal(consent.current, 'consent-2026-10-17b');
   assert.ok(Object.hasOwn(consent.versions, consent.current));
 });
 
@@ -55,10 +55,21 @@ test('consent-2026-10-15 says what the plan says, word for word', () => {
 
 test('consent-2026-10-17 is consent-2026-10-15 without the unsubscribe line, word for word', () => {
   // The step asks for no consent, and /privacy, linked from its footer, says how to unsubscribe. The box's version brings
-  // the line back: CASL wants a consent request to say that consent can be withdrawn (Checkpoint 5's parked list).
+  // the line back: CASL wants a consent request to say that consent can be withdrawn (Checkpoint 5's parked list). It
+  // reached Production on 2026-10-17 and was replaced the same day, so it stays as it was: a contact may name it.
   assert.deepEqual(consent.versions['consent-2026-10-17'], {
     title: 'Stay in the loop',
     notice: 'We’ll email you about security fixes and important changes to Annotake.',
     footer: 'From Fayzan Malik · annotake.app · Privacy policy',
+  });
+});
+
+test('consent-2026-10-17b is consent-2026-10-17 without Fayzan’s name, word for word', () => {
+  // Fayzan's name appears only where the law needs it: /privacy and /terms, linked from here, say who's responsible.
+  // A step that asks for no consent needs no name; the box's version will, or a registered business name.
+  assert.deepEqual(consent.versions['consent-2026-10-17b'], {
+    title: 'Stay in the loop',
+    notice: 'We’ll email you about security fixes and important changes to Annotake.',
+    footer: 'annotake.app · Privacy policy',
   });
 });
