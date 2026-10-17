@@ -46,11 +46,15 @@ const RESULTS = {
   send: { status: 502, json: { ok: false, reason: 'send' } },
 };
 
-/** What a form post without scripts sees, as a page in the site's style. */
+/**
+ * What a form post without scripts sees, as a page in the site's style. The link never breaks mid-word, so it may break
+ * after "annotake.app/", or it would be wider than a 320 px screen.
+ */
 const PAGES = {
   success: ['Check your inbox', '<p>We sent the link to your email. Open it on your Mac.</p>'],
   invalid: ['That doesn’t look like an email address.', '<p><a href="/">Go back and try again</a></p>'],
-  failure: ['We couldn’t send it right now.', `<p>Here’s the link: <span class="message-link">${DOWNLOAD}</span></p>`],
+  failure: ['We couldn’t send it right now.',
+    `<p>Here’s the link: <span class="message-link">${DOWNLOAD.replace('annotake.app/', 'annotake.app/<wbr>')}</span></p>`],
 };
 
 function page(kind) {

@@ -57,8 +57,9 @@ function form(fields) {
 
 const good = (extra = {}) => json({ email: `  ${ADDRESS} `, website: '', t: 5000, ...extra });
 
-/** A page's text, as a reader sees it: tags gone, whitespace collapsed. */
-const textOf = html => html.replace(/<title>[\s\S]*?<\/title>/, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+/** A page's text, as a reader sees it: tags gone, <wbr> without a space, and whitespace collapsed. */
+const textOf = html => html.replace(/<title>[\s\S]*?<\/title>/, '').replace(/<wbr>/g, '').replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ');
 
 async function answer(response) {
   return { status: response.status, type: response.headers.get('content-type'), body: await response.text() };
