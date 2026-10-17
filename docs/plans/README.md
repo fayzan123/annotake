@@ -397,7 +397,7 @@ Your part is Checkpoint 5, the plan's Task 11: the mailing address, Resend's top
 **For later plans:**
 - `make test` runs 536 tests in 65 suites (402 before the build). `make site-unit` runs 162 `node:test` tests, and `make site-test` then 363 page tests in Chrome, WebKit, and Firefox, with 6 Chrome-only ones skipped in the others.
 - Foundation's `precomposedStringWithCanonicalMapping` isn't JavaScript's NFC: its tables get Hangul and some Tibetan wrong. To match the site, compose with ICU (`applyingTransform(StringTransform("Any-NFC"), reverse: false)`), and lowercase with `Any-Lower`.
-- A menu-bar app (`.accessory`) has no main menu, so its text fields get no ⌘V, ⌘C, ⌘X, ⌘A, or ⌘Z until one is installed: `EditMenu.swift`.
+- A menu-bar app (`.accessory`) has no main menu, so its text fields get no ⌘V, ⌘C, ⌘X, ⌘A, or ⌘Z until one is installed: `EditMenu.swift`, now `MainMenu.swift`.
 - A `@MainActor` class's statics are main-actor-isolated too, so one used as a default closure argument needs `nonisolated`.
 - Wiring that a test can't build safely (a real `SessionController` could start a capture) is pinned by tests that read the Swift source.
 - Resend, as of 2026-10-15: every request needs a `User-Agent`; a broadcast goes to a segment, and a contact made through the API is in none; Retrieve Contact returns no topics, but `GET /contacts/{id}/topics` does; a 409 `resource_locked` asks for a retry; an Idempotency-Key lasts 24 hours.

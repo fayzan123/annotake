@@ -127,8 +127,8 @@ Rules:
   - Send Feedback… (a draft to Fayzan's inbox with a diagnostic report, §8)
   - Check for Updates… (Sparkle checks now and shows the result)
   - Quit
-- There is no Dock icon.
-- **A main menu that never shows** (`EditMenu.swift`). Annotake is menu-bar-only, so a text field, such as the email step's, gets ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z only through it. AppKit adds its hidden AutoFill, Start Dictation…, and Emoji & Symbols items with it, so ⌃⌘Space opens Emoji & Symbols while an Annotake window is key.
+- **In the Dock only while a window is open** (`DockPresence.swift`): the first run or Settings puts Annotake in the Dock and ⌘-Tab, and the last one closed takes it out, so a window behind another app, such as System Settings during the permissions, can be found again. The pill, the cards, and the filmstrip don't count. Otherwise Annotake lives in the menu bar alone.
+- **The main menu** (`MainMenu.swift`) shows only while Annotake is in the Dock: About, Settings… (⌘,), and Quit (⌘Q); Edit; and Window's Close (⌘W). Otherwise it holds Edit alone, since the filmstrip and the frame viewer take keys while another app's menus show, and ⌘Q there mustn't quit Annotake. A text field, such as the email step's, gets ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z only through it. AppKit adds its AutoFill, Start Dictation…, and Emoji & Symbols items with it, so ⌃⌘Space opens Emoji & Symbols while an Annotake window is key.
 
 ### 3.6 Settings
 
