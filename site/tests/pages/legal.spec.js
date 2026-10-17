@@ -2,7 +2,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, useTheme } from './support.js';
 
-const UPDATED = 'Last updated: October 15, 2026';
+const UPDATED = 'Last updated: October 17, 2026';
 
 const PAGES = {
   '/privacy': {
