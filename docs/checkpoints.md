@@ -148,7 +148,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - one segment, such as "Annotake users"; note its id;
    - a full-access key.
 
-   Result: not done yet.
+   Result: **done** (2026-10-16). Fayzan made the full-access key "Annotake contacts", and Claude made the rest with it through Resend's API: `Important notices` (opt-in, public) is `8ff665b1-6687-4b24-bd56-ef007df3e4f5`, `Feedback and news` (opt-out, private) is `57d87515-4ce3-42a8-95e9-4f3c04f0018a`, the segment "Annotake users" is `166e1752-e585-4b15-9e44-6f3762f36a68`, and the four string properties exist. The ids aren't secret: Resend's API needs the key for anything.
 4. **In Vercel (Production, Secret):** `RESEND_CONTACTS_KEY`, `RESEND_SEGMENT`, `RESEND_TOPIC_NOTICES`, `RESEND_TOPIC_NEWS`, and `UNSUBSCRIBE_SECRET`. Not `MAILING_ADDRESS`: without it, `/api/subscribe` adds the contact and sends no welcome.
    - `UNSUBSCRIBE_SECRET`: make it with `openssl rand -hex 32`, and save it in the password manager before pasting it in; Vercel never shows a Secret again. Never make a new one: once welcome emails go out, each one's unsubscribe link depends on it. Carry the same value to a Pro team.
    - Change the firewall rule's path from `/api/link` to everything under `/api/` (Request Path, Starts with, `/api/`), and publish it.
