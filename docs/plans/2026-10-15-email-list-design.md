@@ -25,7 +25,7 @@
 |---|---|
 | The email is asked for in the app's first run, not on the site | The site's download is a public GitHub link, and a forwarded `.dmg` skips any site gate. Every copy passes through the first run, and existing copies through Sparkle. It uses the slot `OnboardingModel` already keeps for Stage 2's sign-in |
 | The email is required; feedback and news are a separate, unticked box | CASL asks for consent separately and never pre-ticked, and the EU's GDPR doesn't count consent that's a condition of getting something. Security and update notices are exempt from consent under CASL ([s. 6(6)(c) and (f)](https://laws-lois.justice.gc.ca/eng/acts/E-1.6/FullText.html)), so the address itself can be required |
-| A typed email now, no confirmation step | No inbox trip in setup. Typos and fakes bounce and are dropped. Stage 2's sign-in (Google, GitHub, Apple) verifies addresses later, which is when the paywall needs it (§9) |
+| A typed email now, no confirmation step | No inbox trip in setup. Typos and fakes bounce and are dropped. Stage 2's sign-in (Google, GitHub, Apple) verifies addresses later, which is when the paywall needs it (§9). Since Checkpoint 5, a "Did you mean …?" hint catches likely typos of common providers' domains, without stopping anyone (§3.1) |
 | Existing copies ask once, and recording waits for it | The list should reach every user, not only new ones. One field once is the smallest ask |
 | Resend, not Mailgun | The site already sends through Resend, with its DNS records and key set up. Its contacts, topics, and hosted preference page do the unsubscribe work. One provider, no new DNS |
 | Resend is the list: no database of our own | Nothing to scale, back up, or leak. Stage 2's Supabase arrives with sign-in, and matches contacts by email |
@@ -55,7 +55,8 @@ A new `OnboardingModel.Step.email`, right after `.welcome` in the `.firstRun` st
 *Parked* (§13): the box and the mailing address. For now the step shows the field, the notice's first sentence alone (`consent-2026-10-17`, §13), and "From Fayzan Malik · annotake.app · Privacy policy", and saves every address with `news: false`.
 
 - **The field:** the same rules as the site's `email.js`, on the address and on its lowercase key, as `/api/subscribe` applies them (`EmailConsent.isPlausible`): trimmed, at most 254 characters, no line breaks, a plain address pattern. Continue is greyed out until it matches, and Return presses it when it's enabled. The field has focus when the step opens.
-- **The editing keys** (⌘V, ⌘C, ⌘X, ⌘A, ⌘Z) work through a main menu that never shows (`EditMenu.swift`): a menu-bar app has none of its own.
+- **The typo hint** (Checkpoint 5, `EmailTypo.swift`): after a pause in typing, "Did you mean sam@gmail.com?" below the field, for a domain a letter or two off a common provider's (gmial.com), or one with "com" mistyped (gmail.con). One click takes it; Continue takes the address as typed. A wrong hint is worse than none, so short names (me.com, aol.com) match only exactly, regional domains (hotmail.ca) are known as themselves, and two equally close domains give no hint. Change… has the same hint.
+- **The editing keys** (⌘V, ⌘C, ⌘X, ⌘A, ⌘Z) work through the main menu (`MainMenu.swift`), which a menu-bar app otherwise lacks; it shows only while Annotake is in the Dock.
 - **The box** starts unticked, every time.
 - **The footer line** is what CASL wants on a consent request: who's asking, a mailing address, and a contact (the web address counts). The policy link opens `annotake.app/privacy`.
 - **Continue** saves the address on the Mac (§3.4) and moves straight on to the permissions. The send happens in the background.
@@ -393,7 +394,7 @@ Made in the build (Task 3 for the site, Task 10 for the rest):
 - The field's placeholder is `you@example.com`, and its VoiceOver label "Email address". Autocorrection is off, and it's at most 340 pt wide, as in the sketch.
 - The `.emailOnly` pass ends on You're set, unchanged: it reads right for someone who already uses Annotake.
 - A test measures the email step at 285 pt of the window's 440, so nothing is clipped.
-- A main menu that never shows (`EditMenu.swift`) gives text fields ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z. A menu-bar app has no main menu, so pasting an address did nothing. AppKit adds its own hidden items with it, so ⌃⌘Space opens Emoji & Symbols while an Annotake window is key.
+- A main menu that never shows (`EditMenu.swift`, now `MainMenu.swift`) gives text fields ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z. A menu-bar app has no main menu, so pasting an address did nothing. AppKit adds its own hidden items with it, so ⌃⌘Space opens Emoji & Symbols while an Annotake window is key.
 - Showing the window again first catches up on permissions granted while it was closed.
 
 *Task 7, recording waits for an email (9145059):*
@@ -459,6 +460,7 @@ Made in the build (Task 3 for the site, Task 10 for the rest):
 - The step has no box. Asking for Feedback and news is the consent request that needs the address, and ticks gathered without it might not count as consent later.
 - `consent-2026-10-15`, not yet shipped, was edited rather than replaced: no box, and the footer "From Fayzan Malik · annotake.app · Privacy policy". The box comes back in a new version with `{address}` in its footer, which `consent.test.js` requires of any version with a box.
 - `consent-2026-10-17` (2026-10-17, at the checkpoint's step 7) drops "Every email has an unsubscribe link.": up front it's beside the point, the step asks for no consent, and /privacy and the Terms say how to unsubscribe. `consent-2026-10-15` had reached Production, so it was replaced, not edited, and stays in `consent.json`. The box's version brings the line back.
+- Asked about verifying addresses (2026-10-17), Fayzan agreed to something that never stops anyone: the typo hint (§3.1), not a confirmation email or a code, which would put an inbox trip between download and the first recording. Fakes stay possible and cost nothing while nothing is sent; the parked first email watches its bounces (Checkpoint 5).
 - The app saves every address with `news: false`. `EmailSignup`, the request, and `/api/subscribe` keep `news` for the box's return.
 - `EmailConsent.mailingAddress` and `make release`'s guard against the unset address are gone. They return with the box.
 - No `MAILING_ADDRESS` in Vercel, so `/api/subscribe` adds each contact and logs `subscribe: added welcome skipped no address`. With no welcome, nothing links to `/api/unsubscribe` yet; it's deployed anyway.
