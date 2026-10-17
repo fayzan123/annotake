@@ -546,8 +546,8 @@ struct SettingsFooter: View {
     }
 }
 
-/// The Settings window (spec §3.6): toolbar tabs, each a SwiftUI form over the footer bar. Annotake stays
-/// menu-bar-only while it's open.
+/// The Settings window (spec §3.6): toolbar tabs, each a SwiftUI form over the footer bar. While it's open, Annotake
+/// is in the Dock and ⌘-Tab (DockPresence).
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// General's Add…, with no address saved: AppDelegate points it at the email step once the onboarding exists.
@@ -565,8 +565,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func show() {
         if window == nil { window = makeWindow() }
+        if let window { DockPresence.shared.shown(window) }
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        if let window { DockPresence.shared.closed(window) }
     }
 
     private func makeWindow() -> NSWindow {

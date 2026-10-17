@@ -4,10 +4,11 @@ import Carbon.HIToolbox
 import SwiftUI
 import Testing
 
-/// The main menu's Edit items. Annotake has no menu bar, and a text field gets ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z only from
-/// the main menu's key equivalents: without them, ⌘V in the email step does nothing.
+/// The main menu: the application menu, Edit, and Window. It shows only while Annotake is in the Dock (DockPresence),
+/// but a text field gets ⌘X, ⌘C, ⌘V, ⌘A, ⌘Z, and ⇧⌘Z only from its key equivalents: without them, ⌘V in the email step
+/// does nothing.
 @MainActor
-struct EditMenuTests {
+struct MainMenuTests {
     /// A menu sends its item's action through NSApp, which the app always has. A test process has none until something
     /// makes it, and with none the action goes nowhere, though the key still counts as handled. (A test process may
     /// never activate: nothing shows.)
@@ -27,7 +28,7 @@ struct EditMenuTests {
     }
 
     static func edit(_ menu: NSMenu) throws -> NSMenu {
-        try #require(menu.items.last?.submenu)
+        try #require(menu.items.first { $0.title == "Edit" }?.submenu)
     }
 
     /// A key press as macOS reports it: `characters` without Shift's effect under ⌘, `charactersIgnoringModifiers`
@@ -39,12 +40,49 @@ struct EditMenuTests {
                          keyCode: UInt16(keyCode))!
     }
 
-    /// An empty application menu first, as in every main menu, then Edit. Each item goes to the first responder.
-    @Test func itHoldsTheEditingKeysForTheFirstResponder() throws {
-        let menu = EditMenu.make()
-        #expect(menu.items.count == 2)
+    /// The application menu first, as in every main menu, then Edit, then Window. Each item goes to the first
+    /// responder: NSApp takes About and Quit, the key window Close, and AppDelegate, at the chain's end, Settings….
+    @Test func inTheDockItHoldsTheApplicationMenuThenEditThenWindow() throws {
+        let menu = MainMenu.make(inDock: true)
+        #expect(menu.items.map(\.title) == ["Annotake", "Edit", "Window"])
+        let expected: [(menu: String, items: [(title: String, action: String, key: String)?])] = [
+            ("Annotake", [("About Annotake", "orderFrontStandardAboutPanel:", ""), nil, ("Settings…", "showSettings:", ","),
+                  nil, ("Quit Annotake", "terminate:", "q")]),
+            ("Window", [("Close", "performClose:", "w")]),
+        ]
+        for (title, items) in expected {
+            let submenu = try #require(menu.items.first { $0.title == title }?.submenu, "\(title)")
+            #expect(submenu.items.count == items.count, "\(title)")
+            for (item, expected) in zip(submenu.items, items) {
+                guard let expected else {
+                    #expect(item.isSeparatorItem)
+                    continue
+                }
+                #expect(item.title == expected.title)
+                #expect(item.action.map(NSStringFromSelector) == expected.action, "\(expected.title)")
+                #expect(item.keyEquivalent == expected.key, "\(expected.title)")
+                #expect(item.keyEquivalentModifierMask == .command, "\(expected.title)")
+                #expect(item.target == nil, "\(expected.title) goes to the first responder")
+            }
+        }
+        #expect(AppDelegate.instancesRespond(to: Selector(("showSettings:"))), "AppDelegate opens Settings")
+    }
+
+    /// In the menu bar alone, an empty application menu and Edit, as before Annotake was ever in the Dock. The
+    /// filmstrip and the frame viewer take keys without making Annotake the active app, so the menu bar shows another
+    /// app's menus: ⌘Q there must not quit Annotake, nor ⌘W or ⌘, do anything.
+    @Test func inTheMenuBarAloneItHoldsEditAlone() throws {
+        let menu = MainMenu.make()
+        #expect(menu.items.map(\.title) == ["Annotake", "Edit"])
         #expect(try #require(menu.items.first?.submenu).items.isEmpty)
-        #expect(menu.items.last?.title == "Edit")
+        for (name, key, keyCode) in [("⌘Q", "q", kVK_ANSI_Q), ("⌘W", "w", kVK_ANSI_W), ("⌘,", ",", kVK_ANSI_Comma)] {
+            #expect(!menu.performKeyEquivalent(with: Self.press(key, ignoring: key, keyCode, .command)), "\(name)")
+        }
+    }
+
+    /// Edit's items, each to the first responder.
+    @Test func editHoldsTheEditingKeysForTheFirstResponder() throws {
+        let menu = MainMenu.make()
         let expected: [(title: String, action: String, key: String, modifiers: NSEvent.ModifierFlags)?] = [
             ("Undo", "undo:", "z", .command),
             ("Redo", "redo:", "Z", [.command, .shift]),
@@ -71,7 +109,7 @@ struct EditMenuTests {
 
     /// Each key reaches its action, ⇧⌘Z included, and no other key reaches any: typing stays typing.
     @Test func eachKeyReachesItsActionAndNoOtherKeyDoes() throws {
-        let menu = EditMenu.make()
+        let menu = MainMenu.make()
         let recorder = Recorder()
         for item in try Self.edit(menu).items where !item.isSeparatorItem { item.target = recorder }
         let presses: [(name: String, event: NSEvent, action: String?)] = [
@@ -112,7 +150,7 @@ struct EditMenuTests {
         let editor = try #require(window.firstResponder as? NSTextView)
         #expect(editor.string == "sam@example.com")
 
-        let menu = EditMenu.make()
+        let menu = MainMenu.make()
         for item in try Self.edit(menu).items where !item.isSeparatorItem {
             let action = try #require(item.action)
             let responder: NSResponder = ["undo:", "redo:"].contains(NSStringFromSelector(action)) ? window : editor
@@ -138,7 +176,7 @@ struct EditMenuTests {
         let delegate = lines.firstIndex { $0.hasPrefix("final class AppDelegate") }
         let start = try #require(delegate, "AppMain.swift declares AppDelegate")
         // From AppDelegate on: the other two delegates come before it.
-        let install = lines[start...].firstIndex(of: "NSApp.mainMenu = EditMenu.make()")
+        let install = lines[start...].firstIndex(of: "NSApp.mainMenu = MainMenu.make()")
         let firstRun = lines[start...].firstIndex(of: "onboarding.showIfNeeded()")
         let installed = try #require(install, "AppDelegate installs the menu")
         let shown = try #require(firstRun, "AppDelegate shows the first run")

@@ -154,10 +154,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.cards = cards
         self.filmstrip = filmstrip
 
-        // 7. The menus: the main menu, which never shows but gives text fields such as the email step's ⌘X, ⌘C, ⌘V,
-        //    ⌘A, and ⌘Z (EditMenu); then the status menu, and the Settings window it opens, whose General tab shows the
-        //    email address and changes it, or adds a first one through the email step (step 9).
-        NSApp.mainMenu = EditMenu.make()
+        // 7. The menus: the main menu, which shows only while a window puts Annotake in the Dock, but gives text fields
+        //    such as the email step's ⌘X, ⌘C, ⌘V, ⌘A, and ⌘Z (MainMenu); then the status menu, and the Settings window
+        //    it opens, whose General tab shows the email address and changes it, or adds a first one through the email
+        //    step (step 9).
+        NSApp.mainMenu = MainMenu.make()
         let settingsModel = SettingsModel(store: settingsStore)
         settingsModel.onChange = { [weak self] old, new in self?.settingsChanged(from: old, to: new) }
         let settingsWindow = SettingsWindowController(
@@ -210,6 +211,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         //     address if the site doesn't have it yet (email list design §3.4).
         updater = makeUpdater()
         signup.resume()
+    }
+
+    /// The main menu's Settings… (⌘,), which reaches the app's delegate at the end of the responder chain.
+    @objc func showSettings(_ sender: Any?) {
+        settingsWindow?.show()
     }
 
     /// Settings apply live where they can (design §7): the trigger and gesture timings once idle, sounds at

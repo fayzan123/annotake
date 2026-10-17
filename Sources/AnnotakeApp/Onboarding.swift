@@ -777,6 +777,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         }
         window?.title = windowTitle
         viewModel.startPolling()
+        if let window { DockPresence.shared.shown(window) }
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
     }
@@ -784,5 +785,6 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         viewModel.stopPolling()
         viewModel.closed()
+        if let window { DockPresence.shared.closed(window) }
     }
 }
