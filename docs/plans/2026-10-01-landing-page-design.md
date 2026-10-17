@@ -142,7 +142,7 @@ Screen: Built-in Retina Display · 0:04 · 3 frames (from 3 candidates)
   - Each leg pivots where the two legs' center lines meet, at (60.5, −101.6), which is hidden inside the camera body.
   - The center line runs 113.0 units from foot to pivot, and the feet stay on the baseline.
   - The open pose matches the brand SVG exactly.
-- **Under the logo:** "© 2026 Fayzan Malik · Made in Ontario, Canada", with links to Privacy and Terms.
+- **Under the logo:** "Made in Ontario, Canada", with links to Privacy and Terms.
 
 ### 3.8 Phones and other computers
 
@@ -254,7 +254,7 @@ Plain language. It opens with a "Last updated" date, and old versions stay in gi
 
 ### 4.5 Whose name is on it
 
-- **The maker is Fayzan Malik** in the Terms, the policy, the emails, and the footer, and "Annotake" stays a product name. That needs no Ontario business-name registration.
+- **The maker is Fayzan Malik** in the Terms and the policy, which must say who's responsible, and nowhere else: since 2026-10-17 he stays as anonymous as the law allows. "Annotake" stays a product name, which needs no Ontario business-name registration, so the footer has no © line ("© 2026 Annotake" would present Annotake as the business) and says only "Made in Ontario, Canada", and the link email signs off "Annotake, made in Ontario, Canada", which CASL allows since s. 3(b) exempts a requested email entirely. Registering "Annotake" as a business name (about $60 for 5 years) would let the footer, the emails, and a consent request say Annotake instead of his name; the registry itself is public.
 - **Trading under "Annotake" itself,** on invoices, say, would need that registration (about CA$60 through the Ontario Business Registry) or a company.
 
 ### 4.6 Outside the site
@@ -347,7 +347,7 @@ scripts/make-site-brand.swift  writes brand.js, brand.svg, favicon.svg, and the 
 
 - **From:** `Annotake <noreply@annotake.app>`, with no reply address: annotake.app receives no mail.
 - **Subject:** "Annotake for your Mac".
-- **Body,** as plain text and simple HTML: "Here's the download link you asked for: https://annotake.app/download. Open it on your Mac (macOS 15 or later), open the disk image, and drag Annotake to Applications. This is the only email we'll send you." It's signed "Annotake, made by Fayzan Malik in Ontario, Canada", with links to annotake.app and the privacy policy.
+- **Body,** as plain text and simple HTML: "Here's the download link you asked for: https://annotake.app/download. Open it on your Mac (macOS 15 or later), open the disk image, and drag Annotake to Applications. This is the only email we'll send you." It's signed "Annotake, made in Ontario, Canada", with links to annotake.app and the privacy policy.
 - **DNS records,** in Vercel:
   - Resend's DKIM record, and the MX and SPF records for its sending subdomain, exactly as Resend lists them;
   - `_dmarc` TXT `v=DMARC1; p=none`, with no report address, since nothing receives mail at annotake.app; tightened to `p=quarantine` later.

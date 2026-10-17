@@ -112,7 +112,7 @@
 | Privacy rows | `Plain files` / `Each recording is a folder of PNGs and a steps.md in ~/Pictures/Annotake. They clear out after 30 days unless you choose to keep them.` · `No AI` / `Frames are picked by comparing pixels, and captions come from macOS Accessibility. No models, no uploads.` · `Only while you record` / `Annotake sees your screen only while you record, and it never records what you type.` (`steps.md` and the folder path are in `<code>`) |
 | Finder | title `2026-10-01 at 09.41.12` · rows `01_0m01s.png` `412 KB` `PNG image` · `02_0m02s.png` `405 KB` `PNG image` · `03_0m04s.png` `418 KB` `PNG image` · `steps.md` `1 KB` `Markdown` · path `Macintosh HD › Users › you › Pictures › Annotake › 2026-10-01 at 09.41.12` |
 | Final call | `Try it on your next bug.` |
-| Footer | `© 2026 Fayzan Malik · Made in Ontario, Canada` · links `Privacy` `Terms` `hello@annotake.app` |
+| Footer | `Made in Ontario, Canada` · links `Privacy` `Terms` `hello@annotake.app` |
 | 404 | `This page doesn’t exist.` · link `Go to annotake.app` |
 
   The Quick Look panel's text, exactly:
@@ -158,7 +158,7 @@ Open it on your Mac (macOS 15 or later). Then open the disk image and drag Annot
 
 This is the only email we’ll send you.
 
-Annotake, made by Fayzan Malik in Ontario, Canada
+Annotake, made in Ontario, Canada
 https://annotake.app · Privacy: https://annotake.app/privacy
 ```
 
@@ -912,7 +912,7 @@ cameraOffsetY = pivot − PIVOT_OPEN
   - `og:type` `website`, `og:url` `https://annotake.app/`, `og:title`, `og:description`, `og:image` `https://annotake.app/assets/img/og.v1.png`, `og:image:width` 1200, and `og:image:height` 630;
   - `twitter:card` `summary_large_image`;
   - the icons: `favicon.svg` (`type="image/svg+xml"`), `favicon-32.png` (`sizes="32x32"`), and `apple-touch-icon.png`;
-  - a JSON-LD data block: `{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Annotake","operatingSystem":"macOS 15 or later","applicationCategory":"DeveloperApplication","description":<the meta description>,"url":"https://annotake.app","downloadUrl":"https://annotake.app/download","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Fayzan Malik"}}`.
+  - a JSON-LD data block: `{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Annotake","operatingSystem":"macOS 15 or later","applicationCategory":"DeveloperApplication","description":<the meta description>,"url":"https://annotake.app","downloadUrl":"https://annotake.app/download","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}`.
 - **`/privacy` and `/terms`** get their own title (`Privacy policy · Annotake` and `Terms · Annotake`), a description, a canonical, and the icons.
 - **`robots.txt`:** `User-agent: *`, `Allow: /`, and `Sitemap: https://annotake.app/sitemap.xml`. **`sitemap.xml`** lists `/`, `/privacy`, and `/terms`.
 - **`og.html`** is 1200 × 630, light, using `site.css`:
