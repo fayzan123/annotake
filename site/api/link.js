@@ -23,7 +23,7 @@ Open it on your Mac (macOS 15 or later). Then open the disk image and drag Annot
 
 This is the only email we’ll send you.
 
-Annotake, made by Fayzan Malik in Ontario, Canada
+Annotake, made in Ontario, Canada
 https://annotake.app · Privacy: https://annotake.app/privacy`;
 
 // Inline styles are fine here: it's an email, not the site.
@@ -35,7 +35,7 @@ export const EMAIL_HTML = `<!DOCTYPE html>
 <p style="margin:0 0 24px"><a href="${DOWNLOAD}" style="display:inline-block;padding:12px 22px;border-radius:999px;background:#1c1c1e;color:#ffffff;font-weight:600;text-decoration:none">Download Annotake for Mac</a></p>
 <p style="margin:0 0 16px">Open it on your Mac (macOS 15 or later). Then open the disk image and drag Annotake to Applications.</p>
 <p style="margin:0 0 24px">This is the only email we’ll send you.</p>
-<p style="margin:0;color:#6e6e73;font-size:14px">Annotake, made by Fayzan Malik in Ontario, Canada<br><a href="https://annotake.app" style="color:#6e6e73">annotake.app</a> · Privacy: <a href="https://annotake.app/privacy" style="color:#6e6e73">https://annotake.app/privacy</a></p>
+<p style="margin:0;color:#6e6e73;font-size:14px">Annotake, made in Ontario, Canada<br><a href="https://annotake.app" style="color:#6e6e73">annotake.app</a> · Privacy: <a href="https://annotake.app/privacy" style="color:#6e6e73">https://annotake.app/privacy</a></p>
 </body>
 </html>`;
 

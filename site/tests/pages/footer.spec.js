@@ -97,7 +97,7 @@ test('without JavaScript, the static logo shows', async ({ openPage }) => {
 test('the legal row, exactly', async ({ page }) => {
   await page.goto('/');
   const legal = page.locator('footer .legal');
-  await expect(legal.locator('> span')).toHaveText('© 2026 Fayzan Malik · Made in Ontario, Canada');
+  await expect(legal.locator('> span')).toHaveText('Made in Ontario, Canada');
   const links = legal.locator('nav a');
   await expect(links).toHaveText(['Privacy', 'Terms']);
   expect(await links.evaluateAll(all => all.map(a => a.getAttribute('href')))).toEqual(['/privacy', '/terms']);
