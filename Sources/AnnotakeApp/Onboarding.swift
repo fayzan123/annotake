@@ -478,16 +478,18 @@ private struct EmailStep: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             StepTitle(text: OnboardingCopy.title(.email))
-            TextField("Email address", text: $viewModel.emailDraft, prompt: Text(OnboardingCopy.emailPlaceholder))
-                .labelsHidden()
-                .textFieldStyle(.roundedBorder)
-                .controlSize(.large)
-                .textContentType(.emailAddress)
-                .autocorrectionDisabled()
-                .frame(maxWidth: Self.fieldWidth)
-                .focused($fieldFocused)
-                // Return: submitDraft turns away what Continue, greyed out, would.
-                .onSubmit { viewModel.submitDraft() }
+            SuggestingEmailField(draft: $viewModel.emailDraft) {
+                TextField("Email address", text: $viewModel.emailDraft, prompt: Text(OnboardingCopy.emailPlaceholder))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .controlSize(.large)
+                    .textContentType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .frame(maxWidth: Self.fieldWidth)
+                    .focused($fieldFocused)
+                    // Return: submitDraft turns away what Continue, greyed out, would.
+                    .onSubmit { viewModel.submitDraft() }
+            }
             ForEach(paragraphs, id: \.self) { Paragraph(text: $0) }
             EmailFooter()
         }
@@ -495,6 +497,44 @@ private struct EmailStep: View {
         // follows another.
         .defaultFocus($fieldFocused, true)
         .onAppear { fieldFocused = true }
+    }
+}
+
+/// An email field with "Did you mean …?" below it, for a likely typo of a common provider's domain (EmailTypo): the
+/// email step's and Change…'s. One click puts the suggestion in the field, and nothing waits on it. The hint follows
+/// what's typed after a pause, so it doesn't flash while a domain is half typed, and shows at once for an address
+/// already there, such as Change…'s saved one.
+struct SuggestingEmailField<Field: View>: View {
+    static var pause: Duration { .milliseconds(600) }
+    @Binding var draft: String
+    let field: Field
+    @State private var suggestion: String?
+
+    init(draft: Binding<String>, @ViewBuilder field: () -> Field) {
+        _draft = draft
+        self.field = field()
+        _suggestion = State(initialValue: EmailTypo.suggestion(for: draft.wrappedValue))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            field
+            if let suggestion {
+                Button { draft = suggestion } label: {
+                    Text(verbatim: "Did you mean \(suggestion)?")
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .buttonStyle(.link)
+                .font(.callout)
+            }
+        }
+        .onChange(of: draft) { suggestion = nil }
+        .task(id: draft) {
+            try? await Task.sleep(for: Self.pause)
+            guard !Task.isCancelled else { return }
+            suggestion = EmailTypo.suggestion(for: draft)
+        }
     }
 }
 
