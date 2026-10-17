@@ -154,7 +154,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - Change the firewall rule's path from `/api/link` to everything under `/api/` (Request Path, Starts with, `/api/`), and publish it.
    - Preview gets none of these, so there `/api/unsubscribe` answers 502 (`unsubscribe: failed not configured`). That's expected.
 
-   Result: not done yet.
+   Result: **done** (2026-10-17). Fayzan saved the five settings in his password manager, added them (Production, Secret), and redeployed, which only rebuilt the old `main`. Claude changed the firewall rule in Chrome and published it: it's now "API rate limit" (it was "Email link rate limit"), for a Request Path starting with `/api/` and the method `POST`, still Fixed Window, 10 requests per 600 s, keyed by IP, answering 429.
 5. **Deploy:** first, set both policy pages' "Last updated" to the deploy day, and `UPDATED` in `site/tests/pages/legal.spec.js` to match (step 2). Then merge `email-list` into `main` and push, or redeploy if it's there already, so the functions get step 4's settings. Push the branch whole: Vercel builds the last commit, and Task 1's commit alone fails its build.
    - Vercel shows the pushed commit as Ready on Production, not Canceled.
    - If a later push that leaves `site/` alone still builds, check that Vercel exposes system environment variables: the ignore step reads `VERCEL_GIT_PREVIOUS_SHA`, and without it every push builds, which is safe.
