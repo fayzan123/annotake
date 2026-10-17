@@ -60,7 +60,7 @@ struct EmailSignupTests {
 
         signup.save(address: "  Sam@Example.COM ", news: true)
 
-        let saved = EmailRecord(address: "Sam@Example.COM", news: true, consent: "consent-2026-10-15",
+        let saved = EmailRecord(address: "Sam@Example.COM", news: true, consent: EmailConsent.id,
                                 savedAt: harness.now, sent: false)
         #expect(harness.stored == saved)
         #expect(signup.record == saved)
@@ -75,7 +75,7 @@ struct EmailSignupTests {
         await signup.settle()
         try #require(harness.requests.count == 1)
         #expect(try Self.body(of: harness.requests[0])
-                == Body(email: "Sam@Example.COM", news: true, consent: "consent-2026-10-15", appVersion: "0.3.0 (120)"))
+                == Body(email: "Sam@Example.COM", news: true, consent: EmailConsent.id, appVersion: "0.3.0 (120)"))
         #expect(harness.logged == ["email: sent"])
     }
 
@@ -222,7 +222,7 @@ struct EmailSignupTests {
 
         signup.change(address: "  Kim@Example.org ")
 
-        let changed = EmailRecord(address: "Kim@Example.org", news: true, consent: "consent-2026-10-15",
+        let changed = EmailRecord(address: "Kim@Example.org", news: true, consent: EmailConsent.id,
                                   savedAt: harness.now, sent: false)
         #expect(harness.stored == changed)
         #expect(signup.record == changed)
@@ -230,7 +230,7 @@ struct EmailSignupTests {
         await signup.settle()
         try #require(harness.requests.count == 2)
         #expect(try Self.body(of: harness.requests[1])
-                == Body(email: "Kim@Example.org", news: true, consent: "consent-2026-10-15", appVersion: "0.3.0 (120)"))
+                == Body(email: "Kim@Example.org", news: true, consent: EmailConsent.id, appVersion: "0.3.0 (120)"))
         #expect(harness.stored?.sent == true)
         #expect(harness.logged == ["email: sent", "email: sent"])
     }

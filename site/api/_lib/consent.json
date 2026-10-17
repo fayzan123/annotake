@@ -1,9 +1,14 @@
 {
-  "current": "consent-2026-10-15",
+  "current": "consent-2026-10-17",
   "versions": {
     "consent-2026-10-15": {
       "title": "Stay in the loop",
       "notice": "We’ll email you about security fixes and important changes to Annotake. Every email has an unsubscribe link.",
+      "footer": "From Fayzan Malik · annotake.app · Privacy policy"
+    },
+    "consent-2026-10-17": {
+      "title": "Stay in the loop",
+      "notice": "We’ll email you about security fixes and important changes to Annotake.",
       "footer": "From Fayzan Malik · annotake.app · Privacy policy"
     }
   }
