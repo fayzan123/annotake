@@ -92,7 +92,7 @@ for (const [width, side] of [[320, 'above'], [1440, 'left of']]) {
 test('the final call on a Mac: the download, with its note', async ({ page }) => {
   await page.goto('/');
   const final = page.locator('section.final');
-  await expect(final.locator('h2')).toHaveText('Try it on your next bug.');
+  await expect(final.locator('h2')).toHaveText('Try it on what’s on your screen.');
   const download = final.locator('.cta a.btn-lg');
   await expect(download).toBeVisible();
   await expect(download).toHaveText('Download for Mac');

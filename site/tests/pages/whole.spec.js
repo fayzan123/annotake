@@ -129,7 +129,7 @@ test.describe('in Chrome', () => {
   test('without JavaScript, the page renders, the download and the form are there, and the form posts', async ({ openPage }) => {
     const page = await openPage({ javaScriptEnabled: false });
     await page.goto('/');
-    await expect(page.locator('h1')).toHaveText('Show your coding agent exactly what happened.');
+    await expect(page.locator('h1')).toHaveText('Show any AI exactly what you see.');
     await expect(page.locator('section.hero a[href="/download"]')).toBeVisible();
     await expect(page.locator('section.final a[href="/download"]')).toBeVisible();
     const details = page.locator('section.hero details.getlink');

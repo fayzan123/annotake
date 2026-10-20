@@ -3,9 +3,9 @@ import { readFile, stat } from 'node:fs/promises';
 import { HOME_TITLE } from '../expected.js';
 import { expect, test } from './support.js';
 
-const DESCRIPTION = 'A Mac menu-bar app. Press a key, click through the bug in any app, and drag the card into Claude Code, '
-  + 'Cursor, or ChatGPT: one captioned screenshot per step. Free during the beta.';
-const OG_IMAGE = new URL('../../assets/img/og.v1.png', import.meta.url);
+const DESCRIPTION = 'A Mac menu-bar app. Press a key, click through anything on your screen, and drag the card into '
+  + 'ChatGPT, Claude, or Cursor: one captioned screenshot per step. Free during the beta.';
+const OG_IMAGE = new URL('../../assets/img/og.v2.png', import.meta.url);
 
 /** Every meta and link tag in the head, as [selector key, value] pairs. */
 const head = page => page.evaluate(() => ({
@@ -33,10 +33,10 @@ test('the home page: its title, description, canonical, sharing tags, and icons,
     'og:url': 'https://annotake.app/',
     'og:title': HOME_TITLE,
     'og:description': DESCRIPTION,
-    'og:image': 'https://annotake.app/assets/img/og.v1.png',
+    'og:image': 'https://annotake.app/assets/img/og.v2.png',
     'og:image:width': '1200',
     'og:image:height': '630',
-    'og:image:alt': 'Show your coding agent exactly what happened. A strip of film with three captioned frames.',
+    'og:image:alt': 'Show any AI exactly what you see. A strip of film with three captioned frames.',
     'twitter:card': 'summary_large_image',
   });
   expect(canonical).toBe('https://annotake.app/');
@@ -52,7 +52,7 @@ test('the JSON-LD describes the app', async ({ page }) => {
     '@type': 'SoftwareApplication',
     name: 'Annotake',
     operatingSystem: 'macOS 15 or later',
-    applicationCategory: 'DeveloperApplication',
+    applicationCategory: 'UtilitiesApplication',
     description: DESCRIPTION,
     url: 'https://annotake.app',
     downloadUrl: 'https://annotake.app/download',
@@ -89,7 +89,7 @@ test('the preview image is 1200 × 630 and at most 300 KB', async ({ request }) 
   expect(bytes.toString('latin1', 12, 16)).toBe('IHDR');
   expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1200, 630]);
   expect((await stat(OG_IMAGE)).size).toBeLessThanOrEqual(300 * 1024);
-  const response = await request.get('/assets/img/og.v1.png');
+  const response = await request.get('/assets/img/og.v2.png');
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toBe('image/png');
 });

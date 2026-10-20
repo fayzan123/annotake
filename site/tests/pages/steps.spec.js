@@ -5,7 +5,7 @@ import { expect, pauseClock, test, watchErrors } from './support.js';
 const CAPTIONS = [
   ['step-key', '1/3 · Double-tap your key', 'Right ⌘ out of the box, or Right ⌥ or fn. Double-tap again when you’re done.'],
   ['step-click', '2/3 · Click through it', 'Each step comes out as a screenshot, captioned with what you clicked.'],
-  ['step-drag', '3/3 · Drag the card into your agent', 'Claude Code, Cursor, ChatGPT, or anything else that takes images.'],
+  ['step-drag', '3/3 · Drag the card into your AI', 'ChatGPT, Claude, Cursor, or anything else that takes images.'],
 ];
 const CHIPS = ['1/3 Clicked tab "Appearance"', '2/3 Clicked switch "Dark mode"', '3/3 Clicked button "Save"'];
 const TYPED = "dark mode doesn't stick after Save";

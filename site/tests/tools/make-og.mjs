@@ -1,15 +1,15 @@
-// Renders the preview image that X, Reddit, and Discord show for a link: site/assets/img/og.v1.png, 1200 × 630, from
+// Renders the preview image that X, Reddit, and Discord show for a link: site/assets/img/og.v2.png, 1200 × 630, from
 // og.html. `make site-og` runs it. The local server refuses /tests/ paths, so this opens the home page for its origin
 // and then swaps in og.html's markup; the page keeps its origin, so /assets/… URLs resolve.
 //
-// A new image needs a new name (og.v2.png), and the pages' og:image updated: images are cached as immutable.
+// A new image needs a new name (og.v3.png), and the pages' og:image updated: images are cached as immutable.
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { createServer } from '../server.mjs';
 
 const site = fileURLToPath(new URL('../../', import.meta.url));
-const out = fileURLToPath(new URL('../../assets/img/og.v1.png', import.meta.url));
+const out = fileURLToPath(new URL('../../assets/img/og.v2.png', import.meta.url));
 
 const server = createServer({ root: site });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

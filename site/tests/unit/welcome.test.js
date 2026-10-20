@@ -53,7 +53,7 @@ test('the text, word for word', () => {
   assert.equal(email({ news: true }).text, [
     'Thanks for trying Annotake.',
     '',
-    'Hold Right ⌘, click through the bug in any app, and let go. Then drag the card into Claude Code, Cursor, or ChatGPT.',
+    'Hold Right ⌘, click through anything on your screen, and let go. Then drag the card into ChatGPT, Claude, or Cursor.',
     '',
     'Reply to this email any time: I read every one.',
     '',

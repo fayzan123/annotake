@@ -1,8 +1,8 @@
 # Annotake
 
-Annotake is a Mac menu-bar app for showing your coding agent exactly what happened. Double-tap Right ⌘, reproduce a bug, and drag the card it gives you into Claude Code, Cursor, or ChatGPT: one screenshot per step, each captioned with what you clicked.
+Annotake is a Mac menu-bar app that shows any AI exactly what you see. Double-tap Right ⌘, click through anything on your screen, and drag the card it gives you into ChatGPT, Claude, or Cursor: one screenshot per step, each captioned with what you clicked.
 
-This repo holds the app's releases and its installer only; there's no source code here.
+This repo holds the app's releases and its installer. The source code is at [fayzan123/annotake](https://github.com/fayzan123/annotake), under GPL-3.0.
 
 ## Install
 
