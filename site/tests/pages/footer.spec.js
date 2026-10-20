@@ -106,6 +106,19 @@ test('the legal row, exactly', async ({ page }) => {
 // /privacy says big changes are noted on the home page: the email list was one (Checkpoint 5), and the email becoming
 // optional is another (design §13). The note stays until
 // the policy changes again.
+// TryMacApps' free listing wants its badge on the landing page: their link as given, with the image served from here.
+test('the footer shows the TryMacApps badge, linked, with the image from annotake.app', async ({ page }) => {
+  await page.goto('/');
+  const badge = page.locator('footer a.featured');
+  await expect(badge).toHaveAttribute('href', 'https://www.trymacapps.com');
+  await expect(badge).toHaveAttribute('target', '_blank');
+  await expect(badge).toHaveAttribute('rel', 'noopener');
+  const img = badge.locator('img');
+  await expect(img).toHaveAttribute('src', '/assets/img/trymacapps-badge.png');
+  await expect(img).toHaveAttribute('alt', 'Featured on TryMacApps');
+  await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth)).toBe(400);
+});
+
 test('the legal row notes the privacy policy’s change', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('footer .legal .policy-note'))
