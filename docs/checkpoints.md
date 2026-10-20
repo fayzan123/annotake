@@ -177,7 +177,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - In Resend, the contact is in the segment, on Important notices and not on Feedback and news, with all four properties: `consent_wording` is `consent-2026-10-19`, and `consent_source` is `app`.
    - Vercel's log for the request says `subscribe: added welcome skipped no address`, and no email arrives.
 
-   Result: not done yet.
+   Result: **passed** (2026-10-19). Fayzan signed up from build 181 with a new Gmail alias. Claude checked in Chrome and Gmail: in Resend the contact is Subscribed, in "Annotake users", on Important notices only, with `consent_wording` `consent-2026-10-19`, `consent_source` `app`, `app_version` `0.2.0 (181)`, and `consent_at` `2026-10-20T02:58:22.489Z`. Vercel logged `POST /api/subscribe` 200 at 22:58:21 with `subscribe: added welcome skipped no address`, and nothing reached the alias.
 9. **Release:** `make release DRY_RUN=1 NOTES="…"`, then `make release NOTES="…"`, only once every step above passes. Existing copies get the email step after their next Sparkle update.
    - The real release wants a clean tree, so stash `.vscode/launch.json` around it: `git stash push -- .vscode/launch.json`, then `git stash pop` after.
    - `VERSION` goes to 0.3.0 first, since the optional email step, the Dock, and the typo hint are new, in a commit pushed before the release (it checks that `HEAD` is `origin/main`).
