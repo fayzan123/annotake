@@ -182,7 +182,7 @@ Steps from the email list plan's Task 11, with what the build found ([email list
    - The real release wants a clean tree, so stash `.vscode/launch.json` around it: `git stash push -- .vscode/launch.json`, then `git stash pop` after.
    - `VERSION` goes to 0.3.0 first, since the optional email step, the Dock, and the typo hint are new, in a commit pushed before the release (it checks that `HEAD` is `origin/main`).
 
-   Result: not done yet. A dry run on 2026-10-17 (0.2.0, 173) built the app, made the disk image, signed the update for Sparkle, and wrote the feed.
+   Result: **released** (2026-10-19, with Fayzan's go-ahead): Annotake 0.3.0 (185), tag `v0.3.0-185`, from `8a0e06c` (VERSION 0.3.0, pushed `85eacd2..8a0e06c`). The dry run passed first. The real run stopped after Apple notarized both files, when the network dropped while stapling the disk image (stapler error 68); `make release` run again picked up from there, found both tickets, and published. Checked on GitHub's copies: the release is Latest, with `Annotake.dmg` and `Annotake.zip`; the downloaded disk image's SHA-256 matches the build, Gatekeeper accepts it as Notarized Developer ID, and its ticket validates; the live feed offers 0.3.0 (185) with its Sparkle signature.
 
 **Parked until the list's first email,** even a security notice, in this order:
 1. **The mailing address:** rent a PO box or a virtual mailbox, never your home address (design §6.1). CASL wants it valid for 60 days after each email.
