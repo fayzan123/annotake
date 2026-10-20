@@ -1,7 +1,7 @@
 // What the tests expect, exactly as the plan's Global Constraints write it. Shared by the unit and page tests.
 
 export const CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; " +
+  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://usefulshelf.co; font-src 'self'; " +
   "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'";
 
 /** The five headers every response carries besides the CSP, by lowercased name. */

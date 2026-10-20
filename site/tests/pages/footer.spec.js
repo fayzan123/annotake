@@ -120,18 +120,21 @@ test('the footer shows the TryMacApps badge, linked, with the image from annotak
   await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth)).toBe(400);
 });
 
-// UsefulShelf's badge, as given, with its image served from here too.
-test('the footer shows the UsefulShelf badge, linked, with the image from annotake.app', async ({ page }) => {
+// UsefulShelf's badge, exactly as they give it: their checker looks for their own image URL. The test never loads it.
+test('the footer shows the UsefulShelf badge exactly as given', async ({ page }) => {
+  await page.route('https://usefulshelf.co/**', route => route.abort());
   await page.goto('/');
-  const badge = page.locator('footer a.featured').nth(1);
+  const badge = page.locator('footer .badges a').nth(1);
   await expect(badge).toHaveAttribute('href',
     'https://usefulshelf.co/?utm_source=annotake.app&utm_medium=referral&utm_campaign=badge&utm_content=light');
   await expect(badge).toHaveAttribute('target', '_blank');
   await expect(badge).toHaveAttribute('rel', 'nofollow noopener');
   const img = badge.locator('img');
-  await expect(img).toHaveAttribute('src', '/assets/img/usefulshelf-badge.svg');
+  await expect(img).toHaveAttribute('src', 'https://usefulshelf.co/badge/usefulshelf.svg');
   await expect(img).toHaveAttribute('alt', 'Featured on UsefulShelf');
-  await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth)).toBe(248);
+  await expect(img).toHaveAttribute('width', '248');
+  await expect(img).toHaveAttribute('height', '66');
+  await expect(img).toBeVisible();
 });
 
 // TryMacApps' badge is dark grey on clear: the dark theme inverts it, so it stays readable. UsefulShelf's never is.
@@ -140,7 +143,7 @@ test('the TryMacApps badge reads on both themes', async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme });
     await page.goto('/');
     await expect(page.locator('footer a.featured img.trymacapps')).toHaveCSS('filter', filter);
-    await expect(page.locator('footer a.featured').nth(1).locator('img')).toHaveCSS('filter', 'none');
+    await expect(page.locator('footer .badges a').nth(1).locator('img')).toHaveCSS('filter', 'none');
   }
 });
 
