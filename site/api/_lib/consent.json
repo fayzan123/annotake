@@ -1,5 +1,5 @@
 {
-  "current": "consent-2026-10-17b",
+  "current": "consent-2026-10-19",
   "versions": {
     "consent-2026-10-15": {
       "title": "Stay in the loop",
@@ -15,6 +15,12 @@
       "title": "Stay in the loop",
       "notice": "We’ll email you about security fixes and important changes to Annotake.",
       "footer": "annotake.app · Privacy policy"
+    },
+    "consent-2026-10-19": {
+      "title": "Stay in the loop",
+      "notice": "We’ll email you about security fixes and important changes to Annotake.",
+      "footer": "annotake.app · Privacy policy",
+      "skip": "Skip"
     }
   }
 }
