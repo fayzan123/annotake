@@ -120,9 +120,14 @@ struct OnboardingModel: Equatable {
         if step == .email { advance() }
     }
 
-    /// No address is saved, and the pass in progress is past its email step: an update added the step after this copy
-    /// passed where it goes, or the site refused the address. Back to it, since recording waits for an address; after
-    /// it, `advance()` skips what's done again. A first run at You're set has nothing else left, so it becomes the
+    /// The email step's Skip: the email is optional (email list design §13), so on as with a saved address.
+    mutating func emailSkipped() {
+        emailSaved()
+    }
+
+    /// No address is saved nor the step skipped, and the pass in progress is past its email step: an update added the
+    /// step after this copy passed where it goes, or the site refused the address. Back to it, once; after it,
+    /// `advance()` skips what's done again. A first run at You're set has nothing else left, so it becomes the
     /// .emailOnly pass rather than show the drop box again.
     mutating func askForEmail() {
         let steps = Self.steps(for: persisted.mode)
@@ -135,9 +140,10 @@ struct OnboardingModel: Equatable {
         }
     }
 
-    /// At launch, once it's known whether an address is saved (email list design §3.2). A finished copy without one
-    /// gets the .emailOnly pass. A first run in progress goes back to the email step without one, and on past it with
-    /// one, saved in Settings meanwhile; an .emailOnly pass with one by now is done. Fix permissions… stays as it is.
+    /// At launch, once it's known whether the email is settled: an address saved, or the step skipped (email list
+    /// design §3.2, §13). A finished copy without either gets the .emailOnly pass. A first run in progress goes back to
+    /// the email step without, and on past it with; an .emailOnly pass settled by now is done. Fix permissions… stays
+    /// as it is.
     mutating func launched(hasAddress: Bool) {
         if persisted.completed {
             if !hasAddress { persisted = Self.emailOnly() }
@@ -149,7 +155,7 @@ struct OnboardingModel: Equatable {
         }
     }
 
-    /// The pill's Open, while recording waits for an address: as at launch, except that a Fix permissions… pass in
+    /// Settings' Add…, with no address saved: as at launch, skipped or not, except that a Fix permissions… pass in
     /// progress gives way to the .emailOnly pass, since the person asked for the email.
     mutating func openedForEmail(hasAddress: Bool) {
         if !hasAddress && persisted.mode == .fixPermissions && !persisted.completed {
@@ -161,7 +167,7 @@ struct OnboardingModel: Equatable {
 
     /// "Fix permissions…": a first run or a pass over the permissions in progress stays where it is. Anything else,
     /// an .emailOnly pass in progress included, gives way to a pass over the missing permissions; the email step comes
-    /// back with the pill's Open, or at the next launch.
+    /// back with Settings' Add…, or at the next launch.
     mutating func fixPermissions(granted: [Permission: Bool]) {
         guard persisted.completed || persisted.mode == .emailOnly else { return }
         self = OnboardingModel(granted: granted, persisted: Self.fixingPermissions(granted: granted))
@@ -198,10 +204,10 @@ struct OnboardingModel: Equatable {
         if step == .reopen { advance() }
     }
 
-    /// The window was closed. The email step and missing permissions come back at the next launch; the practice run,
-    /// the drop box, You're set, and Fix permissions… don't.
+    /// The window was closed. A first run's missing permissions come back at the next launch, past an email step
+    /// closed as a skip; the practice run, the drop box, You're set, Fix permissions…, and the .emailOnly pass don't.
     mutating func closed() {
-        if persisted.mode == .fixPermissions || [.practice, .dropCard, .done].contains(step) {
+        if persisted.mode != .firstRun || [.practice, .dropCard, .done].contains(step) {
             persisted.completed = true
         }
     }

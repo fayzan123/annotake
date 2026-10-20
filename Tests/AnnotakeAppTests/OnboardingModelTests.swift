@@ -88,6 +88,19 @@ struct OnboardingModelTests {
         #expect(recorded.step == .dropCard)
     }
 
+    /// Skip leaves the email step as a saved address does: on past what's done.
+    @Test func skippingTheEmailMovesOnLikeASavedOne() {
+        var model = model(at: .email, granted: accessibilityGranted)
+        model.emailSkipped()
+        #expect(model.step == .permission(.inputMonitoring))
+        var emailOnly = Model(granted: noneGranted, persisted: Model.emailOnly())
+        emailOnly.emailSkipped()
+        #expect(emailOnly.step == .done)
+        var welcome = self.model(at: .welcome)
+        welcome.emailSkipped()
+        #expect(welcome.step == .welcome)
+    }
+
     @Test func emailSavedMovesOnlyFromTheEmailStep() {
         for step: Model.Step in [.welcome, .permission(.accessibility), .reopen, .practice, .dropCard, .done] {
             var model = model(at: step, requested: [.screenRecording])
@@ -235,16 +248,15 @@ struct OnboardingModelTests {
         #expect(!fixing.showsAtLaunch)
     }
 
-    /// The .emailOnly pass closed at the email step comes back too; closed at You're set, the address is saved and
-    /// it's done.
-    @Test func closingTheEmailOnlyPassBeforeItsAddressBringsItBack() {
+    /// The .emailOnly pass closed at any step is done: the email is optional, so closing it at the step is a skip.
+    @Test func closingTheEmailOnlyPassFinishesIt() {
         var model = Model(granted: noneGranted, persisted: Model.emailOnly())
         model.closed()
-        #expect(model.showsAtLaunch)
-        #expect(model.persisted == Model.emailOnly())
-        model.emailSaved()
-        model.closed()
         #expect(!model.showsAtLaunch)
+        var saved = Model(granted: noneGranted, persisted: Model.emailOnly())
+        saved.emailSaved()
+        saved.closed()
+        #expect(!saved.showsAtLaunch)
     }
 
     /// A step the mode doesn't have means the mode's first step, past any permission already granted.
@@ -449,7 +461,7 @@ struct OnboardingModelTests {
         }
     }
 
-    /// The pill's Open (Task 7) always leads to the field: as at launch, and a Fix permissions… pass in progress gives
+    /// Settings' Add… always leads to the field: as at launch, and a Fix permissions… pass in progress gives
     /// way to the .emailOnly pass, since the person asked for the email.
     @Test func openingForTheEmailLeadsToTheField() {
         var fixing = Model(granted: noneGranted, persisted: Model.fixingPermissions(granted: noneGranted))
@@ -484,7 +496,7 @@ struct OnboardingModelTests {
 
     /// Fix permissions…: a first run or a Fix permissions… pass in progress shows where it is. Anything else, an
     /// .emailOnly pass in progress included, gives way to a pass over the missing permissions; the email step comes
-    /// back with the pill's Open, or at the next launch, since there's still no address.
+    /// back with Settings' Add…, or at the next launch, since there's still no address.
     @Test func fixPermissionsStartsItsPassUnlessOneIsInProgress() {
         let firstRun = model(at: .email, granted: accessibilityGranted)
         var keptFirstRun = firstRun
@@ -645,7 +657,7 @@ struct OnboardingViewModelTests {
     }
 
     /// The field starts empty each time the step shows (design §3.1): what's typed is a draft, never saved, and gone
-    /// once the window closes. The pill's Open with the step already showing keeps it.
+    /// once the window closes. Add… with the step already showing keeps it.
     @Test func theDraftStartsEmptyEachTimeTheStepShows() throws {
         let harness = SignupHarness()
         let viewModel = Self.viewModel(.init(step: .practice), signup: harness.makeSignup(), defaults: harness.defaults,
@@ -670,21 +682,81 @@ struct OnboardingViewModelTests {
         #expect(!String(decoding: data, as: UTF8.self).contains("sam@"))
     }
 
-    /// Closing the window at the email step doesn't finish anything, in either mode: the step comes back at the next
-    /// launch.
-    @Test func closedAtTheEmailStepItComesBackAtTheNextLaunch() throws {
+    /// Skip saves no address and posts nothing, remembers the skip, and moves on; the next launch doesn't ask again.
+    @Test func skipMovesOnWithoutAnAddress() async throws {
+        let harness = SignupHarness()
+        let signup = harness.makeSignup()
+        var lines: [String] = []
+        let viewModel = Self.viewModel(.init(step: .email), signup: signup, defaults: harness.defaults,
+                                       status: Self.accessibilityOnly, report: { lines.append($0) })
+        viewModel.emailDraft = "sam@example.com"
+        viewModel.skipEmail()
+        #expect(viewModel.model.step == .permission(.inputMonitoring))
+        #expect(viewModel.emailDraft.isEmpty)
+        #expect(signup.skipped)
+        await signup.settle()
+        #expect(harness.stored == nil)
+        #expect(harness.requests.isEmpty)
+        #expect(lines == ["onboarding: inputMonitoring"])
+
+        let next = Self.viewModel(try #require(OnboardingViewModel.load(from: harness.defaults)),
+                                  signup: harness.makeSignup(), defaults: harness.defaults,
+                                  status: Self.accessibilityOnly)
+        next.launched()
+        #expect(next.model.step == .permission(.inputMonitoring))
+
+        let away = Self.viewModel(.init(step: .practice), signup: harness.makeSignup())
+        away.skipEmail()
+        #expect(away.model.step == .practice)
+    }
+
+    /// An existing copy skips the email step it gets once after the update: You're set, and never asked again.
+    @Test func anExistingCopySkipsTheEmailOnce() throws {
+        let harness = SignupHarness()
+        let viewModel = Self.viewModel(OnboardingModel.emailOnly(), signup: harness.makeSignup(),
+                                       defaults: harness.defaults)
+        viewModel.skipEmail()
+        #expect(viewModel.model.step == .done)
+        viewModel.primary()
+        #expect(!viewModel.model.showsAtLaunch)
+
+        let next = Self.viewModel(try #require(OnboardingViewModel.load(from: harness.defaults)),
+                                  signup: harness.makeSignup(), defaults: harness.defaults)
+        next.launched()
+        #expect(!next.model.showsAtLaunch)
+    }
+
+    /// Closing the window at the email step skips it, in either mode: a first run comes back past it at the next
+    /// launch, and the .emailOnly pass doesn't come back.
+    @Test func closedAtTheEmailStepItIsSkipped() throws {
         for persisted in [OnboardingModel.Persisted(step: .email), OnboardingModel.emailOnly()] {
             let harness = SignupHarness()
             let viewModel = Self.viewModel(persisted, signup: harness.makeSignup(), defaults: harness.defaults)
             viewModel.closed()
             viewModel.save()
+            #expect(harness.makeSignup().skipped)
 
             let next = Self.viewModel(try #require(OnboardingViewModel.load(from: harness.defaults)),
                                       signup: harness.makeSignup(), defaults: harness.defaults)
             next.launched()
-            #expect(next.model.persisted == persisted)
-            #expect(next.model.showsAtLaunch)
+            if persisted.mode == .firstRun {
+                #expect(next.model.showsAtLaunch)
+                #expect(next.model.step == .permission(.accessibility))
+            } else {
+                #expect(!next.model.showsAtLaunch)
+            }
         }
+    }
+
+    /// Settings' Add… after a skip still brings the email step back: the person asked for it.
+    @Test func addAfterASkipShowsTheEmailStep() {
+        let harness = SignupHarness()
+        let signup = harness.makeSignup()
+        signup.skip()
+        let viewModel = Self.viewModel(.init(step: .done, completed: true), signup: signup)
+        viewModel.openedForEmail()
+        #expect(viewModel.model.persisted == OnboardingModel.emailOnly())
+        #expect(viewModel.model.showsAtLaunch)
     }
 
     /// An existing copy, finished before the update, asks for the email at its first launch after it, and only then.
@@ -735,7 +807,7 @@ struct OnboardingViewModelTests {
         #expect(!saved.model.showsAtLaunch)
     }
 
-    /// Fix permissions… while the email is pending starts its own pass; the pill's Open then brings the email step
+    /// Fix permissions… while the email is pending starts its own pass; Settings' Add… then brings the email step
     /// back. A first run in progress shows where it is.
     @Test func fixPermissionsWhileTheEmailIsPending() {
         let harness = SignupHarness()
@@ -768,7 +840,7 @@ struct OnboardingViewModelTests {
     }
 }
 
-/// The window's controller: when the window shows at launch, from the pill's Open, and from Fix permissions…. A test's
+/// The window's controller: when the window shows at launch, from Settings' Add…, and from Fix permissions…. A test's
 /// `present` stands in for the window, so nothing is drawn or activated, and the view model sees the permissions the
 /// test gives it.
 @MainActor
@@ -856,9 +928,9 @@ struct OnboardingControllerTests {
         #expect(updatedViewModel.model.step == .email)
     }
 
-    /// The pill's Open, while recording waits for an address: the window, at the email step. The .emailOnly pass that
-    /// finished before the site refused its address comes back, and Fix permissions… in progress gives way.
-    @Test func thePillsOpenShowsTheEmailStep() throws {
+    /// Settings' Add…, with no address saved: the window, at the email step. The .emailOnly pass that finished before
+    /// the site refused its address comes back, and Fix permissions… in progress gives way.
+    @Test func addShowsTheEmailStep() throws {
         for persisted in [Persisted(mode: .emailOnly, step: .done, completed: true),
                           OnboardingModel.fixingPermissions(granted: [:])] {
             let harness = SignupHarness()

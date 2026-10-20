@@ -18,8 +18,6 @@ enum UISnapshots {
               to: directory, as: "pill-handsfree.png")
         write(pill(PillText.message(.screenRecordingNeeded), button: PillButton.openSettings.title),
               to: directory, as: "pill-message.png")
-        write(pill(PillText.message(.emailNeeded), button: PillButton.openEmail.title),
-              to: directory, as: "pill-email.png")
 
         write(CardView(state: .saving(duration: 21)), to: directory, as: "card-saving.png")
         let ready = CardView(state: .ready(sampleCapture(frames: 8, duration: 21), thumbnails: sampleThumbnails()))

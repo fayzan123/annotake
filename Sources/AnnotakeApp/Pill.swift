@@ -27,7 +27,6 @@ enum PillText {
     static func message(_ message: SessionMachine.PillMessage) -> String {
         switch message {
         case .screenRecordingNeeded: "Screen Recording permission needed"
-        case .emailNeeded: "Add your email to start recording"
         case .couldNotStart: "Couldn't start recording — try again"
         case .cannotSave: "Can't save to the captures folder — check the save location"
         case .note(let text): text
@@ -39,14 +38,11 @@ enum PillText {
 enum PillButton {
     /// System Settings, at Screen Recording.
     case openSettings
-    /// The email step (email list design §3.2).
-    case openEmail
 
     /// The button a message offers, if any.
     init?(for message: SessionMachine.PillMessage) {
         switch message {
         case .screenRecordingNeeded: self = .openSettings
-        case .emailNeeded: self = .openEmail
         case .couldNotStart, .cannotSave, .note: return nil
         }
     }
@@ -54,7 +50,6 @@ enum PillButton {
     var title: String {
         switch self {
         case .openSettings: "Open Settings"
-        case .openEmail: "Open"
         }
     }
 }
@@ -149,8 +144,6 @@ final class PillPanel {
 
     let panel: NSPanel
     let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: PillView.height))
-    /// The Open button's action: the email step.
-    var onOpenEmail: (() -> Void)?
     private var screen: NSScreen?
     private var hideTimer: Timer?
     private let buttonTarget = ButtonTarget()
@@ -220,7 +213,6 @@ final class PillPanel {
     func press(_ button: PillButton) {
         switch button {
         case .openSettings: NSWorkspace.shared.open(PermissionPane.screenRecording)
-        case .openEmail: onOpenEmail?()
         }
     }
 

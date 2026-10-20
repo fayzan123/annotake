@@ -119,6 +119,35 @@ struct EmailSignupTests {
         #expect(harness.logged == ["email: invalid"])
     }
 
+    /// Skip in the email step: kept under email.skipped.v1, so the step isn't asked again, and nothing is posted.
+    @Test func skipIsKeptAndPostsNothing() async {
+        let harness = SignupHarness()
+        let signup = harness.makeSignup()
+        #expect(!signup.skipped)
+        signup.skip()
+        await signup.settle()
+        #expect(signup.skipped)
+        #expect(harness.defaults.bool(forKey: EmailSignup.skippedStoreKey))
+        #expect(EmailSignup.skippedStoreKey == "email.skipped.v1")
+        #expect(!signup.hasAddress)
+        #expect(harness.requests.isEmpty)
+        #expect(harness.makeSignup().skipped, "the app opened again remembers it")
+    }
+
+    /// An address saved after a skip clears it, so if the site refuses that address, the email step asks once more.
+    @Test func aSaveAfterASkipClearsIt() async {
+        let harness = SignupHarness()
+        let signup = harness.makeSignup()
+        signup.skip()
+        harness.answers = [.invalid]
+        signup.save(address: "sam@example.com", news: false)
+        #expect(!signup.skipped)
+        await signup.settle()
+        #expect(!signup.hasAddress)
+        #expect(!signup.skipped)
+        #expect(!harness.makeSignup().skipped)
+    }
+
     /// No answer, a 429, or a 5xx: tried again after 1 minute, 5 minutes, 30 minutes, then 6 hours, until it goes.
     @Test func retryLaterBacksOffUntilSent() async {
         #expect(EmailSignup.backoff == [60, 300, 1800, 21_600])
