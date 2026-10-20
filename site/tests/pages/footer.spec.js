@@ -119,6 +119,15 @@ test('the footer shows the TryMacApps badge, linked, with the image from annotak
   await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth)).toBe(400);
 });
 
+// The badge is dark grey on clear: the dark theme inverts it, so it stays readable.
+test('the TryMacApps badge reads on both themes', async ({ page }) => {
+  for (const [theme, filter] of [['light', 'none'], ['dark', 'invert(1)']]) {
+    await page.emulateMedia({ colorScheme: theme });
+    await page.goto('/');
+    await expect(page.locator('footer a.featured img')).toHaveCSS('filter', filter);
+  }
+});
+
 test('the legal row notes the privacy policy’s change', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('footer .legal .policy-note'))
