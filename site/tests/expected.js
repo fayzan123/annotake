@@ -17,7 +17,7 @@ export const IMMUTABLE = 'public, max-age=31536000, immutable';
 
 export const DMG_URL = 'https://github.com/fayzan123/annotake-releases/releases/latest/download/Annotake.dmg';
 
-export const HOME_TITLE = 'Annotake: show your coding agent exactly what happened';
+export const HOME_TITLE = 'Annotake: show any AI exactly what you see';
 
 /** A path to each page the site serves; /nope reaches the 404 page. */
 export const PAGES = ['/', '/privacy', '/terms', '/nope'];

@@ -1,8 +1,8 @@
 import { PHONE, UA } from '../expected.js';
 import { expect, pauseClock, test } from './support.js';
 
-const HEADLINE = 'Show your coding agent exactly what happened.';
-const LINE_1 = 'Press a key, do the thing in any app, and drag the card into Claude Code, Cursor, or ChatGPT.';
+const HEADLINE = 'Show any AI exactly what you see.';
+const LINE_1 = 'Press a key, do the thing in any app, and drag the card into ChatGPT, Claude, or Cursor.';
 const LINE_2 = 'Each step comes out as a screenshot, captioned with what you clicked.';
 const NOTE = 'Free during the beta · macOS 15 or later By downloading, you agree to the Terms.';
 const HINT = 'Open Annotake.dmg, then drag Annotake to Applications.';
@@ -16,7 +16,7 @@ test.describe('on a Mac', () => {
     expect(await page.evaluate(() => navigator.userAgent)).toMatch(/Macintosh/);
     const hero = page.locator('section.hero');
     await expect(hero.locator('h1')).toHaveText(HEADLINE);
-    await expect(hero.locator('h1 span')).toHaveText('exactly what happened.');
+    await expect(hero.locator('h1 span')).toHaveText('exactly what you see.');
     await expect(hero.locator('p.sub')).toHaveText(`${LINE_1} ${LINE_2}`);
     await expect(hero.locator('p.sub .sub-more')).toHaveText(LINE_2);
     const download = hero.locator('.cta a.btn.btn-lg');

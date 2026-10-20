@@ -6,7 +6,7 @@ const HOME = 'https://annotake.app';
 const PRIVACY = 'https://annotake.app/privacy';
 
 const THANKS = 'Thanks for trying Annotake.';
-const SHORTCUT = 'Hold Right ⌘, click through the bug in any app, and let go. Then drag the card into Claude Code, Cursor, or ChatGPT.';
+const SHORTCUT = 'Hold Right ⌘, click through anything on your screen, and let go. Then drag the card into ChatGPT, Claude, or Cursor.';
 const REPLY = 'Reply to this email any time: I read every one.';
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };

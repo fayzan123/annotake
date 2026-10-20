@@ -6,8 +6,8 @@ import UniformTypeIdentifiers
 /// The first run's words (spec §3.7). Every key name goes through `keyName`.
 enum OnboardingCopy {
     static let reassurance = "Annotake sees your screen only while you record. Nothing you record leaves your Mac."
-    static let welcomeSubtitle = "Show your coding agent exactly what happened."
-    static let agents = "Claude Code, Cursor, or ChatGPT"
+    static let welcomeSubtitle = "Show any AI exactly what you see."
+    static let agents = "ChatGPT, Claude, or Cursor"
     static let nextTime = "Next time, drag it into \(agents)."
     static let dropHint = "Drop the card here"
     /// The email field's placeholder.

@@ -5,12 +5,12 @@
 <h1 align="center">Annotake</h1>
 
 <p align="center">
-  <strong>Show your coding agent exactly what happened.</strong>
+  <strong>Show any AI exactly what you see.</strong>
 </p>
 
 <p align="center">
-  A Mac menu-bar app. Press a key, click through the bug in any app, and drag the card into
-  Claude Code, Cursor, or ChatGPT. Each step comes out as a screenshot, captioned with what you clicked.
+  A Mac menu-bar app. Press a key, click through anything on your screen, and drag the card into
+  ChatGPT, Claude, or Cursor. Each step comes out as a screenshot, captioned with what you clicked.
 </p>
 
 <p align="center">
@@ -29,12 +29,13 @@
 </p>
 
 <p align="center">
-  <img src="site/assets/img/og.v1.png" alt="Three frames of a recording on a filmstrip, each captioned with its step: Clicked tab &quot;Appearance&quot;, Clicked switch &quot;Dark mode&quot;, Clicked button &quot;Save&quot;, ending on the error &quot;Couldn't save settings&quot;." width="880">
+  <img src="site/assets/img/og.v2.png" alt="Three frames of a recording on a filmstrip, each captioned with its step: Clicked tab &quot;Appearance&quot;, Clicked switch &quot;Dark mode&quot;, Clicked button &quot;Save&quot;, ending on the error &quot;Couldn't save settings&quot;." width="880">
 </p>
 
-Screen recordings are too long for an agent to read, and a single screenshot misses the steps that led
-there. Annotake keeps only the frames where something changed, captions each with the button, tab, or
-field you used, and hands your agent the steps as images it can read in one go.
+A screen recording is a video most AI can't watch, and a single screenshot misses everything around it.
+Annotake keeps only the frames where something changed, captions each with the button, tab, or field you
+used, and hands your AI the steps as images it can read in one go: a bug to reproduce, a long document to
+page through, a console full of errors, a flow you want explained.
 
 ## Install
 
@@ -67,9 +68,9 @@ macOS turns on the last two only after Annotake reopens, so the first run reopen
 Right ⌘ out of the box. Settings can switch it to Right ⌥ or fn.
 
 1. **Double-tap Right ⌘.** A pill at the bottom of the screen shows you're recording.
-2. **Click through the bug** in any app. Annotake keeps its own windows out of the recording.
+2. **Click through it** in any app. Annotake keeps its own windows out of the recording.
 3. **Double-tap Right ⌘ again.** A card appears at the bottom right.
-4. **Drag the card** into Claude Code, Cursor, ChatGPT, or anything else that takes images.
+4. **Drag the card** into ChatGPT, Claude, Cursor, or anything else that takes images.
 
 For something quick, **hold Right ⌘**, click, and let go. **Right ⌘ + Esc** cancels.
 Click the card to review it first: ← → flips through the frames, ⌫ removes one, and Return applies.

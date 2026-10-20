@@ -31,7 +31,7 @@ make site-test FILTER=hero       # only the page tests whose names match
 make site-brand        # brand.js, img/brand.svg, img/favicon.svg, and img/apple-touch-icon.png from the app's
                        # BrandMark.swift and Wordmark.swift; img/favicon-32.png from Resources/AppIcon.icns
 make site-brand-check  # fails if the committed brand files are out of date
-make site-og           # img/og.v1.png, the preview image for links, from tests/tools/og.html
+make site-og           # img/og.v2.png, the preview image for links, from tests/tools/og.html
 ```
 
 Never edit the generated files by hand. Fonts and images under `/assets/fonts/` and `/assets/img/` are cached as immutable, so a changed one needs a new name (`og.v2.png`), with every reference to it updated.
