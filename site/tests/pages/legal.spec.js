@@ -87,9 +87,9 @@ const EMAIL_SECTION = [
     'the old one: it stays on the list, and gets our emails until you unsubscribe it or ask us to delete it.',
   'Logs. Our own logs never record your address. Vercel’s request logs, kept for up to 30 days, can include it ' +
     'when the app sends it or you use an unsubscribe link.',
-  // Both uses of the address above have their basis.
-  'Legal bases. In the EU and the UK, both uses rest on our legitimate interest: knowing how many people use ' +
-    'Annotake, and telling you about security fixes and important changes.',
+  // The address has one use since the email became optional (design §13), and its basis.
+  'Legal basis. In the EU and the UK, emailing the address you give rests on our legitimate interest in telling ' +
+    'you about security fixes and important changes. Giving it is your choice.',
 ];
 
 const CHANGED = {

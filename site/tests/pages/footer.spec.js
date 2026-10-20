@@ -99,8 +99,9 @@ test('the legal row, exactly', async ({ page }) => {
   const legal = page.locator('footer .legal');
   await expect(legal.locator('> span')).toHaveText('Made in Ontario, Canada');
   const links = legal.locator('nav a');
-  await expect(links).toHaveText(['Privacy', 'Terms']);
-  expect(await links.evaluateAll(all => all.map(a => a.getAttribute('href')))).toEqual(['/privacy', '/terms']);
+  await expect(links).toHaveText(['Privacy', 'Terms', 'GitHub']);
+  expect(await links.evaluateAll(all => all.map(a => a.getAttribute('href'))))
+    .toEqual(['/privacy', '/terms', 'https://github.com/fayzan123/annotake']);
 });
 
 // /privacy says big changes are noted on the home page: the email list was one (Checkpoint 5), and the email becoming
@@ -109,7 +110,7 @@ test('the legal row, exactly', async ({ page }) => {
 // TryMacApps' free listing wants its badge on the landing page: their link as given, with the image served from here.
 test('the footer shows the TryMacApps badge, linked, with the image from annotake.app', async ({ page }) => {
   await page.goto('/');
-  const badge = page.locator('footer a.featured');
+  const badge = page.locator('footer a.featured').first();
   await expect(badge).toHaveAttribute('href', 'https://www.trymacapps.com');
   await expect(badge).toHaveAttribute('target', '_blank');
   await expect(badge).toHaveAttribute('rel', 'noopener');
@@ -119,12 +120,27 @@ test('the footer shows the TryMacApps badge, linked, with the image from annotak
   await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth)).toBe(400);
 });
 
-// The badge is dark grey on clear: the dark theme inverts it, so it stays readable.
+// UsefulShelf's badge, as given, with its image served from here too.
+test('the footer shows the UsefulShelf badge, linked, with the image from annotake.app', async ({ page }) => {
+  await page.goto('/');
+  const badge = page.locator('footer a.featured').nth(1);
+  await expect(badge).toHaveAttribute('href',
+    'https://usefulshelf.co/?utm_source=annotake.app&utm_medium=referral&utm_campaign=badge&utm_content=light');
+  await expect(badge).toHaveAttribute('target', '_blank');
+  await expect(badge).toHaveAttribute('rel', 'nofollow noopener');
+  const img = badge.locator('img');
+  await expect(img).toHaveAttribute('src', '/assets/img/usefulshelf-badge.svg');
+  await expect(img).toHaveAttribute('alt', 'Featured on UsefulShelf');
+  await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth)).toBe(248);
+});
+
+// TryMacApps' badge is dark grey on clear: the dark theme inverts it, so it stays readable. UsefulShelf's never is.
 test('the TryMacApps badge reads on both themes', async ({ page }) => {
   for (const [theme, filter] of [['light', 'none'], ['dark', 'invert(1)']]) {
     await page.emulateMedia({ colorScheme: theme });
     await page.goto('/');
-    await expect(page.locator('footer a.featured img')).toHaveCSS('filter', filter);
+    await expect(page.locator('footer a.featured img.trymacapps')).toHaveCSS('filter', filter);
+    await expect(page.locator('footer a.featured').nth(1).locator('img')).toHaveCSS('filter', 'none');
   }
 });
 
