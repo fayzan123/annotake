@@ -948,6 +948,10 @@ body::before {
 .giant svg { display: block; width: 100%; height: auto; color: var(--ink); fill: var(--red); }
 /* The live logo's front reel winds red with this stroke. */
 .giant .sweep { stroke: var(--red); }
+/* TryMacApps lists Annotake for this badge on the landing page. The image is a copy served from here, so no visitor's
+   browser contacts their site: /privacy names the only services that see visitors. */
+.featured { display: inline-block; margin-top: 28px; border-radius: 10px; overflow: hidden; }
+.featured img { display: block; width: 200px; height: auto; }
 .legal {
   display: flex;
   flex-wrap: wrap;
