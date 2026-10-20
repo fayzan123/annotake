@@ -1,15 +1,17 @@
 # Annotake email list design: an email in the first run
 
-**Status:** approved 2026-10-15 in conversation; built through Task 10 on branch `email-list`, 2026-10-16 (§13 has what changed); at Checkpoint 5, cut to collecting addresses only, for now (§13) · **Plan:** [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2 sign-in), §8 (privacy); [landing page design](2026-10-01-landing-page-design.md) §4.4 (CASL), §5.3 (the link function), §6 (robustness)
+**Status:** approved 2026-10-15 in conversation; built through Task 10 on branch `email-list`, 2026-10-16 (§13 has what changed); at Checkpoint 5, cut to collecting addresses only, for now, and made optional on 2026-10-19 (§13) · **Plan:** [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md) · **Related:** [distribution design](2026-09-30-distribution-design.md) §6 (Stage 2 sign-in), §8 (privacy); [landing page design](2026-10-01-landing-page-design.md) §4.4 (CASL), §5.3 (the link function), §6 (robustness)
 
-**For now (decided 2026-10-16, §13):** the list only collects addresses, which count Annotake's users. Nothing is emailed to it yet, so there's no mailing address: the step has no box, the site sends no welcome email, and nothing is broadcast. The parts marked *parked* below come back, with the address, before the list's first email.
+**Optional (decided 2026-10-19, §13):** the step has a Skip button, recording never waits for an address, and a skip isn't asked again. Where this design says the email is required or recording waits, §13's last entry overrides it.
+
+**For now (decided 2026-10-16, §13):** the list only collects addresses, which count Annotake's users who opt in. Nothing is emailed to it yet, so there's no mailing address: the step has no box, the site sends no welcome email, and nothing is broadcast. The parts marked *parked* below come back, with the address, before the list's first email.
 
 ## 1. Goal
 
 - **What it is:** one new first-run step that asks for an email, one small Vercel function that adds it to a Resend list, and one that unsubscribes. Resend is the list.
 - **Why:** today a download has no bridge back to Fayzan. Before the announcements, every copy should leave him a way to reach its user: when something goes wrong (a security fix, a broken update), and to ask for feedback.
 - **Done means:**
-  - a new user can't finish the first run without an email, and an existing copy asks once after its update;
+  - a new user is asked for an email in the first run and can skip it, and an existing copy asks once after its update (§13, 2026-10-19);
   - every address lands in Resend with its topics and a consent record;
   - every email Annotake sends can be unsubscribed from, in one click where the mail app shows an Unsubscribe button;
   - the privacy policy and the Terms say what's stored, and Fayzan has accepted them;
@@ -24,9 +26,9 @@
 | Decision | Why |
 |---|---|
 | The email is asked for in the app's first run, not on the site | The site's download is a public GitHub link, and a forwarded `.dmg` skips any site gate. Every copy passes through the first run, and existing copies through Sparkle. It uses the slot `OnboardingModel` already keeps for Stage 2's sign-in |
-| The email is required; feedback and news are a separate, unticked box | CASL asks for consent separately and never pre-ticked, and the EU's GDPR doesn't count consent that's a condition of getting something. Security and update notices are exempt from consent under CASL ([s. 6(6)(c) and (f)](https://laws-lois.justice.gc.ca/eng/acts/E-1.6/FullText.html)), so the address itself can be required |
+| The email is required (*optional since 2026-10-19, §13*); feedback and news are a separate, unticked box | CASL asks for consent separately and never pre-ticked, and the EU's GDPR doesn't count consent that's a condition of getting something. Security and update notices are exempt from consent under CASL ([s. 6(6)(c) and (f)](https://laws-lois.justice.gc.ca/eng/acts/E-1.6/FullText.html)), so the address itself can be required |
 | A typed email now, no confirmation step | No inbox trip in setup. Typos and fakes bounce and are dropped. Stage 2's sign-in (Google, GitHub, Apple) verifies addresses later, which is when the paywall needs it (§9). Since Checkpoint 5, a "Did you mean …?" hint catches likely typos of common providers' domains, without stopping anyone (§3.1) |
-| Existing copies ask once, and recording waits for it | The list should reach every user, not only new ones. One field once is the smallest ask |
+| Existing copies ask once, and recording waits for it (*no longer waits since 2026-10-19, §13*) | The list should reach every user, not only new ones. One field once is the smallest ask |
 | Resend, not Mailgun | The site already sends through Resend, with its DNS records and key set up. Its contacts, topics, and hosted preference page do the unsubscribe work. One provider, no new DNS |
 | Resend is the list: no database of our own | Nothing to scale, back up, or leak. Stage 2's Supabase arrives with sign-in, and matches contacts by email |
 | Two topics: **Important notices** and **Feedback and news** | People can drop the second and keep the first, or leave both. Resend shows a topic page from every broadcast's unsubscribe link |
@@ -72,7 +74,7 @@ A new `OnboardingModel.Step.email`, right after `.welcome` in the `.firstRun` st
   - an `.emailOnly` pass in progress shows, unless an address is saved by now: then it finishes, with no window;
   - a Fix permissions… pass in progress shows as before.
 - Closing the window on the email step brings it back at the next launch.
-- **Until an address is saved, nothing records:**
+- **Until an address is saved, nothing records** (*removed 2026-10-19, §13: recording never waits, and the pill's Open is gone*):
   - a hold records nothing, and at its reveal (800 ms by default) the pill shows "Add your email to start recording" with an **Open** button, the way it shows Open Settings. A Right ⌘ shortcut ends before the reveal, so it shows nothing;
   - a double-tap or the menu's Start shows the message at once, and the menu keeps offering Start Recording;
   - no recording is ever cut off: the check happens before one starts, while idle.
@@ -469,3 +471,17 @@ Made in the build (Task 3 for the site, Task 10 for the rest):
 - Open questions 1, 2, 4, 6, and 7 are about the box, the welcome, or unsubscribing, so they wait with the list. Questions 3 and 5 stay for Checkpoint 5's copy review.
 - Copies that save an address now are never offered the box. When it returns, decide whether they're asked once, and whether the list's first email does the welcome's job for the contacts added without one.
 - At the copy review: the `.emailOnly` pass's window is titled "Annotake", set at every show since one window serves every pass, while a first run and Fix permissions… keep "Welcome to Annotake" (question 3). The Change… sheet stays as it is (question 5). /privacy promises that big changes are noted on the home page, and the list is one, so the footer says "Privacy policy updated: the app now asks for your email." beside its Privacy link, the two wrapping together, until the policy changes again. Both policy pages take the deploy day as their date.
+
+**Decided 2026-10-19: the email is optional.** Fayzan weighed releasing Annotake as open source, and a required email is the friction he least wants between a download and the first recording. This overrides §1's "can't finish the first run without an email", §2's required email and "recording waits for it", and §3.2's "Until an address is saved, nothing records".
+- **The step offers Skip** beside Continue (`EmailConsent.skip`). Skip saves nothing and posts nothing, keeps `email.skipped.v1` true, and moves on as a saved address does (`OnboardingModel.emailSkipped()`).
+- **Closing the window on the step is a skip too.** A first run comes back at the next launch past the step; the `.emailOnly` pass is done when closed at any step.
+- **A skip isn't asked again:** at launch, the onboarding treats a skip like a saved address. Settings' Not set with Add… still opens the step, skipped or not.
+- **A save clears the skip,** so if the site refuses an address (400), the step asks once more, and can be skipped again.
+- **Existing copies are asked once after the update,** in the `.emailOnly` pass, and can skip it.
+- **Recording never waits for an address.** `SessionMachine` lost `emailNeeded`, the refused hold, and the "Add your email to start recording" message; the pill lost its Open button; `SessionController` no longer holds the signup. `prepare(sounds:)` still takes the Sounds setting only while idle.
+- **A new consent version, `consent-2026-10-19`:** the same words as `consent-2026-10-17b`, plus `"skip": "Skip"`, so a contact's `consent_wording` names a request it could turn down. `consent.test.js` allows a `skip` string, and `EmailConsentTests` checks it against the app.
+- **/privacy:** the short version says giving the address is optional and drops counting users; "Email from Annotake" says the app asks and you can skip it, with everything working without one; "What goes over the network" sends the address only if you give it. **/terms:** "If you give Annotake your email address, you'll get important notices by email." **The home page's note:** "Privacy policy updated: giving the app your email is optional." Both pages say "Last updated: October 19, 2026": move it to the deploy day if that's later.
+- **The list no longer counts users.** GitHub's release download counts do: `Annotake.dmg` for new installs, the Sparkle `.zip` for updates. Active users wait for Stage 2's server counts ([distribution design](2026-09-30-distribution-design.md) §6).
+- **Fewer fakes:** an address is given only by someone who wants notices, so the bounce worry in Checkpoint 5's parked list mostly goes.
+- **Left alone:** the Terms' license section ("Don't reverse-engineer, decompile, redistribute…") stays while the code is closed. It's rewritten the day the code is published, if Fayzan does.
+
