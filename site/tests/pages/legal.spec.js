@@ -2,7 +2,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, useTheme } from './support.js';
 
-const UPDATED = 'Last updated: October 17, 2026';
+const UPDATED = 'Last updated: October 19, 2026';
 
 const PAGES = {
   '/privacy': {
@@ -64,15 +64,16 @@ async function sections(tab) {
 // paragraphs and list items the email list changed.
 const SHORT_VERSION = [
   'Nothing you record leaves your Mac. Annotake has no server that sees your recordings.',
-  'We get your email address in the app, to count how many people use Annotake and to send you important notices.',
+  'If you give the app your email address, we use it to send you important notices. Giving it is optional.',
   'This website doesn’t use cookies, and it counts visits without identifying you.',
   'If you ask us to email you the download link, we use your address only to send that one email.',
 ];
 
 const EMAIL_SECTION = [
   // No welcome email and no Feedback and news until the list has a mailing address (design §13).
-  'Annotake asks for your email address, and won’t start a recording until it has one. We use it to count how many ' +
-    'people use Annotake, and to send you important notices, such as security fixes.',
+  // The email is optional, and recording never waits for it (design §13).
+  'Annotake asks for your email address, and you can skip it: everything works without one. If you give it, we use ' +
+    'it to send you important notices, such as security fixes.',
   'What we keep is your email address, when you gave it, what the app said when it asked, and the app version. ' +
     'Resend stores it for us, in the United States, and keeps its sending logs for 30 days.',
   // Not "one click": the welcome's link asks first, so a link scanner can't unsubscribe anyone, and a broadcast's opens
@@ -98,10 +99,10 @@ const CHANGED = {
       'and you choose whether to send it. The log never holds button names, window titles, or keys.',
     'What goes over the network. Once a day, Annotake checks for updates by fetching its update feed from GitHub, ' +
       'which sees the app’s version and your IP address, as with any download. Updates download from GitHub too. ' +
-      'The check sends no other information about your Mac. Annotake also sends your email address and its ' +
-      'version to annotake.app once, for the email list below, and again only if you change the address in ' +
+      'The check sends no other information about your Mac. If you give Annotake your email address, it sends it ' +
+      'and its version to annotake.app once, for the email list below, and again only if you change the address in ' +
       'Settings. Like GitHub, annotake.app sees your IP address. Nothing you record is ever sent.',
-    // Stage 2's sign-in takes the required email step's place (design §9), so the policy doesn't promise it's optional.
+    // Stage 2's sign-in takes the email step's place (design §9), so the policy doesn't promise how it will ask.
     'Coming later. A later version will add sign-in and daily counts of how much Annotake is used. This policy will ' +
       'be updated before that version ships, and the app will ask you before it sends anything new.',
   ],
@@ -155,12 +156,12 @@ test('/privacy no longer says there’s no list', async ({ page }) => {
   for (const phrase of GONE) expect(text, phrase).not.toContain(phrase);
 });
 
-test('/terms: the beta means important notices by email, and any email can be unsubscribed from', async ({ page }) => {
+test('/terms: an address given means important notices by email, and any email can be unsubscribed from', async ({ page }) => {
   await page.goto('/terms');
   expect((await sections(page))['The beta']).toEqual([
     'Annotake is free during the beta, for as long as the beta lasts. Its features may change, and the beta may end. ' +
       'Paid plans may come later, but nothing you use becomes paid without notice and your agreement.',
-    'Using Annotake means you’ll get important notices by email. You can unsubscribe from any email.',
+    'If you give Annotake your email address, you’ll get important notices by email. You can unsubscribe from any email.',
   ]);
 });
 

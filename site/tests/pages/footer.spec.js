@@ -103,12 +103,13 @@ test('the legal row, exactly', async ({ page }) => {
   expect(await links.evaluateAll(all => all.map(a => a.getAttribute('href')))).toEqual(['/privacy', '/terms']);
 });
 
-// /privacy says big changes are noted on the home page, and the email list is one (Checkpoint 5). The note stays until
+// /privacy says big changes are noted on the home page: the email list was one (Checkpoint 5), and the email becoming
+// optional is another (design §13). The note stays until
 // the policy changes again.
 test('the legal row notes the privacy policy’s change', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('footer .legal .policy-note'))
-    .toHaveText('Privacy policy updated: the app now asks for your email.');
+    .toHaveText('Privacy policy updated: giving the app your email is optional.');
 });
 
 test('the footer plays with no console errors', async ({ page }) => {

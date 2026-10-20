@@ -5,20 +5,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import consent from '../../api/_lib/consent.json' with { type: 'json' };
 
-/** What every version shows. A version that asks for consent adds the box. */
+/** What every version shows. A version that asks for consent adds the box, and one where the email is optional, Skip. */
 const STRINGS = ['footer', 'notice', 'title'];
 
 test('current names a version that exists', () => {
   assert.deepEqual(Object.keys(consent).sort(), ['current', 'versions']);
-  assert.equal(consent.current, 'consent-2026-10-17b');
+  assert.equal(consent.current, 'consent-2026-10-19');
   assert.ok(Object.hasOwn(consent.versions, consent.current));
 });
 
-test('every version has the three strings, maybe the box, and nothing else', () => {
+test('every version has the three strings, maybe the box and Skip, and nothing else', () => {
   assert.ok(Object.keys(consent.versions).length > 0);
   for (const [id, version] of Object.entries(consent.versions)) {
     const names = Object.keys(version).sort();
-    assert.deepEqual(names.filter(name => name !== 'box'), STRINGS, id);
+    assert.deepEqual(names.filter(name => name !== 'box' && name !== 'skip'), STRINGS, id);
     for (const name of names) {
       assert.equal(typeof version[name], 'string', `${id} ${name}`);
       assert.ok(version[name].length > 0, `${id} ${name}`);
@@ -71,5 +71,16 @@ test('consent-2026-10-17b is consent-2026-10-17 without Fayzan’s name, word fo
     title: 'Stay in the loop',
     notice: 'We’ll email you about security fixes and important changes to Annotake.',
     footer: 'annotake.app · Privacy policy',
+  });
+});
+
+test('consent-2026-10-19 is consent-2026-10-17b with Skip, word for word', () => {
+  // The email is optional (design §13): the step offers Skip beside Continue, and recording never waits for an address.
+  // The words are the same, but a contact's consent_wording should name a request it could turn down.
+  assert.deepEqual(consent.versions['consent-2026-10-19'], {
+    title: 'Stay in the loop',
+    notice: 'We’ll email you about security fixes and important changes to Annotake.',
+    footer: 'annotake.app · Privacy policy',
+    skip: 'Skip',
   });
 });
