@@ -44,7 +44,8 @@ Rules for every session:
 17. **2026-10-15: the email list design and plan.** Every copy asks for an email once, in the first run or after its update, and joins a list in Resend, with topics, a consent record, a welcome email, and an unsubscribe. The design is [2026-10-15-email-list-design.md](2026-10-15-email-list-design.md), and the plan is [2026-10-15-email-list-build.md](2026-10-15-email-list-build.md).
 18. **The email list build. Done 2026-10-16,** unattended, on branch `email-list`, which isn't on `main` yet. The app has the email step and its email-only pass, recording that waits for an address, and the Email row in Settings; the site has `/api/subscribe`, `/api/unsubscribe`, and the policies' email sections. What it decided is in the design's §13, and what it found is under "The email list build" below.
 19. **2026-10-19: the email becomes optional.** The step has Skip, recording never waits for an address, and a skip isn't asked again, under `consent-2026-10-19` (the email list design's §13, last entry).
-20. **Next: Checkpoint 5,** which connects the list to Resend and Vercel, then releases it: the list is in [../checkpoints.md](../checkpoints.md#checkpoint-5-the-email-list).
+20. **2026-10-19: 0.3.0 released, and Annotake goes open source under GPL-3.0.** `LICENSE` at the root; the Terms' "Your license" names the GPL, links the code, and keeps the name and logo Fayzan's. The paid plan in the distribution design stays a Stage 3 decision: a public free-plan limit could be removed in any fork, so Pro would have to be something the code can't give away.
+21. **Done: Checkpoint 5,** which connects the list to Resend and Vercel, then releases it: the list is in [../checkpoints.md](../checkpoints.md#checkpoint-5-the-email-list).
 
 ## Session 1: M0 spikes (done)
 

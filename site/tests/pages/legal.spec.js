@@ -19,7 +19,8 @@ const PAGES = {
     h1: 'Terms',
     h2s: ['Who we are', 'The beta', 'Your license', 'Your recordings', 'No warranty', 'Limitation of liability',
       'Trademarks', 'Open-source software', 'Ending', 'Governing law', 'Changes'],
-    phrases: ['free during the beta', 'as is', 'reverse-engineer',
+    phrases: ['free during the beta', 'as is', 'GNU General Public License, version 3',
+      'not Annotake’s name or logo',
       'Claude Code, Cursor, ChatGPT, Mac, and macOS are trademarks of their owners',
       'isn’t affiliated with or endorsed by them', 'Ontario'],
   },
@@ -165,8 +166,10 @@ test('/terms: an address given means important notices by email, and any email c
   ]);
 });
 
-test('the Terms link the two licenses and the privacy policy', async ({ page }) => {
+test('the Terms link the three licenses, the code, and the privacy policy', async ({ page }) => {
   await page.goto('/terms');
+  await expect(page.locator('main a[href="/licenses/gpl-3.0.txt"]')).toHaveCount(1);
+  await expect(page.locator('main a[href="https://github.com/fayzan123/annotake"]')).toHaveCount(1);
   await expect(page.locator('main a[href="/licenses/sparkle.txt"]')).toHaveCount(1);
   await expect(page.locator('main a[href="/licenses/jost-ofl.txt"]')).toHaveCount(1);
   await expect(page.locator('main a[href="/privacy"]')).not.toHaveCount(0);
@@ -192,6 +195,10 @@ test('the licenses are published as plain text', async ({ request }) => {
   expect(jost.status()).toBe(200);
   expect(jost.headers()['content-type']).toBe('text/plain; charset=utf-8');
   expect(await jost.text()).toContain('SIL OPEN FONT LICENSE');
+  const gpl = await request.get('/licenses/gpl-3.0.txt');
+  expect(gpl.status()).toBe(200);
+  expect(gpl.headers()['content-type']).toBe('text/plain; charset=utf-8');
+  expect(await gpl.text()).toContain('GNU GENERAL PUBLIC LICENSE');
 });
 
 test('an unknown path answers 404, with a way home', async ({ page }) => {
