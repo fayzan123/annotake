@@ -139,8 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.contentCache = contentCache
 
         // 6. The pill.
-        let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel(),
-                                           signup: signup)
+        let controller = SessionController(settingsStore: settingsStore, contentCache: contentCache, pill: PillPanel())
         let cards = CardController()
         let filmstrip = FilmstripController()
         cards.onOpen = { [weak cards, weak filmstrip] capture, id in
@@ -196,12 +195,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.start()
         self.monitor = monitor
 
-        // 9. The first run, until it's done, then the email step once while there's no address, which the pill's Open
-        //    and Settings' Add… bring back; and the login item.
+        // 9. The first run, until it's done, then the email step once, unless an address is saved or it was skipped;
+        //    Settings' Add… brings it back. And the login item.
         Permissions.logStatus()
         let onboarding = OnboardingController(trigger: settings.triggerKey, defaults: .standard, signup: signup)
         controller.onRecordingSaved = { [weak onboarding] in onboarding?.recordingSaved() }
-        controller.onOpenEmail = { [weak onboarding] in onboarding?.showForEmail() }
         settingsWindow.onAddEmail = { [weak onboarding] in onboarding?.showForEmail() }
         onboarding.showIfNeeded()
         self.onboarding = onboarding

@@ -12,6 +12,7 @@ struct EmailConsentTests {
         struct Version: Decodable {
             var title, notice, footer: String
             var box: String?
+            var skip: String?
         }
         var current: String
         var versions: [String: Version]
@@ -37,6 +38,8 @@ struct EmailConsentTests {
         #expect(straight(version.notice) == EmailConsent.notice)
         // The step has no box: until the list has a mailing address, it asks for no consent (design §13).
         #expect(version.box == nil)
+        // The email is optional: the step offers Skip (design §13).
+        #expect(version.skip == EmailConsent.skip)
         // The site's footer ends with the link's words; the app shows them as a Link after its footer.
         #expect(version.footer == EmailConsent.footer + " Privacy policy")
         #expect(EmailConsent.privacyURL.absoluteString == "https://annotake.app/privacy")

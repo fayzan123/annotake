@@ -32,13 +32,18 @@ final class EmailSignup: ObservableObject {
     nonisolated static let maxAppVersionLength = 32
     /// Where the addresses the site has taken from this Mac are kept, each as its key's SHA-256 in lowercase hex.
     static let sentStoreKey = "email.sentKeys.v1"
+    /// Where Skip in the email step is kept, so the step isn't asked again (email list design §13).
+    static let skippedStoreKey = "email.skipped.v1"
 
     /// The record as last saved or read.
     @Published private(set) var record: EmailRecord?
     var hasAddress: Bool { record != nil }
+    /// The email step was skipped, or closed, and no address saved since. The email is optional: the onboarding doesn't
+    /// ask again, and Settings' Add… still can.
+    var skipped: Bool { defaults.bool(forKey: Self.skippedStoreKey) }
     /// Fired after a save or a change is stored, and after a 400 clears the address. Only tests set it: the session
-    /// controller reads hasAddress before each input, Settings observes `record`, and the onboarding asks again at the
-    /// next launch, or when the pill's Open or Settings' Add… brings the email step back.
+    /// onboarding asks again at the next launch, or when Settings' Add… brings the email step back, and Settings observes
+    /// `record`.
     var onChange: (() -> Void)?
 
     private let defaults: UserDefaults
@@ -67,9 +72,16 @@ final class EmailSignup: ObservableObject {
         record = stored
     }
 
+    /// Skip in the email step, or the window closed on it: nothing saved or sent.
+    func skip() {
+        defaults.set(true, forKey: Self.skippedStoreKey)
+    }
+
     /// Continue in the email step: saves the cleaned address and the box's choice under today's wording, then sends,
-    /// even an address the site has: the box was just ticked, or left unticked, again.
+    /// even an address the site has: the box was just ticked, or left unticked, again. It clears a skip, so if the
+    /// site refuses the address, the step asks once more.
     func save(address: String, news: Bool) {
+        defaults.removeObject(forKey: Self.skippedStoreKey)
         replace(with: EmailRecord(address: EmailConsent.clean(address), news: news, consent: EmailConsent.id,
                                   savedAt: now(), sent: false))
     }

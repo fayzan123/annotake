@@ -39,8 +39,6 @@ final class SessionController: InputMonitorDelegate {
     let settingsStore: SettingsStore
     private let contentCache: ShareableContentCache
     private let pill: PillPanel
-    /// Until it holds an address, nothing starts recording (email list design §3.2).
-    private let signup: EmailSignup
     private let ax = AXClient()
     private let flags: WebAccessibilityFlagSetter
     private let context: ContextTracker
@@ -50,8 +48,6 @@ final class SessionController: InputMonitorDelegate {
     var cards: CardController?
     /// A recording was saved: its card is showing.
     var onRecordingSaved: (() -> Void)?
-    /// The pill's Open, while recording waits for an address: the email step.
-    var onOpenEmail: (() -> Void)?
 
     private var current: Recording?
     /// Between stopEngine and showCard, which names its capture.
@@ -64,18 +60,16 @@ final class SessionController: InputMonitorDelegate {
     /// The current recording's input sink, read on the input thread.
     nonisolated let bridge = Locked<InputBridge?>(nil)
 
-    init(settingsStore: SettingsStore, contentCache: ShareableContentCache, pill: PillPanel, signup: EmailSignup) {
+    init(settingsStore: SettingsStore, contentCache: ShareableContentCache, pill: PillPanel) {
         self.settingsStore = settingsStore
         self.contentCache = contentCache
         self.pill = pill
-        self.signup = signup
         flags = WebAccessibilityFlagSetter(ax: ax)
         context = ContextTracker(ax: ax, ownBundleID: Self.bundleID)
-        machine = SessionMachine(sounds: settingsStore.settings.sounds, emailNeeded: !signup.hasAddress)
-        pill.onOpenEmail = { [weak self] in self?.onOpenEmail?() }
+        machine = SessionMachine(sounds: settingsStore.settings.sounds)
     }
 
-    /// The menu offers Stop Recording while this is true. A refused hold records nothing, so the menu offers Start.
+    /// The menu offers Stop Recording while this is true.
     var isRecording: Bool { machine.state.isRecording }
 
     /// The Sounds setting, live.
@@ -108,8 +102,8 @@ final class SessionController: InputMonitorDelegate {
     }
 
     func handle(_ input: SessionMachine.Input, at time: TimeInterval = ProcessInfo.processInfo.systemUptime) {
-        // Taken only while idle: an address saved or cleared changes what starts next, never a hold or a recording.
-        machine.prepare(sounds: settingsStore.settings.sounds, hasAddress: signup.hasAddress)
+        // Taken only while idle: a Sounds change applies to what starts next, never a hold or a recording.
+        machine.prepare(sounds: settingsStore.settings.sounds)
         for effect in machine.handle(input, at: time) {
             run(effect, at: time)
         }

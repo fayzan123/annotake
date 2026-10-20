@@ -6,7 +6,7 @@ import Foundation
 /// consent.json to Production, and check it's live (`make site-smoke URL=https://annotake.app`), before releasing an
 /// app that sends the new id: until then the site answers it 422, and every new address waits on the app's backoff.
 enum EmailConsent {
-    static let id = "consent-2026-10-17b"
+    static let id = "consent-2026-10-19"
     static let title = "Stay in the loop"
     /// No unsubscribe line: the step asks for no consent, and the privacy policy, linked from the footer, says how to
     /// unsubscribe. The box's version brings it back: CASL wants a consent request to say consent can be withdrawn.
@@ -16,6 +16,8 @@ enum EmailConsent {
     /// Fayzan's name, which appears only where the law needs it: the privacy policy and the Terms say who's responsible.
     static let footer = "annotake.app ·"
     static let privacyURL = URL(string: "https://annotake.app/privacy")!
+    /// The button beside Continue: the email is optional (design §13), so the step can be turned down.
+    static let skip = "Skip"
 
     // MARK: - The address check: the site's email.js, as /api/subscribe applies it
 

@@ -203,8 +203,9 @@ final class OnboardingViewModel: ObservableObject {
     }
     func relaunched() { change { $0.relaunched() } }
 
-    /// The window was closed: anything typed in the email step goes with it.
+    /// The window was closed: anything typed in the email step goes with it, and closing on the step skips it.
     func closed() {
+        if model.step == .email { signup?.skip() }
         change { $0.closed() }
         clearEmailDraft()
     }
@@ -227,11 +228,19 @@ final class OnboardingViewModel: ObservableObject {
         change { $0.emailSaved() }
     }
 
-    /// At launch, before the window shows: the email step for a copy without an address (email list design §3.2).
-    /// Whether the window shows is `model.showsAtLaunch`.
-    func launched() { change { $0.launched(hasAddress: hasAddress) } }
+    /// Skip in the email step: no address, and the step isn't asked again (email list design §13).
+    func skipEmail() {
+        guard model.step == .email else { return }
+        signup?.skip()
+        change { $0.emailSkipped() }
+        clearEmailDraft()
+    }
 
-    /// The pill's Open, while recording waits for an address: the email step, or the first run on its way there.
+    /// At launch, before the window shows: the email step for a copy without an address that hasn't skipped it (email
+    /// list design §3.2, §13). Whether the window shows is `model.showsAtLaunch`.
+    func launched() { change { $0.launched(hasAddress: hasAddress || (signup?.skipped ?? false)) } }
+
+    /// Settings' Add…, with no address saved: the email step, or the first run on its way there, skipped or not.
     func openedForEmail() { change { $0.openedForEmail(hasAddress: hasAddress) } }
 
     /// Fix permissions…: its own pass over the permissions, unless a first run or such a pass is in progress.
@@ -367,6 +376,7 @@ struct OnboardingView: View {
             case .email:
                 // Not primary(), which acts on whatever step shows by the time it runs: Continue and Return in the
                 // field both submit the draft, which acts only at the email step.
+                Button(EmailConsent.skip) { viewModel.skipEmail() }
                 Button("Continue") { viewModel.submitDraft() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!viewModel.canSubmitEmail)
@@ -782,7 +792,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         if viewModel.model.showsAtLaunch { show() }
     }
 
-    /// The pill's Open while recording waits for an address, and Settings' Add… with none saved: the window in front,
+    /// Settings' Add… with no address saved: the window in front,
     /// at the email step or the first run on its way there. While it shows the email step, an address cleared meanwhile
     /// changes nothing on screen.
     func showForEmail() {
