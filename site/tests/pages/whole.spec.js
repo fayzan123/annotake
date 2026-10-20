@@ -5,6 +5,10 @@ import { PAGES, PHONE } from '../expected.js';
 import { expect, pauseClock, test, useTheme, watchErrors } from './support.js';
 
 const WIDTHS = [320, 360, 768, 1280, 1440, 2560];
+/** The one request that leaves annotake.app: UsefulShelf's badge, whose checker wants its own image URL. /privacy names
+ *  it. The tests answer it with a stand-in, so they never reach usefulshelf.co. */
+const USEFULSHELF_BADGE = 'https://usefulshelf.co/badge/usefulshelf.svg';
+const STAND_IN = '<svg xmlns="http://www.w3.org/2000/svg" width="248" height="66"><rect width="248" height="66"/></svg>';
 
 /** Records every request, and every response that tries to set a cookie. */
 function watchNetwork(page) {
@@ -20,10 +24,11 @@ function watchNetwork(page) {
 
 for (const theme of ['light', 'dark']) {
   for (const path of PAGES) {
-    test(`${path} in ${theme}: clean, accessible, cookieless, first-party, and never wider than the screen`, async ({ page, context, baseURL }) => {
+    test(`${path} in ${theme}: clean, accessible, cookieless, first-party but for one badge, and never wider than the screen`, async ({ page, context, baseURL }) => {
       await useTheme(page, theme);
       const errors = await watchErrors(page);
       const network = watchNetwork(page);
+      await page.route(USEFULSHELF_BADGE, route => route.fulfill({ contentType: 'image/svg+xml', body: STAND_IN }));
       await page.goto(path);
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
@@ -40,7 +45,7 @@ for (const theme of ['light', 'dark']) {
 
       const origin = new URL(baseURL).origin;
       const elsewhere = network.requests.filter(url => !url.startsWith('data:') && new URL(url).origin !== origin);
-      expect(elsewhere).toEqual([]);
+      expect(elsewhere).toEqual(path === '/' ? [USEFULSHELF_BADGE] : []);
       expect(network.cookies).toEqual([]);
       expect(await context.cookies()).toEqual([]);
       expect(await page.evaluate(() => document.cookie)).toBe('');

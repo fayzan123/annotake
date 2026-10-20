@@ -948,11 +948,12 @@ body::before {
 .giant svg { display: block; width: 100%; height: auto; color: var(--ink); fill: var(--red); }
 /* The live logo's front reel winds red with this stroke. */
 .giant .sweep { stroke: var(--red); }
-/* TryMacApps and UsefulShelf list Annotake for their badges on the landing page. The images are copies served from
-   here, so no visitor's browser contacts their sites: /privacy names the only services that see visitors. */
+/* TryMacApps and UsefulShelf list Annotake for their badges on the landing page. TryMacApps' image is a copy served
+   from here; UsefulShelf's checker wants its own image URL, so that one loads from usefulshelf.co, which the CSP allows
+   and /privacy names. */
 .badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 28px; }
-.featured { display: block; }
-.featured img { display: block; height: auto; max-width: 100%; }
+.badges a { display: block; }
+.badges img { display: block; height: auto; max-width: 100%; }
 /* TryMacApps' badge is dark grey on clear, so on the dark theme it's inverted to read light. UsefulShelf's has its
    own light card and border, and reads on both. */
 :root[data-theme="dark"] .featured .trymacapps { filter: invert(1); }
