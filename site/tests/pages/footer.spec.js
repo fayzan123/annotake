@@ -104,6 +104,18 @@ test('the legal row, exactly', async ({ page }) => {
     .toEqual(['/privacy', '/terms', 'https://github.com/fayzan123/annotake']);
 });
 
+for (const path of ['/', '/privacy', '/terms', '/nope']) {
+  test(`on ${path}, every link to the repo opens in a new tab`, async ({ page }) => {
+    await page.goto(path);
+    const repo = page.locator('a[href="https://github.com/fayzan123/annotake"]');
+    expect(await repo.count()).toBeGreaterThanOrEqual(2);
+    for (const link of await repo.all()) {
+      await expect(link).toHaveAttribute('target', '_blank');
+      await expect(link).toHaveAttribute('rel', 'noopener');
+    }
+  });
+}
+
 // /privacy says big changes are noted on the home page: the email list was one (Checkpoint 5), and the email becoming
 // optional is another (design §13). The note stays until
 // the policy changes again.
