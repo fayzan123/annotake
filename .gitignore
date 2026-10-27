@@ -8,3 +8,6 @@ build/
 site/tests/node_modules/
 site/tests/test-results/
 site/tests/playwright-report/
+
+# The spec, designs, plans, and checkpoints stay on this Mac, never on GitHub
+docs/

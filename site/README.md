@@ -1,6 +1,6 @@
 # annotake.app
 
-The landing page, the privacy policy, the Terms, and three Vercel functions. `api/link.js` emails the download link. The app's email list has the other two: `api/subscribe.js` adds the address the app sends to Resend, with a welcome email, and `api/unsubscribe.js` serves the welcome email's unsubscribe link. Their shared code is in `api/_lib/`, which Vercel never runs as a function. Plain HTML, CSS, and JavaScript modules: no framework, no build step, and no runtime packages. The design is [docs/plans/2026-10-01-landing-page-design.md](../docs/plans/2026-10-01-landing-page-design.md), and the plan that built it is [docs/plans/2026-10-01-landing-page-build.md](../docs/plans/2026-10-01-landing-page-build.md). The email list's are [docs/plans/2026-10-15-email-list-design.md](../docs/plans/2026-10-15-email-list-design.md) and [docs/plans/2026-10-15-email-list-build.md](../docs/plans/2026-10-15-email-list-build.md).
+The landing page, the privacy policy, the Terms, and three Vercel functions. `api/link.js` emails the download link. The app's email list has the other two: `api/subscribe.js` adds the address the app sends to Resend, with a welcome email, and `api/unsubscribe.js` serves the welcome email's unsubscribe link. Their shared code is in `api/_lib/`, which Vercel never runs as a function. Plain HTML, CSS, and JavaScript modules: no framework, no build step, and no runtime packages.
 
 This file and `tests/` are never deployed (`.vercelignore`).
 
@@ -21,7 +21,7 @@ make site-test FILTER=hero       # only the page tests whose names match
 ```
 
 - The page tests use the installed Google Chrome, and Playwright's WebKit and Firefox. Install those two once with `cd site/tests && npx playwright install webkit firefox`.
-- Specs import `test`, `expect`, and the helpers from `tests/pages/support.js`. It works around three browser quirks; the session notes in `docs/plans/README.md` (Session 10) say why.
+- Specs import `test`, `expect`, and the helpers from `tests/pages/support.js`. It works around three browser quirks.
 - Timing tests pause Playwright's clock (`pauseClock`) before loading the page, then move it with `page.clock.runFor`.
 - `tests/subscribe-request.json` is the exact request the app sends to `/api/subscribe`. The app's `EmailSignupTests` check the app sends it, and `subscribe.test.js` and `subscribe.spec.js` post it, so a field renamed on one side alone fails a test.
 
@@ -47,7 +47,7 @@ Never edit the generated files by hand. Fonts and images under `/assets/fonts/` 
 
 ## Deploy
 
-On Vercel (Checkpoints 4 and 5 in [docs/checkpoints.md](../docs/checkpoints.md) have the steps):
+On Vercel:
 
 - **The project:** from `fayzan123/annotake`, with Root Directory `site` and Framework Preset Other. `vercel.json` skips a build only when `site/` is unchanged since the last successful deployment (`VERCEL_GIT_PREVIOUS_SHA`).
 - **Environment variables,** in Production only: `RESEND_API_KEY`, the link email's sending key, and for the email list `RESEND_CONTACTS_KEY` (full access), `RESEND_SEGMENT`, `RESEND_TOPIC_NOTICES`, `RESEND_TOPIC_NEWS`, `UNSUBSCRIBE_SECRET`, and `MAILING_ADDRESS`. `UNSUBSCRIBE_SECRET` is set once and never replaced: every unsubscribe link already sent depends on it. In Preview: `EMAIL_DRY_RUN=1`.

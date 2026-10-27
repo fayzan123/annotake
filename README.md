@@ -134,7 +134,6 @@ Quit the downloaded Annotake first: both use the same bundle id. `make test` run
 | `Sources/AnnotakeApp` | The menu-bar app: pill, cards, review, Settings, and the first run |
 | `Sources/annotake-replay` | Replays a saved session through the frame picker, for tuning |
 | `site/` | annotake.app: plain HTML, CSS, and JavaScript, plus Vercel functions. `make site-dev` serves it, `make site-test` tests it |
-| `docs/` | The spec, the designs, and the plans each feature was built from |
 
 </details>
 

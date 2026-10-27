@@ -76,7 +76,7 @@ for (const [device, options, start] of [['a Mac', {}, 'section.hero .cta a.btn-l
     // Safari moves through buttons and links with Option-Tab, unless "Press Tab to highlight each item" is on.
     const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
     const finalAction = start.replace('section.hero', 'section.final');
-    const wanted = ['header a.home', 'header .theme-toggle', ...(device === 'a Mac' ? ['header a.btn'] : []), start, finalAction];
+    const wanted = ['header a.home', 'header a.github', 'header .theme-toggle', ...(device === 'a Mac' ? ['header a.btn'] : []), start, finalAction];
     const reached = [];
     for (let i = 0; i < 30 && reached.length < wanted.length; i++) {
       await page.keyboard.press(tab);
