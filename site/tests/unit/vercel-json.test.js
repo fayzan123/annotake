@@ -71,8 +71,9 @@ test('a push builds unless site/ is unchanged since the last deployment, whateve
   assert.ok(config.ignoreCommand.length <= 256, `${config.ignoreCommand.length} characters`);
 });
 
-test('the three functions may each run for 10 s', () => {
+test('the four functions may each run for 10 s', () => {
   assert.deepEqual(config.functions, {
+    'api/appcast.js': { maxDuration: 10 },
     'api/link.js': { maxDuration: 10 },
     'api/subscribe.js': { maxDuration: 10 },
     'api/unsubscribe.js': { maxDuration: 10 },

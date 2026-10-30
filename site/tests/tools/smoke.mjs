@@ -4,6 +4,7 @@
 // (an http base) it doesn't follow redirects off the site, so the checks that need GitHub or the real domains say SKIP.
 import { fileURLToPath } from 'node:url';
 import consent from '../../api/_lib/consent.json' with { type: 'json' };
+import { FEED_URL } from '../../api/appcast.js';
 import { CSP, DMG_URL, SECURITY_HEADERS } from '../expected.js';
 
 const EXPECTED = { 'content-security-policy': CSP, ...SECURITY_HEADERS };
@@ -55,6 +56,19 @@ export function checks(base) {
       if (!['application/x-apple-diskimage', 'application/octet-stream'].includes(type)) return fail(`type ${type}`);
       if (!(bytes > MIN_DMG_BYTES)) return fail(`${bytes} bytes`);
       return pass(`${(bytes / 1024 / 1024).toFixed(1)} MB, ${type}`);
+    }],
+    // Not Sparkle's User-Agent, so the check isn't counted.
+    ['/api/appcast answers 302 to the update feed on GitHub, which is the Sparkle feed', async () => {
+      const response = await fetch(url('/api/appcast'), { redirect: 'manual', headers: { 'user-agent': 'smoke' } });
+      await response.body?.cancel();
+      const location = response.headers.get('location');
+      if (response.status !== 302 || location !== FEED_URL) return fail(`${response.status} to ${location}`);
+      if (!secure) return skip('302 to GitHub; not followed from a local server');
+      const feed = await fetch(location);
+      const xml = await feed.text();
+      if (feed.status !== 200) return fail(`the feed answered ${feed.status}`);
+      if (!xml.includes('xmlns:sparkle=')) return fail('the feed isn’t a Sparkle feed');
+      return pass(`${xml.match(/<item>/g)?.length ?? 0} releases`);
     }],
     ['GET /api/link answers 405', async () => {
       const response = await fetch(url('/api/link'));

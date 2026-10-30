@@ -11,3 +11,6 @@ site/tests/playwright-report/
 
 # The spec, designs, plans, and checkpoints stay on this Mac, never on GitHub
 docs/
+
+# Upstash's URL and token for make stats
+site/.env.local

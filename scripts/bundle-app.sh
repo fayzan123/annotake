@@ -19,7 +19,9 @@ LOCAL_IDENTITY="Annotake Local Signing"
 ICON="$ROOT/Resources/AppIcon.icns"
 SPARKLE="$FRAMEWORKS_DIR/Sparkle.framework"
 PUBLIC_KEY_FILE="$ROOT/Resources/sparkle-public-key.txt"
-FEED_URL=https://raw.githubusercontent.com/fayzan123/annotake-releases/main/appcast.xml
+# annotake.app counts the daily check, then redirects to the appcast.xml in fayzan123/annotake-releases
+# (site/api/appcast.js).
+FEED_URL=https://annotake.app/api/appcast
 
 # The identity, first, so a release without a Developer ID fails before anything is built.
 security unlock-keychain -p annotake-local "$KC"

@@ -93,8 +93,8 @@ test:
 .PHONY: replay
 replay:
 	swift run annotake-replay "$(SESSION)"
-# The site (site/): plain HTML, CSS, and JavaScript, plus three Vercel functions in site/api: link.js, and the email
-# list's subscribe.js and unsubscribe.js. Its tests live in site/tests, with the only npm packages, dev-only. Each
+# The site (site/): plain HTML, CSS, and JavaScript, plus four Vercel functions in site/api: link.js, appcast.js (the
+# update feed, which counts checks), and the email list's subscribe.js and unsubscribe.js. Its tests live in site/tests, with the only npm packages, dev-only. Each
 # target installs them first if they're missing.
 # make site-dev serves the site at http://localhost:4173 the way vercel.json says, with the functions in dry-run mode.
 # make site-test runs the unit tests, then the page tests in Chrome, WebKit, and Firefox (FILTER= greps the page tests).
@@ -109,6 +109,10 @@ site-unit: site-deps
 	cd $(SITE_TESTS) && node --test --test-reporter=spec 'unit/*.test.js'
 site-test: site-unit
 	cd $(SITE_TESTS) && npx playwright test $(if $(FILTER),--grep '$(FILTER)')
+# make stats prints GitHub's download counts and the last 14 days of Macs checking for updates (scripts/stats.mjs).
+.PHONY: stats
+stats:
+	node scripts/stats.mjs
 # The site's brand files come from the app's BrandMark.swift and Wordmark.swift (scripts/make-site-brand.swift), and the
 # 32 px favicon from the committed app icon. make site-brand-check fails if the committed text files are out of date.
 SITE_BRAND_SOURCES := scripts/make-site-brand.swift Sources/AnnotakeApp/BrandMark.swift Sources/AnnotakeApp/Wordmark.swift

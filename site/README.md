@@ -1,6 +1,6 @@
 # annotake.app
 
-The landing page, the privacy policy, the Terms, and three Vercel functions. `api/link.js` emails the download link. The app's email list has the other two: `api/subscribe.js` adds the address the app sends to Resend, with a welcome email, and `api/unsubscribe.js` serves the welcome email's unsubscribe link. Their shared code is in `api/_lib/`, which Vercel never runs as a function. Plain HTML, CSS, and JavaScript modules: no framework, no build step, and no runtime packages.
+The landing page, the privacy policy, the Terms, and four Vercel functions. `api/link.js` emails the download link, and `api/appcast.js` is the app's update feed: it counts each day's distinct Macs per version in Upstash Redis, then redirects to the feed on GitHub. The app's email list has the other two: `api/subscribe.js` adds the address the app sends to Resend, with a welcome email, and `api/unsubscribe.js` serves the welcome email's unsubscribe link. Their shared code is in `api/_lib/`, which Vercel never runs as a function. Plain HTML, CSS, and JavaScript modules: no framework, no build step, and no runtime packages.
 
 This file and `tests/` are never deployed (`.vercelignore`).
 
@@ -15,7 +15,7 @@ Serves the site at http://localhost:4173 the way `vercel.json` says: clean URLs,
 ## Test it
 
 ```
-make site-unit                   # node:test: the server, the functions, the email check, the brand, boot.js, the logo, the tools
+make site-unit                   # node:test: the server, the functions (the update feed's too), the email check, the brand, boot.js, the logo, the tools
 make site-test                   # the unit tests, then the page tests in Chrome, WebKit, and Firefox
 make site-test FILTER=hero       # only the page tests whose names match
 ```
@@ -40,7 +40,7 @@ Never edit the generated files by hand. Fonts, images, and video under `/assets/
 
 - **The CSP allows no inline scripts or styles:** no `<script>` with code and no `<style>` (JSON-LD data blocks are fine), and no `style="…"` or `style.cssText`. Code sets single properties (`element.style.left`, `style.setProperty('--k', …)`), toggles classes, and sets SVG attributes.
 - **No cookies, and nothing from another origin.** The theme choice lives in `localStorage` (`annotake-theme`), and every access is wrapped in `try`/`catch`.
-- **No function logs an email address.** Each request logs one `link: <outcome>`, `subscribe: <outcome>`, or `unsubscribe: <outcome>` line. `/api/link` never stores or returns one, and `/api/subscribe` keeps it only in Resend, as the list.
+- **No function logs an email address.** Each request logs one `link: <outcome>`, `subscribe: <outcome>`, `unsubscribe: <outcome>`, or `appcast: <outcome>` line, and `/api/appcast` never stores an IP: only an HMAC of it under a daily salt that expires after 36 h. `/api/link` never stores or returns one, and `/api/subscribe` keeps it only in Resend, as the list.
 - **The consent wording** lives in `api/_lib/consent.json`, and the app's copy (`Sources/AnnotakeApp/EmailConsent.swift`) is tested against it. A change adds a new version and moves `current`; a shipped version is never edited. Deploy it, and see `make site-smoke URL=https://annotake.app`'s consent check pass (400, not 422), before releasing an app that sends the new id: until then the site answers that id 422, and every new copy's address waits on the app's backoff.
 - **The address check** is `assets/email.js`, shared by the page and the functions. `EmailConsent.swift` mirrors it, tied to it only by test cases ported one for one, so a change to one changes the other and both test files.
 - **Copy uses `’` for apostrophes in prose,** and straight quotes inside captions.

@@ -2,7 +2,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, useTheme } from './support.js';
 
-const UPDATED = 'Last updated: October 19, 2026';
+// The update-check counts (docs/plans/2026-10-30-update-counts-design.md) changed the privacy policy on its own.
+const UPDATED = { '/privacy': 'Last updated: October 30, 2026', '/terms': 'Last updated: October 19, 2026' };
 
 const PAGES = {
   '/privacy': {
@@ -11,7 +12,7 @@ const PAGES = {
     h2s: ['The short version', 'The Annotake app', 'This website', 'The link email', 'Email from Annotake',
       'Who else sees data', 'Your rights', 'Children', 'Changes'],
     phrases: ['Nothing you record leaves your Mac', 'This website doesn’t use cookies', 'Vercel Web Analytics', 'Resend',
-      '30 days', 'GitHub', 'United States', 'We never sell', 'before that version ships',
+      '30 days', 'GitHub', 'Upstash', 'United States', 'We never sell', 'before that version ships',
       'Office of the Privacy Commissioner of Canada', 'Fayzan Malik', 'Ontario, Canada'],
   },
   '/terms': {
@@ -32,7 +33,7 @@ for (const [path, page] of Object.entries(PAGES)) {
     expect(response.status()).toBe(200);
     await expect(tab).toHaveTitle(page.title);
     await expect(tab.locator('main h1')).toHaveText(page.h1);
-    await expect(tab.locator('main .updated')).toHaveText(UPDATED);
+    await expect(tab.locator('main .updated')).toHaveText(UPDATED[path]);
     await expect(tab.locator('main h2')).toHaveText(page.h2s);
     const text = (await tab.locator('main').textContent()).replace(/\s+/g, ' ');
     for (const phrase of page.phrases) expect(text, phrase).toContain(phrase);
@@ -65,6 +66,7 @@ async function sections(tab) {
 // paragraphs and list items the email list changed.
 const SHORT_VERSION = [
   'Nothing you record leaves your Mac. Annotake has no server that sees your recordings.',
+  'We count how many Macs check for updates each day, without identifying yours.',
   'If you give the app your email address, we use it to send you important notices. Giving it is optional.',
   'This website doesn’t use cookies, and it counts visits without identifying you.',
   'If you ask us to email you the download link, we use your address only to send that one email.',
@@ -98,11 +100,18 @@ const CHANGED = {
     'Send Feedback. Send Feedback opens a draft in your mail app with the app’s and macOS’s versions, your Mac’s ' +
       'model, which permissions are granted, the app’s recent log, and its latest crash report. You see the draft, ' +
       'and you choose whether to send it. The log never holds button names, window titles, or keys.',
-    'What goes over the network. Once a day, Annotake checks for updates by fetching its update feed from GitHub, ' +
-      'which sees the app’s version and your IP address, as with any download. Updates download from GitHub too. ' +
+    // The check goes through annotake.app's /api/appcast from the build after 0.3.0.
+    'What goes over the network. Once a day, Annotake checks for updates. It asks annotake.app, which counts the ' +
+      'check and sends it on to the update feed on GitHub; earlier versions ask GitHub directly. Both see the app’s ' +
+      'version and your IP address, as with any download. Updates download from GitHub too. ' +
       'The check sends no other information about your Mac. If you give Annotake your email address, it sends it ' +
       'and its version to annotake.app once, for the email list below, and again only if you change the address in ' +
       'Settings. Like GitHub, annotake.app sees your IP address. Nothing you record is ever sent.',
+    // A daily salt that expires after 36 h, so no IP is kept and no count follows a Mac (api/appcast.js).
+    'Counting update checks. annotake.app counts how many Macs check for updates each day, and on which version ' +
+      'of Annotake. It doesn’t keep your IP address: it turns it into a code with a key that changes every day and ' +
+      'is deleted after a day and a half, so a count can’t follow your Mac from one day to the next or be traced ' +
+      'back to it. Upstash stores the counts for us, and they’re kept for 400 days.',
     // Stage 2's sign-in takes the email step's place (design §9), so the policy doesn't promise how it will ask.
     'Coming later. A later version will add sign-in and daily counts of how much Annotake is used. This policy will ' +
       'be updated before that version ships, and the app will ask you before it sends anything new.',
@@ -114,8 +123,8 @@ const CHANGED = {
   ],
   // Replies to our emails and Send Feedback's drafts reach Fayzan's Gmail, so Google is named, with no address.
   'Who else sees data': [
-    'Only these services: Vercel (hosting and analytics), Resend (our emails and the email list), GitHub (downloads ' +
-      'and updates), and Google (Gmail, where your replies and feedback arrive). They’re in the United States, so ' +
+    'Only these services: Vercel (hosting and analytics), Upstash (the update-check counts), Resend (our emails and ' +
+      'the email list), GitHub (downloads and updates), and Google (Gmail, where your replies and feedback arrive). They’re in the United States, so ' +
       'what they process is handled there, under US law. We never sell personal information, and we don’t share it ' +
       'for advertising.',
   ],
@@ -125,7 +134,8 @@ const CHANGED = {
       'this policy says.',
     'In the EU or the UK, you also have rights under the GDPR, including access, correction, deletion, and ' +
       'objection, and you can complain to your data protection authority. The legal basis for the link email is ' +
-      'your request for it; for the email list and keeping this website secure, our legitimate interest.',
+      'your request for it; for the email list, counting update checks, and keeping this website secure, our ' +
+      'legitimate interest.',
   ],
 };
 

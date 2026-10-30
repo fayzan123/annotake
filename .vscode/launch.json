@@ -39,6 +39,26 @@
       "target": "annotake-replay",
       "configuration": "release",
       "preLaunchTask": "swift: Build Release annotake-replay"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:annotake}",
+      "name": "Debug annotake-appcast",
+      "target": "annotake-appcast",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug annotake-appcast"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:annotake}",
+      "name": "Release annotake-appcast",
+      "target": "annotake-appcast",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release annotake-appcast"
     }
   ]
 }
