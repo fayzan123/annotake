@@ -30,16 +30,16 @@ export function checks(base) {
   const fail = detail => ({ status: 'FAIL', detail });
   const skip = detail => ({ status: 'SKIP', detail });
   return [
-    ['/, /privacy, and /terms answer 200 HTML, with the CSP and the five headers, and no cookie', async () => {
+    ['/, /demo, /privacy, and /terms answer 200 HTML, with the CSP and the five headers, and no cookie', async () => {
       const problems = [];
-      for (const path of ['/', '/privacy', '/terms']) {
+      for (const path of ['/', '/demo', '/privacy', '/terms']) {
         const response = await fetch(url(path), { redirect: 'manual' });
         await response.body?.cancel();
         if (response.status !== 200) problems.push(`${path}: ${response.status}`);
         if (!response.headers.get('content-type')?.startsWith('text/html')) problems.push(`${path}: not HTML`);
         problems.push(...checkHeaders(response.headers).map(problem => `${path}: ${problem}`));
       }
-      return problems.length ? fail(problems.join('; ')) : pass('3 pages');
+      return problems.length ? fail(problems.join('; ')) : pass('4 pages');
     }],
     ['/download answers 302 to the disk image on GitHub, which is over 1 MB', async () => {
       const response = await fetch(url('/download'), { redirect: 'manual' });

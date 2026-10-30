@@ -34,7 +34,7 @@ make site-brand-check  # fails if the committed brand files are out of date
 make site-og           # img/og.v2.png, the preview image for links, from tests/tools/og.html
 ```
 
-Never edit the generated files by hand. Fonts and images under `/assets/fonts/` and `/assets/img/` are cached as immutable, so a changed one needs a new name (`og.v2.png`), with every reference to it updated.
+Never edit the generated files by hand. Fonts, images, and video under `/assets/fonts/`, `/assets/img/`, and `/assets/video/` are cached as immutable, so a changed one needs a new name (`og.v2.png`), with every reference to it updated. The demo video (`video/demo.v1.mp4`, played by `/demo` and the hero's dialog in `assets/demo.js`) is the 1080p cut re-encoded for the web: `ffmpeg -i <cut>.mp4 -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -tune stillimage -c:a aac -b:a 128k -movflags +faststart`. `+faststart` puts the index first, so it plays before it finishes loading. Its poster, `img/demo-poster.v1.jpg`, is the frame at 1.5 s, 1280 px wide.
 
 ## Rules the code keeps
 

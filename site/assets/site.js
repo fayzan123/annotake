@@ -1,5 +1,6 @@
 // The page's module entry. boot.js has already set the theme; this wires the parts that respond to the visitor.
 import { acmeWindow, setAcme, stateAfter } from './acme.js';
+import { initDemo } from './demo.js';
 import { initGate } from './gate.js';
 import { initLinkForm } from './linkform.js';
 import { buildLogo, playLogo } from './logo.js';
@@ -46,6 +47,8 @@ function wireDownloads() {
 wireThemeToggles();
 wireDownloads();
 for (const form of document.querySelectorAll('form.linkform')) initLinkForm(form);
+const demoLink = document.querySelector('a.demo-link');
+if (demoLink) initDemo(demoLink);
 const gate = document.querySelector('.gate-wrap');
 if (gate) initGate(gate, { reducedMotion });
 const how = document.querySelector('section.how');

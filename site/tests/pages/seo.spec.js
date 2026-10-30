@@ -94,7 +94,7 @@ test('the preview image is 1200 × 630 and at most 300 KB', async ({ request }) 
   expect(response.headers()['content-type']).toBe('image/png');
 });
 
-test('robots.txt allows everything and names the sitemap, which lists the three pages', async ({ request }) => {
+test('robots.txt allows everything and names the sitemap, which lists the four pages', async ({ request }) => {
   const robots = await request.get('/robots.txt');
   expect(robots.status()).toBe(200);
   expect(await robots.text()).toBe('User-agent: *\nAllow: /\n\nSitemap: https://annotake.app/sitemap.xml\n');
@@ -104,5 +104,5 @@ test('robots.txt allows everything and names the sitemap, which lists the three 
   const text = await sitemap.text();
   expect(text).toMatch(/^<\?xml version="1.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9">/);
   expect([...text.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]))
-    .toEqual(['https://annotake.app/', 'https://annotake.app/privacy', 'https://annotake.app/terms']);
+    .toEqual(['https://annotake.app/', 'https://annotake.app/demo', 'https://annotake.app/privacy', 'https://annotake.app/terms']);
 });

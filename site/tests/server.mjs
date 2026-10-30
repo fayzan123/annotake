@@ -21,6 +21,8 @@ const TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.mp4': 'video/mp4',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
   '.xml': 'application/xml; charset=utf-8',
@@ -170,7 +172,20 @@ export function createServer({ root, env = {} }) {
     const file = await findFile(pathname);
     if (!file) return send(req, res, pathname, 404, ...(await notFound()));
     const type = TYPES[extname(file)] ?? 'application/octet-stream';
-    send(req, res, pathname, 200, { 'Content-Type': type }, await readFile(file));
+    const body = await readFile(file);
+    // Safari plays a video only from a server that answers byte ranges, as Vercel does.
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, body.length - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), body.length - 1) : body.length - 1;
+      if (start > end) {
+        return send(req, res, pathname, 416, { 'Content-Range': `bytes */${body.length}`, 'Content-Type': type });
+      }
+      return send(req, res, pathname, 206, {
+        'Content-Type': type, 'Accept-Ranges': 'bytes', 'Content-Range': `bytes ${start}-${end}/${body.length}`,
+      }, body.subarray(start, end + 1));
+    }
+    send(req, res, pathname, 200, { 'Content-Type': type, 'Accept-Ranges': 'bytes' }, body);
   }
 
   return http.createServer((req, res) => {

@@ -20,7 +20,7 @@ export const DMG_URL = 'https://github.com/fayzan123/annotake-releases/releases/
 export const HOME_TITLE = 'Annotake: show any AI exactly what you see';
 
 /** A path to each page the site serves; /nope reaches the 404 page. */
-export const PAGES = ['/', '/privacy', '/terms', '/nope'];
+export const PAGES = ['/', '/demo', '/privacy', '/terms', '/nope'];
 
 /** User agents for the Mac check. */
 export const UA = {

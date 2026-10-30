@@ -268,6 +268,50 @@ body::before {
 .note a:hover { color: var(--ink); text-decoration-color: currentColor; }
 .dl-hint { margin-top: 14px; font-size: 15px; color: var(--ink-2); }
 
+/* The hero's demo link, and the dialog it opens. The dialog's video is dark in either theme, and so is its backdrop. */
+.demo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  font-size: 15px;
+  color: var(--ink-2);
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-2);
+}
+.demo-link:hover { color: var(--ink); text-decoration-color: currentColor; }
+.demo-link svg { width: 17px; height: 17px; flex: none; }
+.demo-dialog {
+  /* As wide as fits, and no taller than the window leaves room for, with the close button above. */
+  width: min(1040px, calc(100vw - 32px), calc((100vh - 120px) * 16 / 9));
+  max-width: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #000;
+  overflow: visible;
+}
+.demo-dialog::backdrop { background: rgb(0 0 0 / .78); }
+.demo-dialog .demo-video { display: block; width: 100%; height: auto; border-radius: 12px; }
+.demo-close {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / .16);
+  color: #fff;
+  cursor: pointer;
+}
+.demo-close:hover { background: rgb(255 255 255 / .26); }
+.demo-close:focus-visible { outline-color: #fff; }
+.demo-close svg { width: 18px; height: 18px; }
+
 .getlink > summary { list-style: none; cursor: pointer; }
 .getlink > summary::-webkit-details-marker { display: none; }
 /* Without scripts, under the download: a secondary link. */
@@ -1004,6 +1048,20 @@ body::before {
   overflow-wrap: anywhere;
 }
 
+/* ---------- /demo ---------- */
+
+.demo-page { max-width: 1040px; margin: 0 auto; padding: 56px 24px 120px; text-align: center; }
+.demo-page h1 { font-weight: 600; font-size: clamp(34px, 4.2vw, 56px); line-height: 1.05; letter-spacing: -0.03em; }
+.demo-page .demo-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 32px 0 36px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #000;
+}
+
 /* ---------- The 404 page, and the page the link form gets back without scripts ---------- */
 
 .notfound,
@@ -1024,6 +1082,7 @@ body::before {
   .logo { height: 32px; }
   .hero { padding: 34px 20px 0; }
   .hero .sub { margin: 16px auto 24px; font-size: 16.5px; }
+  .demo-page { padding: 32px 16px 80px; }
   .sub-more { display: none; }
   .site-footer { padding: 0 20px 28px; }
 }

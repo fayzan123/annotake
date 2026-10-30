@@ -83,9 +83,9 @@ test('/download is a 302 to the latest disk image on GitHub', () => {
   assert.deepEqual(config.redirects, [{ source: '/download', destination: DMG_URL, statusCode: 302 }]);
 });
 
-test('every path gets the CSP and the five headers; fonts and images are immutable', () => {
+test('every path gets the CSP and the five headers; fonts, images, and video are immutable', () => {
   const byName = rules => Object.fromEntries(rules.map(({ key, value }) => [key.toLowerCase(), value]));
-  assert.deepEqual(config.headers.map(rule => rule.source), ['/(.*)', '/assets/fonts/(.*)', '/assets/img/(.*)']);
+  assert.deepEqual(config.headers.map(rule => rule.source), ['/(.*)', '/assets/fonts/(.*)', '/assets/img/(.*)', '/assets/video/(.*)']);
   assert.deepEqual(byName(config.headers[0].headers), { 'content-security-policy': CSP, ...SECURITY_HEADERS });
   for (const rule of config.headers.slice(1)) {
     assert.deepEqual(byName(rule.headers), { 'cache-control': IMMUTABLE });
