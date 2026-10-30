@@ -7,9 +7,10 @@ X86_TRIPLE := x86_64-apple-macosx15.0
 ARM_BIN = $(shell swift build -c release --triple $(ARM_TRIPLE) --show-bin-path)
 X86_BIN = $(shell swift build -c release --triple $(X86_TRIPLE) --show-bin-path)
 UNIVERSAL := .build/universal
-# The marketing version, and the build number: the commit count.
+# The marketing version, and the build number: the commit count plus BUILD_OFFSET. Removing docs/ from the history
+# (2026-10-27) took the count from 185 back to 148, so the offset keeps builds above every one already shipped.
 VERSION := $(shell cat VERSION)
-BUILD := $(shell git rev-list --count HEAD)
+BUILD := $(shell echo $$(( $$(git rev-list --count HEAD) + $$(cat BUILD_OFFSET) )))
 RELEASE ?= 0
 .PHONY: app run install zip selftest selftest-intel ui-snapshots cert clean icon devid-csr devid-import sparkle-keys \
 	dmg-background dmg-venv release

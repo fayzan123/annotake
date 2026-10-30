@@ -27,7 +27,7 @@ DRY_RUN=${DRY_RUN:-0}
 NOTES=${NOTES:-}
 NOTARY_TIMEOUT=${NOTARY_TIMEOUT:-30m}
 VERSION=$(cat VERSION)
-BUILD=$(git rev-list --count HEAD)
+BUILD=$(( $(git rev-list --count HEAD) + $(cat BUILD_OFFSET) ))
 TAG="v$VERSION-$BUILD"
 DOWNLOAD="https://github.com/$REPO/releases/download/$TAG"
 
@@ -55,6 +55,11 @@ else
   gh auth status >/dev/null 2>&1 || fail "gh isn't signed in (gh auth login)"
   gh repo view "$REPO" >/dev/null || fail "no $REPO on GitHub"
   if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then fail "$REPO already has $TAG"; fi
+  # Sparkle offers an update only when its build is higher, so a build at or below a shipped one reaches nobody.
+  SHIPPED=$(gh api "repos/$REPO/contents/appcast.xml" -H 'Accept: application/vnd.github.raw' \
+    | sed -n 's:.*<sparkle\:version>\([0-9]*\)</sparkle\:version>.*:\1:p' | sort -n | tail -1)
+  [ -n "$SHIPPED" ] || fail "couldn't read the builds in $REPO's appcast.xml"
+  [ "$BUILD" -gt "$SHIPPED" ] || fail "build $BUILD isn't above $SHIPPED, the newest in the feed: raise BUILD_OFFSET"
 fi
 
 # iCloud Drive tags bundles in ~/Documents with Finder information, which strict code-signing checks reject,
